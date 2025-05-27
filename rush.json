@@ -783,6 +783,12 @@
             "projectFolder": "apps/demo-playground",
             "versionPolicyName": "appPolicy",
             "tags": ["level-1", "team-flow", "demo"]
+        },
+        {
+            "packageName": "@flowgram.ai/demo-free-layout-forked",
+            "projectFolder": "apps/demo-free-layout-forked",
+            "tags": ["level-1", "team-flow", "demo"],
+            "versionPolicyName": "appPolicy"
         }
     ]
 }

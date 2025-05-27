@@ -306,6 +306,14 @@
           "autoinstallerName": "rush-commands",
           "safeForSimultaneousRushProcesses": true,
           "shellCommand": "concurrently --kill-others --prefix \"{name}\" --names [watch],[demo] -c white,blue \"rush build:watch --to-except @flowgram.ai/demo-nextjs\" \"cd apps/demo-nextjs && rushx dev\""
+      },
+      {
+        "name": "dev:demo-free-layout-forked",
+        "commandKind": "global",
+        "summary": "⭐️️ run dev in app/demo-free-layout-forked",
+        "autoinstallerName": "rush-commands",
+        "safeForSimultaneousRushProcesses": true,
+        "shellCommand": "concurrently --kill-others --prefix \"{name}\" --names [watch],[demo] -c white,blue \"rush build:watch --to-except @flowgram.ai/demo-free-layout-forked\" \"cd apps/demo-free-layout-forked && rushx dev\""
       }
   ],
 
