@@ -1,4 +1,8 @@
-import { WorkflowLineEntity, WorkflowNodeEntity } from '@flowgram.ai/free-layout-core';
+import {
+  WorkflowLineEntity,
+  WorkflowNodeEntity,
+  WorkflowNodeLinesData,
+} from '@flowgram.ai/free-layout-core';
 import { FlowNodeBaseType, FlowNodeTransformData } from '@flowgram.ai/document';
 
 import { LayoutEdge, LayoutNode, LayoutParams } from './type';
@@ -14,6 +18,8 @@ export class LayoutStore {
   private init: boolean = false;
 
   private store: LayoutStoreData;
+
+  private container: WorkflowNodeEntity;
 
   public get initialized(): boolean {
     return this.init;
@@ -47,11 +53,9 @@ export class LayoutStore {
   }
 
   /** 创建布局数据 */
-  private createStore(params: {
-    nodes: WorkflowNodeEntity[];
-    edges: WorkflowLineEntity[];
-  }): LayoutStoreData {
-    const { nodes, edges } = params;
+  private createStore(params: LayoutParams): LayoutStoreData {
+    const { nodes, edges, container } = params;
+    this.container = container;
     const layoutNodes = this.createLayoutNodes(nodes);
     const layoutEdges = this.createEdgesStore(edges);
     const virtualEdges = this.createVirtualEdges(params);
@@ -211,30 +215,42 @@ export class LayoutStore {
       nodeIdList.push(node.id);
     });
 
-    const sameFromEdges = new Map<string, LayoutEdge[]>();
     // 第2级排序：被连线节点排序靠后
     this.edges.forEach((edge) => {
       nodeIdList.push(edge.to);
-      if (edge.entity.info.fromPort) {
-        const edgesForFrom = sameFromEdges.get(edge.from) || [];
-        sameFromEdges.set(edge.from, [...edgesForFrom, edge]);
-      }
     });
 
-    // 第3级排序：相同 from 的节点的不同 port，根据 port y坐标排序
-    sameFromEdges.forEach((edges, from) => {
-      const sortedEdges = edges.sort((a, b) => {
-        const aPort = a.entity.fromPort;
-        const bPort = b.entity.fromPort;
+    // 第3级排序：按照从开始节点进行遍历排序
+    const visited = new Set<string>();
+    const visit = (node: WorkflowNodeEntity) => {
+      if (visited.has(node.id)) {
+        return;
+      }
+      visited.add(node.id);
+      nodeIdList.push(node.id);
+      // 访问子节点
+      node.blocks.forEach((child) => {
+        visit(child);
+      });
+      // 访问后续节点
+      const { outputLines } = node.getData(WorkflowNodeLinesData);
+      const sortedLines = outputLines.sort((a, b) => {
+        const aPort = a.fromPort;
+        const bPort = b.fromPort;
         if (aPort && bPort) {
           return aPort.point.y - bPort.point.y;
         }
         return 0;
       });
-      sortedEdges.forEach((edge) => {
-        nodeIdList.push(edge.to);
+      sortedLines.forEach((line) => {
+        const { to } = line;
+        if (!to) {
+          return;
+        }
+        visit(to);
       });
-    });
+    };
+    visit(this.container);
 
     // 使用 reduceRight 去重并保留最后一个出现的节点 id
     const uniqueNodeIds: string[] = nodeIdList.reduceRight((acc: string[], nodeId: string) => {

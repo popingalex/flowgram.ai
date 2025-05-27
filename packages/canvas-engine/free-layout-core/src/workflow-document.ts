@@ -170,6 +170,7 @@ export class WorkflowDocument extends FlowDocument {
         parent,
       },
       undefined,
+      true,
       true
     ) as WorkflowNodeEntity;
 

@@ -61,6 +61,7 @@ export interface DagreNode {
 export interface LayoutParams {
   nodes: WorkflowNodeEntity[];
   edges: WorkflowLineEntity[];
+  container: WorkflowNodeEntity;
 }
 
 export interface LayoutOptions {

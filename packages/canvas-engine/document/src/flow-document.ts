@@ -229,7 +229,8 @@ export class FlowDocument<T = FlowDocumentJSON> implements Disposable {
   addNode(
     data: AddNodeData,
     addedNodes?: FlowNodeEntity[],
-    ignoreCreateAndUpdateEvent?: boolean
+    ignoreCreateAndUpdateEvent?: boolean,
+    ignoreBlocks?: boolean
   ): FlowNodeEntity {
     const { id, type = 'block', originParent, parent, meta, hidden, index } = data;
     let node = this.getNode(id);
@@ -278,7 +279,7 @@ export class FlowDocument<T = FlowDocumentJSON> implements Disposable {
       if (extendNodes && addedNodes) {
         addedNodes.push(...extendNodes);
       }
-    } else if (data.blocks && data.blocks.length > 0) {
+    } else if (data.blocks && data.blocks.length > 0 && !ignoreBlocks) {
       // 兼容老的写法
       if (!data.blocks[0].type) {
         this.addInlineBlocks(node, data.blocks, addedNodes);

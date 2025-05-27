@@ -9,7 +9,7 @@ export function MaterialDisplay(props: any) {
         command={{
           'By Import': `import { ${props.exportName} } from '@flowgram.ai/materials'`,
           // components/type-selector/index.tsx -> components/type-selector
-          'By CLI': `npx @flowgram.ai/form-materials ${props.filePath
+          'By CLI': `npx @flowgram.ai/form-materials@latest ${props.filePath
             .split('/')
             .slice(0, -1)
             .join('/')}`,

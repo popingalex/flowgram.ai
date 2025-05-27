@@ -30,7 +30,7 @@ export class AutoLayoutService {
     await Promise.all(nodes.map(async (child) => this.layoutNode(child, options)));
 
     const layout = new Layout();
-    layout.init({ nodes, edges }, options);
+    layout.init({ nodes, edges, container: node }, options);
     layout.layout();
     await layout.position();
   }

@@ -31,7 +31,4 @@ export const GroupNodeRegistry: FlowNodeRegistry = {
   formMeta: {
     render: () => <></>,
   },
-  onCreate() {
-    // NOTICE: 这个函数是为了避免触发固定布局 flowDocument.addBlocksAsChildren
-  },
 };

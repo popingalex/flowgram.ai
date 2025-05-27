@@ -24,7 +24,7 @@ export const WorkflowPointStyle = styled.div`
     border-radius: 50%;
     width: 20px;
     height: 20px;
-    background-color: #fff;
+    background-color: var(--g-workflow-port-color-background, #fff);
     transform: scale(0.5);
     transition: all 0.2s linear 0s;
   }
@@ -37,12 +37,12 @@ export const WorkflowPointStyle = styled.div`
     width: 100%;
     height: 100%;
     border-radius: 50%;
-    background: #9197F1;
+    background: var(--g-workflow-port-color-secondary, #9197f1);
     transform: scale(0.4, 0.4);
     transition: all 0.2s linear 0s;
 
     &.hasError {
-      background: red;
+      background: var(--g-workflow-port-color-error, red);
     }
 
     .symbol {
@@ -51,7 +51,7 @@ export const WorkflowPointStyle = styled.div`
       height: 14px;
       opacity: 0;
       pointer-events: none;
-      color: #fff;
+      color: var(--g-workflow-port-color-background, #fff);
       transition: opacity 0.2s linear 0s;
 
       & > svg {
@@ -68,21 +68,21 @@ export const WorkflowPointStyle = styled.div`
       width: 8px;
       height: 8px;
       opacity: 0;
-      background: #9197f1;
+      background: var(--g-workflow-port-color-secondary, #9197f1);
       border-radius: 50%;
       transition: opacity 0.2s linear 0s;
     }
   }
 
   &.linked .bg:not(.hasError) {
-    background: #4d53e8;
+    background: var(--g-workflow-port-color-primary, #4d53e8);
   }
 
   &.hovered .bg:not(.hasError) {
     border: none;
     cursor: crosshair;
     transform: scale(1, 1);
-    background: #4d53e8;
+    background: var(--g-workflow-port-color-primary, #4d53e8);
 
     & > .symbol {
       opacity: 1;
@@ -97,7 +97,7 @@ export const WorkflowPointStyle = styled.div`
     &::after,
     &::before {
       content: '';
-      background: #fff;
+      background: var(--g-workflow-port-color-background, #fff);
       border-radius: 2px;
       position: absolute;
     }
@@ -106,13 +106,13 @@ export const WorkflowPointStyle = styled.div`
       left: 4px;
       width: 2px;
       height: 6px;
-      box-shadow: 0 4px #fff;
+      box-shadow: 0 4px var(--g-workflow-port-color-background, #fff);
     }
 
     &::before {
       top: 4px;
       width: 6px;
       height: 2px;
-      box-shadow: 4px 0 #fff;
+      box-shadow: 4px 0 var(--g-workflow-port-color-background, #fff);
     }
 `;

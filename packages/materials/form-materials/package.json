@@ -4,6 +4,7 @@
   "homepage": "https://flowgram.ai/",
   "repository": "https://github.com/bytedance/flowgram.ai",
   "license": "MIT",
+  "type": "module",
   "exports": {
     "types": "./dist/index.d.ts",
     "import": "./dist/esm/index.js",

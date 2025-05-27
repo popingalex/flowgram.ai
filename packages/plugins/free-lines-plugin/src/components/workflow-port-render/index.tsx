@@ -74,7 +74,7 @@ export const WorkflowPortRender: React.FC<WorkflowPortRenderProps> =
     }, [hoverService, entity, targetElement]);
 
     // 监听变化
-    const className = classNames(props.className || '', {
+    const className = classNames('workflow-port-render', props.className || '', {
       hovered: !readonly && hovered && !disabled && portType !== 'input',
       // 有线条链接的时候深蓝色小圆点
       linked,
