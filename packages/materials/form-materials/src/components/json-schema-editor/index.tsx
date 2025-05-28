@@ -197,3 +197,9 @@ function PropertyEdit(props: {
     </>
   );
 }
+
+// 导出样式组件供外部使用
+export * from './styles';
+export * from './types';
+export { usePropertiesEdit } from './hooks';
+export { BlurInput } from './components/blur-input';

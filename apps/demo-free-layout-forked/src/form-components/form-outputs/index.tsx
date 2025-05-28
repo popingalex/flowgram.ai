@@ -1,7 +1,7 @@
 import { Field } from '@flowgram.ai/free-layout-editor';
+import { IJsonSchema } from '@flowgram.ai/form-materials';
 
 import { TypeTag } from '../type-tag';
-import { JsonSchema } from '../../typings';
 import { useIsSidebar } from '../../hooks';
 import { FormOutputsContainer } from './styles';
 
@@ -11,7 +11,7 @@ export function FormOutputs() {
     return null;
   }
   return (
-    <Field<JsonSchema> name={'outputs'}>
+    <Field<IJsonSchema> name={'outputs'}>
       {({ field }) => {
         const properties = field.value?.properties;
         if (properties) {

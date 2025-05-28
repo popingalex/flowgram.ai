@@ -1,4 +1,4 @@
-import { defaultEntityDefinition, EntityTransformer } from './typings/entity';
+import { defaultEntityDefinition, EntityTransformer } from './typings/mas/entity';
 import { FlowDocumentJSON } from './typings';
 
 export const initialData: FlowDocumentJSON = {
@@ -21,34 +21,7 @@ export const initialData: FlowDocumentJSON = {
           version: '1.0.0',
           tags: ['AI', 'assistant', 'multi-agent'],
           description: '这是一个多智能体系统中的智能助手实体，负责处理用户查询和工作流启动',
-          properties: {
-            role: {
-              type: 'string',
-              description: '实体角色定义',
-              default: 'assistant',
-              required: true,
-            },
-            capabilities: {
-              type: 'array',
-              description: '实体能力列表',
-              items: {
-                type: 'string',
-              },
-              default: ['query-processing', 'workflow-management'],
-            },
-            priority: {
-              type: 'number',
-              description: '执行优先级',
-              default: 1,
-              required: false,
-            },
-            isActive: {
-              type: 'boolean',
-              description: '是否激活',
-              default: true,
-              required: true,
-            },
-          },
+          properties: {},
         },
         workflowEntityData: EntityTransformer.toWorkflowData({
           ...defaultEntityDefinition,

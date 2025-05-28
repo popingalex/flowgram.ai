@@ -115,14 +115,18 @@ export function usePropertiesEdit(
         }
       }
 
-      let drilldownSchema = value || {};
+      // 创建更新后的完整schema
+      const updatedValue = { ...(value || {}) };
+      let drilldownSchema = updatedValue;
       if (drilldown.path) {
-        drilldownSchema = drilldown.path.reduce((acc, key) => acc[key], value || {});
+        // 如果有嵌套路径，需要更新嵌套的schema
+        drilldownSchema = drilldown.path.reduce((acc, key) => acc[key], updatedValue);
       }
       drilldownSchema.properties = nextProperties;
       drilldownSchema.required = nextRequired;
 
-      onChange?.(value || {});
+      // 传递更新后的完整schema
+      onChange?.(updatedValue);
 
       return next;
     });

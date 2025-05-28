@@ -5,17 +5,19 @@ import {
   FormMeta,
   ValidateTrigger,
 } from '@flowgram.ai/free-layout-editor';
-import { JsonSchemaEditor } from '@flowgram.ai/form-materials';
+import { IJsonSchema } from '@flowgram.ai/form-materials';
 
-import { FlowNodeJSON, JsonSchema } from '../../typings';
+import { FlowNodeJSON } from '../../typings';
 import { useIsSidebar } from '../../hooks';
 import { FormHeader, FormContent, FormOutputs, EntityForm } from '../../form-components';
+import { EnumStoreProvider } from '../../components/ext/entity-property-type-selector/enum-store';
+import { EntityPropertiesEditor } from '../../components/ext/entity-properties-editor';
 
 export const renderForm = ({ form }: FormRenderProps<FlowNodeJSON>) => {
   const isSidebar = useIsSidebar();
   if (isSidebar) {
     return (
-      <>
+      <EnumStoreProvider>
         <FormHeader />
         <FormContent>
           <div style={{ marginBottom: '16px' }}>
@@ -28,22 +30,20 @@ export const renderForm = ({ form }: FormRenderProps<FlowNodeJSON>) => {
             </h4>
             <Field
               name="outputs"
-              render={({ field: { value, onChange } }: FieldRenderProps<JsonSchema>) => (
-                <>
-                  <JsonSchemaEditor
-                    value={value}
-                    onChange={(value) => onChange(value as JsonSchema)}
-                  />
-                </>
+              render={({ field: { value, onChange } }: FieldRenderProps<IJsonSchema>) => (
+                <EntityPropertiesEditor
+                  value={value as any}
+                  onChange={(value: any) => onChange(value as IJsonSchema)}
+                />
               )}
             />
           </div>
         </FormContent>
-      </>
+      </EnumStoreProvider>
     );
   }
   return (
-    <>
+    <EnumStoreProvider>
       <FormHeader />
       <FormContent>
         <EntityForm name="data.entityDefinition" />
@@ -51,7 +51,7 @@ export const renderForm = ({ form }: FormRenderProps<FlowNodeJSON>) => {
           <FormOutputs />
         </div>
       </FormContent>
-    </>
+    </EnumStoreProvider>
   );
 };
 

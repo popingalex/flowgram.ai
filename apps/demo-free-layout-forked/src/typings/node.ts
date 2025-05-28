@@ -7,9 +7,9 @@ import {
   WorkflowNodeMeta,
 } from '@flowgram.ai/free-layout-editor';
 import { IFlowValue } from '@flowgram.ai/form-materials';
+import { type IJsonSchema } from '@flowgram.ai/form-materials';
 
-import { type JsonSchema } from './json-schema';
-import { type EntityDefinition, type WorkflowEntityData } from './entity';
+import { type EntityDefinition, type WorkflowEntityData } from './mas/entity';
 
 /**
  * You can customize the data of the node, and here you can use JsonSchema to define the input and output of the node
@@ -26,13 +26,13 @@ export interface FlowNodeJSON extends FlowNodeJSONDefault {
      */
     inputsValues?: Record<string, IFlowValue>;
     /**
-     * Define the inputs data of the node by JsonSchema
+     * Define the inputs data of the node by IJsonSchema
      */
-    inputs?: JsonSchema;
+    inputs?: IJsonSchema;
     /**
-     * Define the outputs data of the node by JsonSchema
+     * Define the outputs data of the node by IJsonSchema
      */
-    outputs?: JsonSchema;
+    outputs?: IJsonSchema;
     /**
      * Entity definition for multi-agent system
      */
