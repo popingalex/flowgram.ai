@@ -7,6 +7,7 @@ export const AddNode = (props: { disabled: boolean }) => {
   const addNode = useAddNode();
   return (
     <Button
+      data-testid="demo.free-layout.add-node"
       icon={<IconPlus />}
       color="highlight"
       style={{ backgroundColor: 'rgba(171,181,255,0.3)', borderRadius: '8px' }}

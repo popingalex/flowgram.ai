@@ -162,11 +162,11 @@ export function useEditorProps(
        * 可以通过 key 自定义 UI 组件
        */
       materials: {
-        renderNodes: {
+        components: {
           ...defaultFixedSemiMaterials,
-          [FlowRendererKey.ADDER]: NodeAdder,
-          [FlowRendererKey.BRANCH_ADDER]: BranchAdder,
-          [FlowRendererKey.DRAG_NODE]: DragNode,
+          [FlowRendererKey.ADDER]: NodeAdder, // Node Add Button
+          [FlowRendererKey.BRANCH_ADDER]: BranchAdder, // Branch Add Button
+          [FlowRendererKey.DRAG_NODE]: DragNode, // Component in node dragging
         },
         renderDefaultNode: BaseNode, // node render
         renderTexts: {

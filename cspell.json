@@ -16,7 +16,8 @@
     "rspress",
     "Sandpack",
     "zoomin",
-    "zoomout"
+    "zoomout",
+    "gedit"
   ],
   "ignoreWords": [],
   "import": []

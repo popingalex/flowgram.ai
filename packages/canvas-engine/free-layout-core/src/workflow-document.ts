@@ -238,11 +238,15 @@ export class WorkflowDocument extends FlowDocument {
         const parentTransform = node.parent.getData(FlowNodeTransformData);
         parentTransform.fireChange();
       });
+      let lastDeleteNodeData: WorkflowNodeJSON | undefined;
+      node.preDispose.onDispose(() => {
+        lastDeleteNodeData = this.toNodeJSON(node);
+      });
       node.onDispose(() => {
         this.fireContentChange({
           type: WorkflowContentChangeType.DELETE_NODE,
           entity: node,
-          toJSON: () => this.toNodeJSON(node),
+          toJSON: () => lastDeleteNodeData,
         });
       });
     }

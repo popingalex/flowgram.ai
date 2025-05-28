@@ -1,4 +1,4 @@
-import { WorkflowDocument, WorkflowContentChangeType } from '@flowgram.ai/free-layout-core';
+import { WorkflowContentChangeType } from '@flowgram.ai/free-layout-core';
 import { type FlowNodeEntity } from '@flowgram.ai/document';
 
 import {
@@ -12,9 +12,8 @@ export const deleteNodeChange: ContentChangeTypeToOperation<DeleteWorkflowNodeOp
   type: WorkflowContentChangeType.DELETE_NODE,
   toOperation: (event, ctx) => {
     const config = ctx.get<FreeHistoryConfig>(FreeHistoryConfig);
-    const document = ctx.get<WorkflowDocument>(WorkflowDocument);
     const node = event.entity as FlowNodeEntity;
-    const json = document.toNodeJSON(node);
+    const json = event.toJSON();
     const parentID = node.parent?.id;
 
     return {

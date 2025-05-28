@@ -428,6 +428,16 @@
         //   "tags": [ "frontend-team" ]
         // },
         //
+        {
+            "packageName": "@flowgram.ai/e2e-fixed-layout",
+            "projectFolder": "e2e/fixed-layout",
+            "tags": ["e2e"]
+        },
+        {
+            "packageName": "@flowgram.ai/e2e-free-layout",
+            "projectFolder": "e2e/free-layout",
+            "tags": ["e2e"]
+        },
         // eslint 通用配置
         {
             "packageName": "@flowgram.ai/eslint-config",
