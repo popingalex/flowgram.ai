@@ -1,0 +1,69 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 开发工作流程
+
+## 项目启动和文档
+详细的启动方式、功能说明、开发状态等请查看：[CURSOR_README.md](mdc:CURSOR_README.md)
+
+## 核心开发原则
+1. **修改前确认**：是否会影响原始工作流编辑器功能？
+2. **测试流程**：确保"流程图编辑器"页面正常工作
+3. **问题处理**：扩展功能可以自由重写，引擎功能必须保持兼容
+
+## 代码修改权限
+- ✅ **可以自由修改**：`src/components/ext/` 下的所有扩展代码
+- ❌ **绝对不能修改**：`packages/` 目录下的引擎代码
+- ⚠️ **谨慎修改**：其他原有的工作流编辑器相关代码
+
+## 页面结构
+- **流程图编辑器**：原始工作流编辑器，基于 [Editor](mdc:apps/demo-free-layout-forked/src/editor.tsx)
+- **实体属性编辑器测试**：扩展功能测试页面，基于 [EntityPropertiesEditorTestPage](mdc:apps/demo-free-layout-forked/src/components/ext/entity-properties-editor/test-page.tsx)
+
+## 开发原则
+
+### 修改前必须确认
+1. 是否会影响原有功能？
+2. 是否改变了原有界面样式？
+3. 是否破坏了现有的类型定义？
+4. 是否违反了扩展原则？
+
+### 测试流程
+1. 确保"流程图编辑器"页面正常工作
+2. 确保原有的属性编辑功能正常
+3. 测试扩展功能是否按预期工作
+4. 检查控制台是否有错误
+
+### 问题处理
+1. 优先查看原始实现：[demo-free-layout](mdc:apps/demo-free-layout)
+2. 理解错误的根本原因
+3. 寻找不破坏原有设计的解决方案
+4. 如果无法解决，考虑回滚并重新设计
+
+## 代码组织
+
+### 原有代码（不要修改）
+- [form-components](mdc:apps/demo-free-layout-forked/src/form-components) - 原始表单组件
+- [nodes](mdc:apps/demo-free-layout-forked/src/nodes) - 原始节点定义
+- [editor.tsx](mdc:apps/demo-free-layout-forked/src/editor.tsx) - 原始编辑器
+
+### 扩展代码（可以修改）
+- [components/ext](mdc:apps/demo-free-layout-forked/src/components/ext) - 扩展组件
+- [typings/mas](mdc:apps/demo-free-layout-forked/src/typings/mas) - 扩展类型定义
+
+### 共享代码（谨慎修改）
+- [app.tsx](mdc:apps/demo-free-layout-forked/src/app.tsx) - 应用入口
+- [typings/index.ts](mdc:apps/demo-free-layout-forked/src/typings/index.ts) - 类型导出
+
+## 当前开发状态
+- ✅ 模块化属性管理功能已实现
+- ✅ 枚举类管理功能已实现
+- ❌ VariableSelector Provider 依赖问题未解决
+- ❌ 实体属性编辑器测试页面无法正常工作
+
+## 下一步计划
+1. 解决 VariableSelector 依赖问题
+2. 确保所有功能正常工作
+3. 完善文档和测试
