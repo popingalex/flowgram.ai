@@ -50,7 +50,7 @@ export interface EntityPropertiesEditorProps {
 }
 
 export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (props) => {
-  const { value = { type: 'object' }, config = {}, onChange: onChangeProps } = props;
+  const { value, onChange: onChangeProps, config } = props;
   const [dataRestrictionVisible, setDataRestrictionVisible] = useState(false);
   const [currentEditingProperty, setCurrentEditingProperty] = useState<PropertyValueType | null>(
     null
@@ -59,29 +59,12 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
   // 使用全局枚举状态
   const { getEnumValues } = useEnumStore();
 
-  // 自定义onChange，清理内部字段但保留enumClassId
+  // 外部枚举关联映射 - 独立于属性数据
+  const [enumAssociations, setEnumAssociations] = useState<Map<string, string>>(new Map());
+
+  // 简化的onChange，不清理内部字段，保持usePropertiesEdit的完整性
   const handleChange = (updatedSchema: IJsonSchema) => {
-    if (!updatedSchema.properties) {
-      onChangeProps?.(updatedSchema);
-      return;
-    }
-
-    // 遍历所有属性，清理内部字段，保留enumClassId
-    const processedProperties: Record<string, any> = {};
-
-    Object.entries(updatedSchema.properties).forEach(([key, property]) => {
-      // 清理内部字段，只保留标准JSON Schema字段和enumClassId
-      const { key: _, extra: __, isPropertyRequired: ___, ...cleanProperty } = property as any;
-
-      processedProperties[key] = cleanProperty;
-    });
-
-    const finalSchema = {
-      ...updatedSchema,
-      properties: processedProperties,
-    };
-
-    onChangeProps?.(finalSchema);
+    onChangeProps?.(updatedSchema);
   };
 
   const { propertyList, onAddProperty, onRemoveProperty, onEditProperty } = usePropertiesEdit(
@@ -95,19 +78,19 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
   };
 
   const handleDataRestrictionConfirm = (result?: { enumClassId?: string }) => {
-    if (!currentEditingProperty || !onEditProperty) return;
+    if (!currentEditingProperty?.name) return;
 
-    const updatedProperty = { ...currentEditingProperty };
-    if (result?.enumClassId) {
-      // 只保存枚举类ID，不保存enum值
-      (updatedProperty as any).enumClassId = result.enumClassId;
-    } else {
-      // 清除枚举限制
-      delete (updatedProperty as any).enumClassId;
-      delete updatedProperty.enum;
-    }
+    // 在外部关联映射中管理枚举关系
+    setEnumAssociations((prev) => {
+      const newMap = new Map(prev);
+      if (result?.enumClassId) {
+        newMap.set(currentEditingProperty.name!, result.enumClassId);
+      } else {
+        newMap.delete(currentEditingProperty.name!);
+      }
+      return newMap;
+    });
 
-    onEditProperty(currentEditingProperty.key!, updatedProperty);
     setDataRestrictionVisible(false);
     setCurrentEditingProperty(null);
   };
@@ -116,6 +99,10 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
     setDataRestrictionVisible(false);
     setCurrentEditingProperty(null);
   };
+
+  // 获取属性的枚举类ID（从外部关联中）
+  const getPropertyEnumClassId = (propertyName?: string) =>
+    propertyName ? enumAssociations.get(propertyName) : undefined;
 
   return (
     <>
@@ -126,6 +113,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
               key={_property.key}
               value={_property}
               config={config}
+              enumClassId={getPropertyEnumClassId(_property.name)}
               onChange={(_v) => {
                 onEditProperty(_property.key!, _v);
               }}
@@ -145,7 +133,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
         visible={dataRestrictionVisible}
         onCancel={handleDataRestrictionCancel}
         onConfirm={handleDataRestrictionConfirm}
-        currentEnumClassId={(currentEditingProperty as any)?.enumClassId}
+        currentEnumClassId={getPropertyEnumClassId(currentEditingProperty?.name)}
         propertyInfo={{
           name: currentEditingProperty?.name,
           type: currentEditingProperty?.type,
@@ -159,6 +147,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
 function PropertyEdit(props: {
   value?: PropertyValueType;
   config?: ConfigType;
+  enumClassId?: string; // 外部传入的枚举类ID
   onChange?: (value: PropertyValueType) => void;
   onRemove?: () => void;
   onDataRestrictionClick?: () => void;
@@ -168,6 +157,7 @@ function PropertyEdit(props: {
   const {
     value,
     config,
+    enumClassId,
     onChange: onChangeProps,
     onRemove,
     onDataRestrictionClick,
@@ -183,8 +173,7 @@ function PropertyEdit(props: {
 
   const { name, type, items, description, isPropertyRequired } = value || {};
 
-  // 获取实时的枚举值
-  const enumClassId = (value as any)?.enumClassId;
+  // 获取枚举值 - 从外部关联获取，不从属性本身
   const currentEnumValues = enumClassId ? getEnumValues(enumClassId) : value?.enum;
 
   const typeSelectorValue = useMemo(
@@ -196,6 +185,7 @@ function PropertyEdit(props: {
     [type, items, currentEnumValues]
   );
 
+  // 恢复原始的usePropertiesEdit逻辑
   const { propertyList, isDrilldownObject, onAddProperty, onRemoveProperty, onEditProperty } =
     usePropertiesEdit(value, onChangeProps);
 
@@ -292,6 +282,7 @@ function PropertyEdit(props: {
                   key={_property.key}
                   value={_property}
                   config={config}
+                  enumClassId={undefined} // 嵌套属性暂不支持枚举
                   onChange={(_v) => {
                     onEditProperty(_property.key!, _v);
                   }}
