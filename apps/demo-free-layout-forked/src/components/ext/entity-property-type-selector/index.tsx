@@ -10,6 +10,7 @@ export interface EntityPropertyTypeSelectorProps {
   value?: Partial<IJsonSchema>;
   onChange?: (value: Partial<IJsonSchema>) => void;
   onDataRestrictionClick?: () => void;
+  disabled?: boolean;
 }
 
 // 解析类型选择值
@@ -35,6 +36,7 @@ export const EntityPropertyTypeSelector: React.FC<EntityPropertyTypeSelectorProp
   value,
   onChange,
   onDataRestrictionClick,
+  disabled = false,
 }) => {
   // 判断是否为字符串类型
   const isStringType = value?.type === 'string';
@@ -69,7 +71,7 @@ export const EntityPropertyTypeSelector: React.FC<EntityPropertyTypeSelectorProp
   const selectValue = useMemo(() => getTypeSelectValue(value), [value]);
 
   const handleTypeChange = (newValue: any) => {
-    if (onChange) {
+    if (onChange && !disabled) {
       const valueArray = Array.isArray(newValue) ? newValue : [newValue];
       onChange(parseTypeSelectValue(valueArray));
     }
@@ -81,8 +83,16 @@ export const EntityPropertyTypeSelector: React.FC<EntityPropertyTypeSelectorProp
       <div style={{ width: 28, flexShrink: 0 }}>
         <Cascader
           size="small"
+          disabled={disabled}
           triggerRender={() => (
-            <Button size="small" style={{ width: '100%' }}>
+            <Button
+              size="small"
+              style={{
+                width: '100%',
+                backgroundColor: disabled ? 'var(--semi-color-fill-1)' : undefined,
+              }}
+              disabled={disabled}
+            >
               {getSchemaIcon(value)}
             </Button>
           )}
@@ -95,7 +105,7 @@ export const EntityPropertyTypeSelector: React.FC<EntityPropertyTypeSelectorProp
 
       {/* 数据限制按钮 - 固定位置 */}
       <div style={{ width: 24, flexShrink: 0 }}>
-        {isStringType ? (
+        {isStringType && !disabled ? (
           <Tooltip
             content={
               <div

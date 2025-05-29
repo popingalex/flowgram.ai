@@ -19,6 +19,7 @@ interface EnumClassItemProps {
   onSave: (classId: string, e: React.MouseEvent) => void;
   onCancelEdit: (classId: string, e: React.MouseEvent) => void;
   onDelete: (classId: string, e: React.MouseEvent) => void;
+  onSelect: (classId: string) => void;
   formApiRefs: React.MutableRefObject<Record<string, any>>;
 }
 
@@ -30,6 +31,7 @@ export const EnumClassItem: React.FC<EnumClassItemProps> = ({
   onSave,
   onCancelEdit,
   onDelete,
+  onSelect,
   formApiRefs,
 }) => (
   <List.Item
@@ -45,7 +47,9 @@ export const EnumClassItem: React.FC<EnumClassItemProps> = ({
       padding: '4px 16px',
       boxShadow: isSelected ? '0 4px 12px rgba(0, 0, 0, 0.1)' : '0 2px 8px rgba(0, 0, 0, 0.05)',
       transition: 'all 0.2s ease',
+      cursor: isEditing ? 'default' : 'pointer',
     }}
+    onClick={isEditing ? undefined : () => onSelect(item.id)}
     align="flex-start"
     header={<Radio value={item.id} style={{ marginTop: 4 }} />}
     main={

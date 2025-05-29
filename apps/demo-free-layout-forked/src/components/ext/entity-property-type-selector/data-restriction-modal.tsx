@@ -192,7 +192,7 @@ export const DataRestrictionModal: React.FC<DataRestrictionModalProps> = ({
 
   // 动态标题
   const modalTitle = propertyInfo
-    ? `数据限制 - 属性 &quot;${propertyInfo.name || '未命名'}&quot; (${propertyInfo.type})`
+    ? `数据限制 - 属性 "${propertyInfo.name || '未命名'}" (${propertyInfo.type || 'string'})`
     : '数据限制';
 
   return (
@@ -274,6 +274,7 @@ export const DataRestrictionModal: React.FC<DataRestrictionModalProps> = ({
                   onSave={handleSaveClass}
                   onCancelEdit={handleCancelEdit}
                   onDelete={handleDeleteClass}
+                  onSelect={(classId) => setSelectedValue(classId)}
                   formApiRefs={formApiRefs}
                 />
               )}

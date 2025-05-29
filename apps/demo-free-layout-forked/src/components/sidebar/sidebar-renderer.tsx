@@ -77,7 +77,7 @@ export const SidebarRenderer = () => {
   ) : null;
 
   return (
-    <SideSheet mask={false} visible={visible} onCancel={handleClose}>
+    <SideSheet mask={false} visible={visible} onCancel={handleClose} width={800}>
       <IsSidebarContext.Provider value={true}>{content}</IsSidebarContext.Provider>
     </SideSheet>
   );
