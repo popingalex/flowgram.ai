@@ -2,8 +2,8 @@ import styled from 'styled-components';
 
 export const FormOutputsContainer = styled.div`
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 4px;
   border-top: 1px solid var(--semi-color-border);
   padding: 8px 0 0;
   width: 100%;

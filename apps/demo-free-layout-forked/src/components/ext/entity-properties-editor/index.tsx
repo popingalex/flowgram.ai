@@ -1,54 +1,46 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useContext } from 'react';
 
 import { IJsonSchema } from '@flowgram.ai/form-materials';
 import {
   ConfigType,
   PropertyValueType,
-  IconAddChildren,
-  UIActions,
-  UICollapseTrigger,
-  UICollapsible,
-  UIContainer,
-  UIExpandDetail,
-  UILabel,
+  usePropertiesEdit,
   UIProperties,
   UIPropertyLeft,
-  UIPropertyMain,
   UIPropertyRight,
-  UIRequired,
-  UIType,
-  UIName,
-  UIRow,
-  usePropertiesEdit,
+  UIPropertyMain,
+  UIExpandDetail,
+  UILabel,
+  UICollapsible,
+  UICollapseTrigger,
 } from '@flowgram.ai/form-materials';
 import {
-  Button,
-  Checkbox,
-  IconButton,
-  Input,
   Card,
   Typography,
-  Divider,
+  Button,
   Space,
+  Input,
+  Checkbox,
   Tag,
-  Descriptions,
-  Collapsible,
+  IconButton,
+  Tooltip,
 } from '@douyinfe/semi-ui';
 import {
-  IconExpand,
-  IconShrink,
   IconPlus,
+  IconSetting,
   IconChevronDown,
   IconChevronRight,
   IconMinus,
-  IconSetting,
-  IconInfoCircle,
+  IconExpand,
+  IconShrink,
+  IconExternalOpen,
 } from '@douyinfe/semi-icons';
 
+import { ModuleSelectorModal } from '../module-selector';
 import { useModuleStore } from '../entity-property-type-selector/module-store';
 import { useEnumStore } from '../entity-property-type-selector/enum-store';
+import { useEntityStore, Attribute } from '../entity-property-type-selector/entity-store';
 import { DataRestrictionModal } from '../entity-property-type-selector/data-restriction-modal';
-import { EntityPropertyTypeSelector } from '../entity-property-type-selector';
 import {
   CustomUIContainer,
   CustomUIRow,
@@ -57,19 +49,27 @@ import {
   CustomUIRequired,
   CustomUIActions,
 } from './styles';
-import { ModuleSelectorModal } from '../module-selector';
-import { useEntityStore, Attribute } from '../entity-property-type-selector/entity-store';
+import { EntityPropertyTypeSelector } from '../entity-property-type-selector';
 
 const { Title, Text } = Typography;
 
-export interface EntityPropertiesEditorProps {
-  value?: IJsonSchema;
-  onChange?: (value: IJsonSchema) => void;
+// 属性值类型定义（添加这个接口定义）
+interface Property {
+  key: string;
+  schema: any;
+  required: boolean;
+}
+
+interface EntityPropertiesEditorProps {
+  value?: PropertyValueType;
+  onChange?: (value: PropertyValueType) => void;
   config?: ConfigType;
-  hideModuleButton?: boolean; // 隐藏模块按钮（用于模块编辑时）
-  hideModuleGrouping?: boolean; // 隐藏模块分组（用于模块编辑时）
-  disabled?: boolean; // 禁用编辑
-  currentEntityId?: string; // 当前实体ID
+  hideModuleButton?: boolean;
+  hideModuleGrouping?: boolean;
+  disabled?: boolean;
+  onNavigateToModule?: (moduleId: string) => void; // 新增：导航到模块管理页面的回调
+  currentEntityId?: string; // 当前选中的实体ID
+  compact?: boolean; // 新增：紧凑模式，减少padding
 }
 
 // 将后台实体属性转换为PropertyValueType格式
@@ -98,21 +98,26 @@ const convertAttributeToPropertyValue = (
   };
 };
 
-export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (props) => {
-  const {
-    value,
-    onChange: onChangeProps,
-    config,
-    hideModuleButton,
-    hideModuleGrouping,
-    disabled,
-    currentEntityId,
-  } = props;
+export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
+  value,
+  onChange,
+  config,
+  hideModuleButton = false,
+  hideModuleGrouping = false,
+  disabled = false,
+  onNavigateToModule, // 新增参数
+  currentEntityId, // 新增参数
+  compact = false,
+}) => {
   const [dataRestrictionVisible, setDataRestrictionVisible] = useState(false);
   const [currentEditingProperty, setCurrentEditingProperty] = useState<PropertyValueType | null>(
     null
   );
   const [moduleSelectorVisible, setModuleSelectorVisible] = useState(false);
+  const [focusModuleId, setFocusModuleId] = useState<string | undefined>(undefined);
+
+  // 添加自定义属性状态
+  const [customProperties, setCustomProperties] = useState<Property[]>([]);
 
   // 使用全局枚举状态和模块状态
   const { getEnumValues } = useEnumStore();
@@ -131,34 +136,91 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
   // 模块折叠状态 - 默认收起
   const [moduleCollapseStates, setModuleCollapseStates] = useState<Record<string, boolean>>({});
 
-  // 将实体属性转换为PropertyValueType格式用于显示
-  const entityDisplayProperties = useMemo(() => {
-    if (!currentEntity) return [];
+  // 分组属性：参考FormOutputs的正确实现
+  const { entityDirectProperties, moduleGroups, userCustomProperties } = useMemo(() => {
+    const properties = value?.properties || {};
 
-    const properties: PropertyValueType[] = [];
-    let index = 0;
+    const entityDirectProps: PropertyValueType[] = [];
+    const moduleGroupsMap: Record<string, PropertyValueType[]> = {};
+    const userCustomProps: PropertyValueType[] = [];
 
-    // 添加实体直接属性
-    currentEntity.attributes.forEach((attr) => {
-      properties.push(convertAttributeToPropertyValue(attr, index++, false));
+    // 遍历所有属性进行分类
+    Object.entries(properties).forEach(([name, property], index) => {
+      if (!currentEntity) {
+        // 如果没有实体，全部归为用户自定义属性
+        userCustomProps.push({
+          key: index,
+          name,
+          title: property.title || name,
+          description: property.description,
+          type: property.type,
+          isPropertyRequired: false,
+        });
+        return;
+      }
+
+      // 检查是否为实体直接属性
+      const isDirectProperty = currentEntity.attributes.some((attr) => attr.id === name);
+      if (isDirectProperty) {
+        const attr = currentEntity.attributes.find((attr) => attr.id === name);
+        entityDirectProps.push({
+          key: index,
+          name,
+          title: attr?.name || name,
+          description: attr?.description || property.description,
+          type: property.type,
+          isPropertyRequired: false,
+        });
+        return;
+      }
+
+      // 检查是否为模块属性
+      let isModuleProperty = false;
+      if (currentEntity.bundles) {
+        const modules = getModulesByIds(currentEntity.bundles);
+        for (const module of modules) {
+          const moduleAttr = module.attributes.find((attr) => attr.id === name);
+          if (moduleAttr) {
+            if (!moduleGroupsMap[module.id]) {
+              moduleGroupsMap[module.id] = [];
+            }
+            moduleGroupsMap[module.id].push({
+              key: index,
+              name,
+              title: moduleAttr.name || name,
+              description: moduleAttr.description || property.description,
+              type: property.type,
+              isPropertyRequired: false,
+            });
+            isModuleProperty = true;
+            break;
+          }
+        }
+      }
+
+      // 如果不是实体属性也不是模块属性，归为用户自定义属性
+      if (!isModuleProperty) {
+        userCustomProps.push({
+          key: index,
+          name,
+          title: property.title || name,
+          description: property.description,
+          type: property.type,
+          isPropertyRequired: false,
+        });
+      }
     });
 
-    // 添加模块属性
-    if (currentEntity.bundles) {
-      const modules = getModulesByIds(currentEntity.bundles);
-      modules.forEach((module) => {
-        module.attributes.forEach((attr) => {
-          properties.push(convertAttributeToPropertyValue(attr, index++, true, module.id));
-        });
-      });
-    }
-
-    return properties;
-  }, [currentEntity, getModulesByIds]);
+    return {
+      entityDirectProperties: entityDirectProps,
+      moduleGroups: moduleGroupsMap,
+      userCustomProperties: userCustomProps,
+    };
+  }, [value?.properties, currentEntity, getModulesByIds]);
 
   // 初始化时从实体数据加载属性到schema中，避免在render中调用setState
   useEffect(() => {
-    if (currentEntity && onChangeProps) {
+    if (currentEntity && onChange) {
       // 将实体的所有属性（直接属性 + 模块属性）同步到schema中
       const entityProperties: Record<string, any> = {};
 
@@ -225,10 +287,10 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
 
       // 使用requestAnimationFrame避免在render中直接调用setState
       requestAnimationFrame(() => {
-        onChangeProps(updatedSchema);
+        onChange(updatedSchema);
       });
     }
-  }, [currentEntity?.id, currentEntity?.bundles, getModulesByIds, onChangeProps]);
+  }, [currentEntity?.id, currentEntity?.bundles, getModulesByIds, onChange]);
 
   // 初始化模块绑定
   useEffect(() => {
@@ -280,14 +342,105 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
       properties: updatedProperties,
     };
 
-    onChangeProps?.(updatedSchema);
+    onChange?.(updatedSchema);
     setModuleSelectorVisible(false);
+    setFocusModuleId(undefined); // 清除焦点模块ID
   };
 
-  const { propertyList, onAddProperty, onRemoveProperty, onEditProperty } = usePropertiesEdit(
-    value,
-    onChangeProps
-  );
+  // 移除 usePropertiesEdit，自己实现属性管理
+  // const { propertyList, onAddProperty, onRemoveProperty, onEditProperty } = usePropertiesEdit(
+  //   value || { type: 'object', properties: {} }, // 确保始终传递正确的对象schema结构
+  //   onChangeProps
+  // );
+
+  // 自定义的添加属性功能
+  const handleAddProperty = () => {
+    // 生成新属性的key
+    const newPropertyKey = `custom_property_${Date.now()}`;
+
+    // 创建新属性
+    const newProperty: Property = {
+      key: newPropertyKey,
+      schema: {
+        type: 'string',
+        title: '新属性',
+        description: '',
+      },
+      required: false,
+    };
+
+    // 添加到自定义属性列表
+    const updatedCustomProperties = [...customProperties, newProperty];
+    setCustomProperties(updatedCustomProperties);
+
+    // 更新value中的properties
+    const currentProperties = value?.properties || {};
+    const updatedProperties = {
+      ...currentProperties,
+      [newPropertyKey]: newProperty.schema,
+    };
+
+    // 通知父组件更新
+    if (onChange) {
+      onChange({
+        ...value,
+        type: 'object',
+        properties: updatedProperties,
+      });
+    }
+
+    console.log('Added new property:', newPropertyKey, newProperty);
+  };
+
+  // 删除属性功能
+  const handleRemoveProperty = (propertyKey: string) => {
+    // 从自定义属性列表中移除
+    const updatedCustomProperties = customProperties.filter((prop) => prop.key !== propertyKey);
+    setCustomProperties(updatedCustomProperties);
+
+    // 从value的properties中移除
+    const currentProperties = value?.properties || {};
+    const updatedProperties = { ...currentProperties };
+    delete updatedProperties[propertyKey];
+
+    // 通知父组件更新
+    if (onChange) {
+      onChange({
+        ...value,
+        type: 'object',
+        properties: updatedProperties,
+      });
+    }
+
+    console.log('Removed property:', propertyKey);
+  };
+
+  // 编辑属性功能
+  const handleEditProperty = (propertyKey: string, updatedProperty: PropertyValueType) => {
+    // 更新自定义属性列表
+    const updatedCustomProperties = customProperties.map((prop) =>
+      prop.key === propertyKey ? { ...prop, schema: updatedProperty } : prop
+    );
+    setCustomProperties(updatedCustomProperties);
+
+    // 更新value中的properties
+    const currentProperties = value?.properties || {};
+    const updatedProperties = {
+      ...currentProperties,
+      [propertyKey]: updatedProperty,
+    };
+
+    // 通知父组件更新
+    if (onChange) {
+      onChange({
+        ...value,
+        type: 'object',
+        properties: updatedProperties,
+      });
+    }
+
+    console.log('Updated property:', propertyKey, updatedProperty);
+  };
 
   // 获取实体所有属性的ID集合（用于判断哪些是实体属性）
   const entityPropertyIds = useMemo(() => {
@@ -313,46 +466,16 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
     return ids;
   }, [currentEntity, getModulesByIds]);
 
-  // 分组属性：实体直接属性、模块属性、用户自定义属性
-  const entityDirectProperties = propertyList.filter((prop) => {
-    if (!currentEntity || !prop.name) return false;
-    // 是实体直接属性
-    return currentEntity.attributes.some((attr) => attr.id === prop.name);
-  });
+  // 检查是否为模块属性
+  const isModuleProperty = (propertyName?: string) => propertyName?.includes('/') || false;
 
-  const entityModuleProperties = propertyList.filter((prop) => {
-    if (!currentEntity || !prop.name) return false;
-    // 是模块属性（不是直接属性，但在实体属性ID集合中）
-    const isDirectProperty = currentEntity.attributes.some((attr) => attr.id === prop.name);
-    return !isDirectProperty && entityPropertyIds.has(prop.name);
-  });
-
-  const userCustomProperties = propertyList.filter((prop) => {
-    if (!prop.name) return false;
-    // 不是实体属性的就是用户自定义属性
-    return !entityPropertyIds.has(prop.name);
-  });
-
-  // 按模块分组模块属性（用于显示）
-  const moduleGroups = useMemo(() => {
-    if (!currentEntity) return {};
-
-    const groups: Record<string, PropertyValueType[]> = {};
-
-    if (currentEntity.bundles) {
-      const modules = getModulesByIds(currentEntity.bundles);
-      modules.forEach((module) => {
-        const moduleProps = entityModuleProperties.filter((prop) =>
-          module.attributes.some((attr) => attr.id === prop.name)
-        );
-        if (moduleProps.length > 0) {
-          groups[module.id] = moduleProps;
-        }
-      });
-    }
-
-    return groups;
-  }, [currentEntity, getModulesByIds, entityModuleProperties]);
+  // 切换模块折叠状态
+  const toggleModuleCollapse = (moduleId: string) => {
+    setModuleCollapseStates((prev) => ({
+      ...prev,
+      [moduleId]: !prev[moduleId],
+    }));
+  };
 
   const handleDataRestrictionClick = (property: PropertyValueType) => {
     setCurrentEditingProperty(property);
@@ -386,27 +509,19 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
   const getPropertyEnumClassId = (propertyName?: string) =>
     propertyName ? enumAssociations.get(propertyName) : undefined;
 
-  // 检查是否为模块属性
-  const isModuleProperty = (propertyName?: string) => propertyName?.includes('/') || false;
-
-  // 切换模块折叠状态
-  const toggleModuleCollapse = (moduleId: string) => {
-    setModuleCollapseStates((prev) => ({
-      ...prev,
-      [moduleId]: !prev[moduleId],
-    }));
-  };
-
   return (
-    <div style={{ padding: '24px', maxWidth: '100%' }}>
+    <div style={{ padding: compact ? '12px' : '24px', maxWidth: '100%' }}>
       {/* 属性配置区域 */}
-      <Card style={{ marginBottom: '16px' }} bodyStyle={{ padding: '16px' }}>
+      <Card
+        style={{ marginBottom: compact ? '8px' : '16px' }}
+        bodyStyle={{ padding: compact ? '8px' : '16px' }}
+      >
         <div
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            marginBottom: '16px',
+            marginBottom: compact ? '8px' : '16px',
           }}
         >
           <Title heading={5} style={{ margin: 0 }}>
@@ -430,7 +545,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
               type="secondary"
               size="small"
               icon={<IconPlus />}
-              onClick={onAddProperty}
+              onClick={handleAddProperty}
               disabled={disabled}
             >
               添加属性
@@ -461,11 +576,15 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
                     config={config}
                     enumClassId={getPropertyEnumClassId(_property.name)}
                     isModuleProperty={false}
-                    isReadOnly={true} // 实体属性只读
-                    onChange={() => {}} // 实体属性不可编辑
-                    onRemove={() => {}} // 实体属性不可删除
-                    onDataRestrictionClick={() => {}} // 实体属性不可配置数据限制
-                    disabled={true}
+                    isReadOnly={false} // 修改：实体属性改为可编辑
+                    onChange={(_v) => {
+                      handleEditProperty(_property.key!.toString(), _v);
+                    }}
+                    onRemove={() => {
+                      handleRemoveProperty(_property.key!.toString());
+                    }}
+                    onDataRestrictionClick={() => handleDataRestrictionClick(_property)}
+                    disabled={disabled}
                   />
                 ))}
               </UIProperties>
@@ -474,7 +593,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
         )}
 
         {/* 模块 - 支持折叠，默认收起 */}
-        {entityModuleProperties.length > 0 && (
+        {Object.keys(moduleGroups).length > 0 && !hideModuleGrouping && (
           <div style={{ marginBottom: '16px' }}>
             <Text
               strong
@@ -507,14 +626,21 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
                       padding: '8px 12px',
                       backgroundColor: 'var(--semi-color-fill-0)',
                       borderRadius: '6px 6px 0 0',
-                      cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
                     }}
-                    onClick={() => toggleModuleCollapse(moduleId)}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        cursor: 'pointer',
+                        flex: 1,
+                      }}
+                      onClick={() => toggleModuleCollapse(moduleId)}
+                    >
                       {isCollapsed ? (
                         <IconChevronRight size="small" />
                       ) : (
@@ -527,6 +653,26 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
                         {moduleProps.length} 属性
                       </Tag>
                     </div>
+
+                    {/* 跳转到模块管理的按钮 */}
+                    {onNavigateToModule && (
+                      <Tooltip content="在模块管理中查看">
+                        <IconButton
+                          size="small"
+                          theme="borderless"
+                          icon={<IconExternalOpen />}
+                          onClick={(e) => {
+                            e.stopPropagation(); // 阻止触发折叠
+                            setFocusModuleId(moduleId);
+                            setModuleSelectorVisible(true);
+                          }}
+                          style={{
+                            color: 'var(--semi-color-text-2)',
+                            marginLeft: '8px',
+                          }}
+                        />
+                      </Tooltip>
+                    )}
                   </div>
 
                   {/* 模块属性内容 - 可折叠 */}
@@ -542,8 +688,12 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
                               enumClassId={getPropertyEnumClassId(_property.name)}
                               isModuleProperty={true}
                               isReadOnly={true} // 模块属性只读
-                              onChange={() => {}} // 模块属性不可编辑
-                              onRemove={() => {}} // 模块属性不可删除
+                              onChange={(_v) => {
+                                handleEditProperty(_property.key!.toString(), _v);
+                              }}
+                              onRemove={() => {
+                                handleRemoveProperty(_property.key!.toString());
+                              }}
                               onDataRestrictionClick={() => {}} // 模块属性不可配置数据限制
                               disabled={true}
                             />
@@ -555,6 +705,47 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* 如果hideModuleGrouping为true，则将模块属性与实体属性混合显示 */}
+        {Object.keys(moduleGroups).length > 0 && hideModuleGrouping && (
+          <div style={{ marginBottom: '16px' }}>
+            <Text
+              strong
+              style={{
+                fontSize: '14px',
+                color: 'var(--semi-color-text-1)',
+                marginBottom: '8px',
+                display: 'block',
+              }}
+            >
+              模块属性
+            </Text>
+            <CustomUIContainer>
+              <UIProperties>
+                {Object.values(moduleGroups)
+                  .flat()
+                  .map((_property) => (
+                    <PropertyEdit
+                      key={_property.key}
+                      value={_property}
+                      config={config}
+                      enumClassId={getPropertyEnumClassId(_property.name)}
+                      isModuleProperty={true}
+                      isReadOnly={true} // 模块属性只读
+                      onChange={(_v) => {
+                        handleEditProperty(_property.key!.toString(), _v);
+                      }}
+                      onRemove={() => {
+                        handleRemoveProperty(_property.key!.toString());
+                      }}
+                      onDataRestrictionClick={() => {}} // 模块属性不可配置数据限制
+                      disabled={true}
+                    />
+                  ))}
+              </UIProperties>
+            </CustomUIContainer>
           </div>
         )}
 
@@ -583,10 +774,10 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
                     isModuleProperty={false}
                     isReadOnly={false} // 自定义属性可编辑
                     onChange={(_v) => {
-                      onEditProperty(_property.key!, _v);
+                      handleEditProperty(_property.key!.toString(), _v);
                     }}
                     onRemove={() => {
-                      onRemoveProperty(_property.key!);
+                      handleRemoveProperty(_property.key!.toString());
                     }}
                     onDataRestrictionClick={() => handleDataRestrictionClick(_property)}
                     disabled={disabled}
@@ -603,7 +794,11 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = (pr
         visible={moduleSelectorVisible}
         selectedModuleIds={currentBundleIds}
         onConfirm={handleModuleSelectionConfirm}
-        onCancel={() => setModuleSelectorVisible(false)}
+        onCancel={() => {
+          setModuleSelectorVisible(false);
+          setFocusModuleId(undefined); // 清除焦点模块ID
+        }}
+        focusModuleId={focusModuleId}
       />
 
       <DataRestrictionModal
@@ -765,7 +960,7 @@ function PropertyEdit(props: {
                 <IconButton
                   size="small"
                   theme="borderless"
-                  icon={<IconAddChildren />}
+                  icon={<IconPlus />}
                   onClick={() => {
                     onAddProperty();
                     setCollapse(true);

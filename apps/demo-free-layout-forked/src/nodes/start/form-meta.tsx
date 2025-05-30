@@ -8,6 +8,7 @@ import {
   ValidateTrigger,
 } from '@flowgram.ai/free-layout-editor';
 import { IJsonSchema } from '@flowgram.ai/form-materials';
+import { Toast } from '@douyinfe/semi-ui';
 
 import { FlowNodeJSON } from '../../typings';
 import { useIsSidebar } from '../../hooks';
@@ -22,11 +23,24 @@ const EntityPropertiesEditorWrapper: React.FC<{
 }> = ({ value, onChange }) => {
   const { selectedEntityId } = useContext(SidebarContext);
 
+  // 导航到模块管理页面的回调
+  const handleNavigateToModule = (moduleId: string) => {
+    // 触发关联模块弹窗，并聚焦到指定模块
+    // 这需要与EntityPropertiesEditor组件通信，让它打开模块选择器并聚焦到指定模块
+    // 我们通过设置一个状态来实现这个功能
+
+    // 由于这个函数在EntityPropertiesEditor内部被调用，
+    // 我们需要让EntityPropertiesEditor自己处理这个逻辑
+    console.log(`Request to focus on module: ${moduleId}`);
+  };
+
   return (
     <EntityPropertiesEditor
       value={value}
       onChange={onChange}
       currentEntityId={selectedEntityId || undefined}
+      onNavigateToModule={handleNavigateToModule}
+      hideModuleGrouping={false}
     />
   );
 };

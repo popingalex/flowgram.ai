@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useReducer, ReactNode } from 'react';
 
+import { MOCK_ENUM_CLASSES } from '../api/mock-data';
+
 // 枚举类接口
 export interface EnumClass {
   id: string;
@@ -26,34 +28,9 @@ type EnumStoreAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null };
 
-// 初始状态
+// 初始状态 - 使用mock数据
 const initialState: EnumStoreState = {
-  enumClasses: {
-    'vehicle-types': {
-      id: 'vehicle-types',
-      name: '车辆类型',
-      description: '工程车辆分类',
-      values: ['推土机', '挖掘机', '装载机', '压路机', '起重机'],
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-    colors: {
-      id: 'colors',
-      name: '颜色',
-      description: '常用颜色选项',
-      values: ['红色', '蓝色', '绿色', '黄色', '黑色', '白色'],
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-    sizes: {
-      id: 'sizes',
-      name: '尺寸',
-      description: '标准尺寸规格',
-      values: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z',
-    },
-  },
+  enumClasses: MOCK_ENUM_CLASSES,
   loading: false,
   error: null,
 };

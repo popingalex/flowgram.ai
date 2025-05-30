@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 import { IJsonSchema } from '@flowgram.ai/form-materials';
-import { Card, Typography, Space } from '@douyinfe/semi-ui';
+import { Card, Typography, Space, Button } from '@douyinfe/semi-ui';
 
 import { ModuleStoreProvider } from '../entity-property-type-selector/module-store';
 import { EnumStoreProvider } from '../entity-property-type-selector/enum-store';
@@ -16,71 +16,95 @@ export const EntityPropertiesEditorTestPage: React.FC = () => {
     properties: {
       name: {
         type: 'string',
-        description: '姓名',
-      },
-      vehicleType: {
-        type: 'string',
-        description: '车辆类型',
+        title: '名称',
+        description: '实体名称',
       },
       age: {
         type: 'number',
-        description: '年龄',
+        title: '年龄',
+        description: '实体年龄',
       },
     },
-    required: ['name'],
   });
 
+  const [selectedEntityId, setSelectedEntityId] = useState<string>('vehicle');
+
+  const handleSchemaChange = (newSchema: IJsonSchema) => {
+    setSchema(newSchema);
+    console.log('Schema updated:', newSchema);
+  };
+
   return (
-    <EnumStoreProvider>
-      <EntityStoreProvider>
-        <ModuleStoreProvider>
-          <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-            <Title heading={2}>实体属性编辑器测试</Title>
-            <Text type="secondary">
-              左侧编辑属性，右侧实时显示生成的Schema。字符串类型旁边会显示&quot;限&quot;按钮，点击可以配置枚举类
-            </Text>
+    <EntityStoreProvider>
+      <ModuleStoreProvider>
+        <EnumStoreProvider>
+          <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+            <Card style={{ marginBottom: '24px' }}>
+              <Title heading={3}>实体属性编辑器测试</Title>
+              <Text type="secondary">
+                测试EntityPropertiesEditor组件的功能，包括实体属性、模块属性和自定义属性的管理。
+              </Text>
+            </Card>
 
-            <div
-              style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}
-            >
-              <Card title="属性编辑器" style={{ height: 'fit-content' }}>
-                <EntityPropertiesEditor value={schema} onChange={setSchema} />
-              </Card>
-
-              <Card title="生成的Schema" style={{ height: 'fit-content' }}>
-                <pre
-                  style={{
-                    backgroundColor: '#f8f9fa',
-                    padding: 16,
-                    borderRadius: 6,
-                    fontSize: 12,
-                    lineHeight: 1.4,
-                    overflow: 'auto',
-                    maxHeight: 500,
-                    margin: 0,
+            <div style={{ display: 'flex', gap: '24px' }}>
+              {/* 左侧：编辑器 */}
+              <div style={{ flex: 1 }}>
+                <EntityPropertiesEditor
+                  value={schema}
+                  onChange={handleSchemaChange}
+                  currentEntityId={selectedEntityId}
+                  onNavigateToModule={(moduleId) => {
+                    console.log('Navigate to module:', moduleId);
                   }}
-                >
-                  {JSON.stringify(schema, null, 2)}
-                </pre>
-              </Card>
-            </div>
+                />
+              </div>
 
-            <div style={{ marginTop: 24 }}>
-              <Title heading={4}>使用说明</Title>
-              <ul style={{ marginTop: 8, lineHeight: 1.6 }}>
-                <li>添加字符串类型的属性，会在类型选择器旁显示&quot;限&quot;按钮</li>
-                <li>点击&quot;限&quot;按钮打开数据限制弹窗</li>
-                <li>在弹窗中可以选择现有的枚举类或创建新的枚举类</li>
-                <li>选择枚举类后，只保存枚举类ID，枚举值从全局状态获取</li>
-                <li>有枚举类时按钮会高亮显示</li>
-                <li>可以点击&quot;无限制&quot;清除枚举类引用</li>
-                <li>修改枚举类时，所有引用该枚举类的属性会自动更新</li>
-                <li>枚举类数据存储在全局状态中，未来可与服务器同步</li>
-              </ul>
+              {/* 右侧：预览和控制 */}
+              <div style={{ width: '400px' }}>
+                <Card style={{ marginBottom: '16px' }}>
+                  <Title heading={5}>实体选择</Title>
+                  <Space wrap>
+                    <Button
+                      type={selectedEntityId === 'vehicle' ? 'primary' : 'secondary'}
+                      onClick={() => setSelectedEntityId('vehicle')}
+                    >
+                      车辆 (vehicle)
+                    </Button>
+                    <Button
+                      type={selectedEntityId === 'slope' ? 'primary' : 'secondary'}
+                      onClick={() => setSelectedEntityId('slope')}
+                    >
+                      边坡 (slope)
+                    </Button>
+                    <Button
+                      type={selectedEntityId === 'debris_flow' ? 'primary' : 'secondary'}
+                      onClick={() => setSelectedEntityId('debris_flow')}
+                    >
+                      泥石流 (debris_flow)
+                    </Button>
+                  </Space>
+                </Card>
+
+                <Card>
+                  <Title heading={5}>当前Schema</Title>
+                  <pre
+                    style={{
+                      backgroundColor: '#f8f9fa',
+                      padding: '12px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      overflow: 'auto',
+                      maxHeight: '400px',
+                    }}
+                  >
+                    {JSON.stringify(schema, null, 2)}
+                  </pre>
+                </Card>
+              </div>
             </div>
           </div>
-        </ModuleStoreProvider>
-      </EntityStoreProvider>
-    </EnumStoreProvider>
+        </EnumStoreProvider>
+      </ModuleStoreProvider>
+    </EntityStoreProvider>
   );
 };

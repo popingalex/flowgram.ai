@@ -26,6 +26,7 @@ import {
 } from './components/ext/entity-property-type-selector/entity-store';
 import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
 import { ApiTestPage } from './components/ext/api-test-page';
+import { toggleMockMode, isMockEnabled } from './components/ext/api/api-mock';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -71,6 +72,29 @@ const EntitySelector: React.FC<{
         </Select.Option>
       ))}
     </Select>
+  );
+};
+
+// Mock模式切换组件
+const MockToggle: React.FC = () => {
+  const [mockEnabled, setMockEnabled] = useState(isMockEnabled());
+
+  const handleToggle = () => {
+    toggleMockMode();
+    setMockEnabled(isMockEnabled());
+  };
+
+  return (
+    <Button
+      theme="borderless"
+      onClick={handleToggle}
+      style={{
+        color: mockEnabled ? 'var(--semi-color-success)' : 'var(--semi-color-warning)',
+        marginRight: '12px',
+      }}
+    >
+      {mockEnabled ? 'Mock模式' : '真实API'}
+    </Button>
   );
 };
 
@@ -234,6 +258,9 @@ const AppContent: React.FC = () => {
                   测试功能
                 </Button>
               </Dropdown>
+
+              {/* Mock模式切换 */}
+              <MockToggle />
 
               <Button
                 theme="borderless"

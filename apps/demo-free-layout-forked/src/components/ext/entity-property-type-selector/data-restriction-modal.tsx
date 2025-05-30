@@ -53,7 +53,6 @@ export const DataRestrictionModal: React.FC<DataRestrictionModalProps> = ({
 }) => {
   const [searchText, setSearchText] = useState('');
   const [selectedValue, setSelectedValue] = useState<string>('no-restriction');
-  const [editingClassId, setEditingClassId] = useState<string | null>(null);
 
   // 使用全局枚举状态
   const {
@@ -66,7 +65,7 @@ export const DataRestrictionModal: React.FC<DataRestrictionModalProps> = ({
   } = useEnumStore();
 
   // 为每个枚举类维护formApi引用
-  const formApiRefs = useRef<Record<string, any>>({});
+  const formApiRefs = useRef<Record<string, any>>();
 
   // 获取所有枚举类
   const enumClasses = getAllEnumClasses();
@@ -110,7 +109,6 @@ export const DataRestrictionModal: React.FC<DataRestrictionModalProps> = ({
 
   const handleEditClass = (classId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setEditingClassId(classId);
   };
 
   const handleSaveClass = (classId: string, e: React.MouseEvent) => {
@@ -130,25 +128,10 @@ export const DataRestrictionModal: React.FC<DataRestrictionModalProps> = ({
       description: formValues.description || '',
       values: formValues.values.filter((v: string) => v && v.trim()),
     });
-
-    setEditingClassId(null);
   };
 
   const handleCancelEdit = (classId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-
-    // 重置表单到原始值
-    const formApi = formApiRefs.current[classId];
-    const originalClass = getEnumClass(classId);
-    if (formApi && originalClass) {
-      formApi.setValues({
-        name: originalClass.name,
-        description: originalClass.description,
-        values: originalClass.values,
-      });
-    }
-
-    setEditingClassId(null);
   };
 
   const handleDeleteClass = (classId: string, e: React.MouseEvent) => {
@@ -172,7 +155,6 @@ export const DataRestrictionModal: React.FC<DataRestrictionModalProps> = ({
 
     // 使用全局状态添加
     addEnumClass(newClass);
-    setEditingClassId(newClass.id);
   };
 
   const handleConfirm = () => {
@@ -186,7 +168,6 @@ export const DataRestrictionModal: React.FC<DataRestrictionModalProps> = ({
   const handleCancel = () => {
     setSearchText('');
     setSelectedValue('no-restriction');
-    setEditingClassId(null);
     onCancel();
   };
 
@@ -269,7 +250,7 @@ export const DataRestrictionModal: React.FC<DataRestrictionModalProps> = ({
                   key={item.id}
                   item={item}
                   isSelected={selectedValue === item.id}
-                  isEditing={editingClassId === item.id}
+                  isEditing={false}
                   onEdit={handleEditClass}
                   onSave={handleSaveClass}
                   onCancelEdit={handleCancelEdit}

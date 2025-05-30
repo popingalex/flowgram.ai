@@ -1,179 +1,142 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-import { API_CONFIG, buildApiUrl, apiRequest } from '../api/config';
+import { apiRequest, buildApiUrl, API_CONFIG } from '../api/config';
 
-// 实体属性类型
-export interface Attribute {
+// 实体属性接口
+export interface EntityAttribute {
   id: string;
-  name?: string;
-  type?: string;
+  type: string;
+  name: string;
   description?: string;
   enumClassId?: string;
 }
 
-// 实体数据类型
+// 实体接口
 export interface Entity {
   id: string;
   name: string;
   description?: string;
-  deprecated?: boolean;
-  attributes: Attribute[];
-  bundles?: string[]; // 关联的模块ID列表
+  deprecated: boolean;
+  bundles?: string[];
+  attributes: EntityAttribute[];
 }
 
-// Store接口
-interface EntityStoreContextType {
+// 状态接口
+interface EntityStoreState {
   entities: Entity[];
-  getEntity: (id: string) => Entity | undefined;
-  updateEntity: (updatedEntity: Entity) => void;
-  addEntity: (newEntity: Entity) => void;
-  deleteEntity: (entityId: string) => void;
-  refreshEntities: () => Promise<void>;
   loading: boolean;
+  error: string | null;
 }
 
+// 上下文接口
+interface EntityStoreContextType extends EntityStoreState {
+  refreshEntities: () => Promise<void>;
+  getEntity: (id: string) => Entity | undefined;
+  addEntity: (entity: Omit<Entity, 'deprecated'>) => Promise<void>;
+  updateEntity: (id: string, updates: Partial<Entity>) => Promise<void>;
+  deleteEntity: (id: string) => Promise<void>;
+}
+
+// 创建上下文
 const EntityStoreContext = createContext<EntityStoreContextType | undefined>(undefined);
 
-// 从API获取实体数据
-const fetchEntitiesFromAPI = async (): Promise<Entity[]> => {
-  try {
-    const url = buildApiUrl(API_CONFIG.ENDPOINTS.ENTITY);
-    console.log('Fetching entities from:', url);
-
-    const entities = await apiRequest(url);
-    console.log('Fetched entities:', entities);
-
-    return entities;
-  } catch (error) {
-    console.error('Failed to fetch entities from API:', error);
-    throw error;
-  }
-};
-
-// 创建新实体
-const createEntityAPI = async (entity: Entity): Promise<Entity> => {
-  try {
-    const url = buildApiUrl(API_CONFIG.ENDPOINTS.ENTITY);
-    const createdEntity = await apiRequest(url, {
-      method: 'POST',
-      body: JSON.stringify(entity),
-    });
-    return createdEntity;
-  } catch (error) {
-    console.error('Failed to create entity:', error);
-    throw error;
-  }
-};
-
-// 更新实体
-const updateEntityAPI = async (entity: Entity): Promise<Entity> => {
-  try {
-    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.ENTITY}${entity.id}/`);
-    const updatedEntity = await apiRequest(url, {
-      method: 'PUT',
-      body: JSON.stringify(entity),
-    });
-    return updatedEntity;
-  } catch (error) {
-    console.error('Failed to update entity:', error);
-    throw error;
-  }
-};
-
-// 删除实体
-const deleteEntityAPI = async (entityId: string): Promise<void> => {
-  try {
-    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.ENTITY}${entityId}/`);
-    await apiRequest(url, {
-      method: 'DELETE',
-    });
-  } catch (error) {
-    console.error('Failed to delete entity:', error);
-    throw error;
-  }
-};
-
 // Provider组件
-export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [entities, setEntities] = useState<Entity[]>([]);
-  const [loading, setLoading] = useState(false);
+interface EntityStoreProviderProps {
+  children: ReactNode;
+}
 
-  const refreshEntities = useCallback(async () => {
-    setLoading(true);
+export const EntityStoreProvider: React.FC<EntityStoreProviderProps> = ({ children }) => {
+  const [state, setState] = useState<EntityStoreState>({
+    entities: [],
+    loading: false,
+    error: null,
+  });
+
+  // 获取所有实体
+  const refreshEntities = async () => {
+    setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const fetchedEntities = await fetchEntitiesFromAPI();
-      setEntities(fetchedEntities);
-    } catch (error) {
-      console.error('Failed to refresh entities:', error);
-      // 可以在这里添加错误提示
-    } finally {
-      setLoading(false);
+      const url = buildApiUrl(API_CONFIG.ENDPOINTS.ENTITY);
+      const entities = await apiRequest(url);
+      setState((prev) => ({ ...prev, entities, loading: false }));
+    } catch (error: any) {
+      setState((prev) => ({ ...prev, error: error.message, loading: false }));
     }
-  }, []);
-
-  const getEntity = useCallback(
-    (id: string) => entities.find((entity) => entity.id === id),
-    [entities]
-  );
-
-  const updateEntity = useCallback(async (updatedEntity: Entity) => {
-    try {
-      setLoading(true);
-      const result = await updateEntityAPI(updatedEntity);
-      setEntities((prev) => prev.map((entity) => (entity.id === result.id ? result : entity)));
-      console.log('实体更新成功:', result);
-    } catch (error) {
-      console.error('Failed to update entity:', error);
-      // 可以在这里添加错误提示
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const addEntity = useCallback(async (newEntity: Entity) => {
-    try {
-      setLoading(true);
-      const result = await createEntityAPI(newEntity);
-      setEntities((prev) => [...prev, result]);
-      console.log('实体创建成功:', result);
-    } catch (error) {
-      console.error('Failed to create entity:', error);
-      // 可以在这里添加错误提示
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const deleteEntity = useCallback(async (entityId: string) => {
-    try {
-      setLoading(true);
-      await deleteEntityAPI(entityId);
-      setEntities((prev) => prev.filter((entity) => entity.id !== entityId));
-      console.log('实体删除成功:', entityId);
-    } catch (error) {
-      console.error('Failed to delete entity:', error);
-      // 可以在这里添加错误提示
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // 组件挂载时加载实体数据
-  React.useEffect(() => {
-    refreshEntities();
-  }, [refreshEntities]);
-
-  const value: EntityStoreContextType = {
-    entities,
-    getEntity,
-    updateEntity,
-    addEntity,
-    deleteEntity,
-    refreshEntities,
-    loading,
   };
 
-  return <EntityStoreContext.Provider value={value}>{children}</EntityStoreContext.Provider>;
+  // 获取单个实体
+  const getEntity = (id: string): Entity | undefined =>
+    state.entities.find((entity) => entity.id === id);
+
+  // 添加实体
+  const addEntity = async (entity: Omit<Entity, 'deprecated'>) => {
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const url = buildApiUrl(API_CONFIG.ENDPOINTS.ENTITY);
+      const newEntity = await apiRequest(url, {
+        method: 'POST',
+        body: JSON.stringify({ ...entity, deprecated: false }),
+      });
+      setState((prev) => ({
+        ...prev,
+        entities: [...prev.entities, newEntity],
+        loading: false,
+      }));
+    } catch (error: any) {
+      setState((prev) => ({ ...prev, error: error.message, loading: false }));
+    }
+  };
+
+  // 更新实体
+  const updateEntity = async (id: string, updates: Partial<Entity>) => {
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.ENTITY}${id}/`);
+      const updatedEntity = await apiRequest(url, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+      setState((prev) => ({
+        ...prev,
+        entities: prev.entities.map((entity) => (entity.id === id ? updatedEntity : entity)),
+        loading: false,
+      }));
+    } catch (error: any) {
+      setState((prev) => ({ ...prev, error: error.message, loading: false }));
+    }
+  };
+
+  // 删除实体
+  const deleteEntity = async (id: string) => {
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.ENTITY}${id}/`);
+      await apiRequest(url, { method: 'DELETE' });
+      setState((prev) => ({
+        ...prev,
+        entities: prev.entities.filter((entity) => entity.id !== id),
+        loading: false,
+      }));
+    } catch (error: any) {
+      setState((prev) => ({ ...prev, error: error.message, loading: false }));
+    }
+  };
+
+  // 初始化时加载实体
+  useEffect(() => {
+    refreshEntities();
+  }, []);
+
+  const contextValue: EntityStoreContextType = {
+    ...state,
+    refreshEntities,
+    getEntity,
+    addEntity,
+    updateEntity,
+    deleteEntity,
+  };
+
+  return <EntityStoreContext.Provider value={contextValue}>{children}</EntityStoreContext.Provider>;
 };
 
 // Hook
