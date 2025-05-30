@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
+import { API_CONFIG, buildApiUrl, apiRequest } from '../api/config';
+
 // 模块数据类型
 export interface ModuleAttribute {
   id: string;
@@ -12,6 +14,7 @@ export interface Module {
   id: string;
   name: string;
   description?: string;
+  deprecated?: boolean;
   attributes: ModuleAttribute[];
 }
 
@@ -29,55 +32,62 @@ interface ModuleStoreContextType {
 
 const ModuleStoreContext = createContext<ModuleStoreContextType | undefined>(undefined);
 
-// 模拟API调用 - 实际应该从后端获取
+// 从API获取模块数据
 const fetchModulesFromAPI = async (): Promise<Module[]> => {
   try {
-    // TODO: 替换为实际的API调用
-    const response = await fetch('/api/modules');
-    if (!response.ok) {
-      throw new Error('Failed to fetch modules');
-    }
-    return await response.json();
-  } catch (error) {
-    console.warn('Failed to fetch modules from API, using mock data:', error);
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.MODULE);
+    console.log('Fetching modules from:', url);
 
-    // 返回模拟数据
-    return [
-      {
-        id: 'transform',
-        name: '变换',
-        description: '基础变换模块',
-        attributes: [
-          { id: 'transform/coordinates', name: '坐标', type: 'n[3]' },
-          { id: 'transform/position', name: '位置', type: 'n[3]' },
-          { id: 'transform/rotation', name: '旋转', type: 'n[3]' },
-          { id: 'transform/scale', name: '缩放', type: 'n[3]' },
-        ],
-      },
-      {
-        id: 'controlled',
-        name: '可控制的',
-        description: '控制相关模块',
-        attributes: [
-          { id: 'controlled/commands', name: '指令集合', type: '(command:s,args:u)[]' },
-          { id: 'controlled/standby_position', name: '待机位置', type: 'n[3]' },
-          { id: 'controlled/work_position', name: '工作位置', type: 'n[3]' },
-          { id: 'controlled/action', name: '行为', type: 's' },
-          { id: 'controlled/stance', name: '姿态', type: 's' },
-          { id: 'controlled/status', name: '状态', type: 's' },
-        ],
-      },
-      {
-        id: 'vehicle',
-        name: '载具',
-        description: '载具相关模块',
-        attributes: [
-          { id: 'vehicle/loading_area', name: '装货位置', type: 's' },
-          { id: 'vehicle/unloading_area', name: '卸货位置', type: 's' },
-          { id: 'vehicle/type', name: '载具类型', type: 's' },
-        ],
-      },
-    ];
+    const modules = await apiRequest(url);
+    console.log('Fetched modules:', modules);
+
+    return modules;
+  } catch (error) {
+    console.error('Failed to fetch modules from API:', error);
+    throw error;
+  }
+};
+
+// 创建新模块
+const createModuleAPI = async (module: Module): Promise<Module> => {
+  try {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.MODULE);
+    const createdModule = await apiRequest(url, {
+      method: 'POST',
+      body: JSON.stringify(module),
+    });
+    return createdModule;
+  } catch (error) {
+    console.error('Failed to create module:', error);
+    throw error;
+  }
+};
+
+// 更新模块
+const updateModuleAPI = async (module: Module): Promise<Module> => {
+  try {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.MODULE}${module.id}/`);
+    const updatedModule = await apiRequest(url, {
+      method: 'PUT',
+      body: JSON.stringify(module),
+    });
+    return updatedModule;
+  } catch (error) {
+    console.error('Failed to update module:', error);
+    throw error;
+  }
+};
+
+// 删除模块
+const deleteModuleAPI = async (moduleId: string): Promise<void> => {
+  try {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.MODULE}${moduleId}/`);
+    await apiRequest(url, {
+      method: 'DELETE',
+    });
+  } catch (error) {
+    console.error('Failed to delete module:', error);
+    throw error;
   }
 };
 
@@ -89,11 +99,11 @@ export const ModuleStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
   const refreshModules = useCallback(async () => {
     setLoading(true);
     try {
-      // 强制重新获取干净的数据
       const fetchedModules = await fetchModulesFromAPI();
       setModules(fetchedModules);
     } catch (error) {
       console.error('Failed to refresh modules:', error);
+      // 可以在这里添加错误提示
     } finally {
       setLoading(false);
     }
@@ -109,25 +119,50 @@ export const ModuleStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
     [getModule]
   );
 
-  const updateModule = useCallback((updatedModule: Module) => {
-    console.log('更新模块:', updatedModule);
-    setModules((prev) =>
-      prev.map((module) => (module.id === updatedModule.id ? updatedModule : module))
-    );
+  const updateModule = useCallback(async (updatedModule: Module) => {
+    try {
+      setLoading(true);
+      const result = await updateModuleAPI(updatedModule);
+      setModules((prev) => prev.map((module) => (module.id === result.id ? result : module)));
+      console.log('模块更新成功:', result);
+    } catch (error) {
+      console.error('Failed to update module:', error);
+      // 可以在这里添加错误提示
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const addModule = useCallback((newModule: Module) => {
-    setModules((prev) => [...prev, newModule]);
+  const addModule = useCallback(async (newModule: Module) => {
+    try {
+      setLoading(true);
+      const result = await createModuleAPI(newModule);
+      setModules((prev) => [...prev, result]);
+      console.log('模块创建成功:', result);
+    } catch (error) {
+      console.error('Failed to create module:', error);
+      // 可以在这里添加错误提示
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const deleteModule = useCallback((moduleId: string) => {
-    setModules((prev) => prev.filter((module) => module.id !== moduleId));
+  const deleteModule = useCallback(async (moduleId: string) => {
+    try {
+      setLoading(true);
+      await deleteModuleAPI(moduleId);
+      setModules((prev) => prev.filter((module) => module.id !== moduleId));
+      console.log('模块删除成功:', moduleId);
+    } catch (error) {
+      console.error('Failed to delete module:', error);
+      // 可以在这里添加错误提示
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // 组件挂载时强制加载干净的模块数据
+  // 组件挂载时加载模块数据
   React.useEffect(() => {
-    // 强制清空现有数据，重新加载
-    setModules([]);
     refreshModules();
   }, [refreshModules]);
 

@@ -5,7 +5,8 @@ import {
   useRefresh,
   useClientContext,
 } from '@flowgram.ai/free-layout-editor';
-import { SideSheet } from '@douyinfe/semi-ui';
+import { SideSheet, Button } from '@douyinfe/semi-ui';
+import { IconClose } from '@douyinfe/semi-icons';
 
 import { FlowNodeMeta } from '../../typings';
 import { SidebarContext, IsSidebarContext, NodeRenderContext } from '../../context';
@@ -71,13 +72,34 @@ export const SidebarRenderer = () => {
   const content = nodeRender ? (
     <PlaygroundEntityContext.Provider key={nodeRender.node.id} value={nodeRender.node}>
       <NodeRenderContext.Provider value={nodeRender}>
-        {nodeRender.form?.render()}
+        <div style={{ position: 'relative', height: '100%' }}>
+          {/* 手动添加关闭按钮 */}
+          <Button
+            icon={<IconClose />}
+            theme="borderless"
+            size="small"
+            onClick={handleClose}
+            style={{
+              position: 'absolute',
+              top: '16px',
+              right: '16px',
+              zIndex: 1000,
+            }}
+          />
+          {nodeRender.form?.render()}
+        </div>
       </NodeRenderContext.Provider>
     </PlaygroundEntityContext.Provider>
   ) : null;
 
   return (
-    <SideSheet mask={false} visible={visible} onCancel={handleClose} width={800}>
+    <SideSheet
+      mask={false}
+      visible={visible}
+      width={800}
+      closable={false}
+      // 移除 onCancel 以防止点击外部关闭
+    >
       <IsSidebarContext.Provider value={true}>{content}</IsSidebarContext.Provider>
     </SideSheet>
   );

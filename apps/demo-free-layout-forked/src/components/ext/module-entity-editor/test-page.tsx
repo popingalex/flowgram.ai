@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 
 import { Card, Typography, List, Space, Spin } from '@douyinfe/semi-ui';
 
-import { EntityStoreProvider, useEntityStore } from '../entity-store';
 import { ModuleStoreProvider } from '../entity-property-type-selector/module-store';
+import { EntityStoreProvider, useEntityStore } from '../entity-property-type-selector/entity-store';
 import { ModuleEntityEditor } from './index';
 
 const { Title, Text } = Typography;
@@ -58,11 +58,11 @@ const ModuleEntityTestContent: React.FC = () => {
                 </Text>
                 <br />
                 <Text size="small">属性: {entity.attributes.length} 个</Text>
-                {entity.bundle_ids.length > 0 && (
+                {entity.bundles && entity.bundles.length > 0 && (
                   <>
                     <br />
                     <Text size="small" type="tertiary">
-                      模块: {entity.bundle_ids.join(', ')}
+                      模块: {entity.bundles.join(', ')}
                     </Text>
                   </>
                 )}

@@ -34,30 +34,7 @@ export const initialData: FlowDocumentJSON = {
         }),
         outputs: {
           type: 'object',
-          properties: {
-            query: {
-              type: 'string',
-              default: 'Hello Flow.',
-            },
-            enable: {
-              type: 'boolean',
-              default: true,
-            },
-            array_obj: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  int: {
-                    type: 'number',
-                  },
-                  str: {
-                    type: 'string',
-                  },
-                },
-              },
-            },
-          },
+          properties: {},
         },
       },
     },
@@ -134,7 +111,7 @@ export const initialData: FlowDocumentJSON = {
         title: 'Loop_2',
         batchFor: {
           type: 'ref',
-          content: ['start_0', 'array_obj'],
+          content: ['start_0'],
         },
         outputs: {
           type: 'object',
