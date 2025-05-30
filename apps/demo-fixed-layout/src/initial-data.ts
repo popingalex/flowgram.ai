@@ -111,7 +111,7 @@ export const initialData: FlowDocumentJSON = {
               data: {
                 title: 'If_0',
                 inputsValues: {
-                  condition: '',
+                  condition: { type: 'constant', content: true },
                 },
                 inputs: {
                   type: 'object',
@@ -131,7 +131,7 @@ export const initialData: FlowDocumentJSON = {
               data: {
                 title: 'If_1',
                 inputsValues: {
-                  condition: '',
+                  condition: { type: 'constant', content: true },
                 },
                 inputs: {
                   type: 'object',
@@ -168,7 +168,7 @@ export const initialData: FlowDocumentJSON = {
           data: {
             title: 'Catch Block 1',
             inputsValues: {
-              condition: '',
+              condition: { type: 'constant', content: true },
             },
             inputs: {
               type: 'object',
@@ -188,7 +188,7 @@ export const initialData: FlowDocumentJSON = {
           data: {
             title: 'Catch Block 2',
             inputsValues: {
-              condition: '',
+              condition: { type: 'constant', content: true },
             },
             inputs: {
               type: 'object',

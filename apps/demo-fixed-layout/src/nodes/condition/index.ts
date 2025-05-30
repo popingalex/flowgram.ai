@@ -31,7 +31,7 @@ export const ConditionNodeRegistry: FlowNodeRegistry = {
           data: {
             title: 'If_0',
             inputsValues: {
-              condition: '',
+              condition: { type: 'constant', content: '' },
             },
             inputs: {
               type: 'object',
@@ -51,7 +51,7 @@ export const ConditionNodeRegistry: FlowNodeRegistry = {
           data: {
             title: 'If_1',
             inputsValues: {
-              condition: '',
+              condition: { type: 'constant', content: '' },
             },
             inputs: {
               type: 'object',
