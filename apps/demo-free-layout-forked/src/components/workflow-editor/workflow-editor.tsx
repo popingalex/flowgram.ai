@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 
 import {
   EditorRenderer,
@@ -8,15 +8,16 @@ import {
   useService,
   FlowNodeFormData,
   FormModelV2,
+  WorkflowNodeEntity,
 } from '@flowgram.ai/free-layout-editor';
 
 import '@flowgram.ai/free-layout-editor/index.css';
 import '../../styles/index.css';
 import { DemoTools } from '../tools';
-import { SidebarRenderer } from '../sidebar';
+import { SidebarRenderer, SidebarProvider } from '../sidebar';
+import { useEntityStore, EntityCompleteProperties } from '../ext/entity-store';
 import { useModuleStore } from '../ext/entity-property-type-selector/module-store';
 import { EnumStoreProvider } from '../ext/entity-property-type-selector/enum-store';
-import { useEntityStore } from '../ext/entity-property-type-selector/entity-store';
 import { nodeRegistries } from '../../nodes';
 import { initialData } from '../../initial-data';
 import { useEditorProps } from '../../hooks';
@@ -31,142 +32,179 @@ interface WorkflowEditorProps {
 const EntityPropertySyncer: React.FC<{ selectedEntityId: string | null }> = ({
   selectedEntityId,
 }) => {
-  const { getEntity } = useEntityStore();
-  const { getModulesByIds } = useModuleStore();
+  const { getEntityCompleteProperties, onEntityPropertiesChange, loading, entities } =
+    useEntityStore();
   const document = useService(WorkflowDocument);
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const retryCountRef = useRef(0);
+  const maxRetries = 3;
 
-  // 当选择的实体改变时，立即同步所有Start节点的属性
-  useEffect(() => {
-    if (!selectedEntityId || !document) return;
+  // 同步实体属性到Start节点
+  const syncEntityToStartNodes = useCallback(
+    (entityId: string, properties: EntityCompleteProperties) => {
+      if (!document) {
+        console.warn('EntityPropertySyncer - Document service not available');
+        return false;
+      }
 
-    const currentEntity = getEntity(selectedEntityId);
-    if (!currentEntity) return;
+      console.log('EntityPropertySyncer - Syncing entity properties:', {
+        entityId,
+        allPropertiesCount: Object.keys(properties.allProperties.properties || {}).length,
+        editablePropertiesCount: Object.keys(properties.editableProperties.properties || {}).length,
+        properties,
+      });
 
-    // 使用setTimeout避免在渲染过程中更新状态
-    const timeoutId = setTimeout(() => {
       try {
-        // 构建实体的所有属性（直接属性 + 模块属性）
-        const entityProperties: Record<string, any> = {};
-
-        // 添加实体直接属性
-        currentEntity.attributes.forEach((attr) => {
-          entityProperties[attr.id] = {
-            type:
-              attr.type === 'n'
-                ? 'number'
-                : attr.type === 's'
-                ? 'string'
-                : attr.type?.includes('[')
-                ? 'array'
-                : 'string',
-            title: attr.name || attr.id,
-            description: attr.description,
-          };
-        });
-
-        // 添加模块属性（同级，不带模块前缀）
-        if (currentEntity.bundles) {
-          const modules = getModulesByIds(currentEntity.bundles);
-          modules.forEach((module) => {
-            module.attributes.forEach((attr) => {
-              // 属性在工作流中都是同级的，不带模块前缀
-              entityProperties[attr.id] = {
-                type:
-                  attr.type === 'n'
-                    ? 'number'
-                    : attr.type === 's'
-                    ? 'string'
-                    : attr.type?.includes('[')
-                    ? 'array'
-                    : 'string',
-                title: attr.name || attr.id,
-                description: attr.description || `来自模块: ${module.name || module.id}`,
-              };
-            });
-          });
-        }
-
-        // 查找所有Start节点并更新其属性
+        // 查找所有Start节点并更新
         const allNodes = document.getAllNodes();
-        console.log('Found nodes:', allNodes.length);
+        let updatedCount = 0;
 
-        allNodes.forEach((node: any, index: number) => {
-          try {
-            const nodeRegistry = node.getNodeRegistry?.();
-            const nodeType = nodeRegistry?.type;
-            console.log(`Node ${index}: type=${nodeType}`);
+        // 遍历所有节点，同步实体属性到outputs
+        allNodes.forEach((node: WorkflowNodeEntity) => {
+          // 获取节点的注册信息来判断类型
+          const nodeRegistry = node.getNodeRegistry?.();
+          if (nodeRegistry?.type === 'start' && selectedEntityId) {
+            const entityProperties = getEntityCompleteProperties(selectedEntityId);
+            if (entityProperties) {
+              // 获取节点的表单数据
+              const formData = node.getData(FlowNodeFormData);
+              const formModel = formData?.getFormModel();
 
-            if (nodeType === 'start') {
-              console.log('Processing Start node:', node);
+              if (formModel) {
+                // 使用allProperties格式（节点显示用）
+                const currentOutputs = (formModel as FormModelV2).getValueIn('data.outputs');
+                const newOutputs = entityProperties.allProperties;
 
-              // 获取节点的form数据
-              try {
-                const formData = node.getData(FlowNodeFormData);
-                const formModel = formData?.getFormModel();
+                // 检查是否需要更新
+                if (JSON.stringify(currentOutputs) !== JSON.stringify(newOutputs)) {
+                  console.log('同步实体属性到start节点:', {
+                    nodeId: node.id,
+                    from: currentOutputs,
+                    to: newOutputs,
+                  });
 
-                if (!formModel) {
-                  console.warn('No form model found for Start node');
-                  return;
+                  // 更新节点数据
+                  (formModel as FormModelV2).setValueIn('data.outputs', newOutputs);
+                  updatedCount++;
                 }
-
-                console.log('Found form model for Start node');
-
-                // 获取当前的outputs数据
-                const currentOutputs = formModel.getValueIn('outputs') || {};
-                const currentProperties = currentOutputs.properties || {};
-
-                // 保留用户自定义的输出属性
-                const userProperties: Record<string, any> = {};
-                Object.keys(currentProperties).forEach((key) => {
-                  if (!entityProperties[key]) {
-                    userProperties[key] = currentProperties[key];
-                  }
-                });
-
-                // 合并实体属性和用户自定义属性
-                const mergedProperties = {
-                  ...entityProperties,
-                  ...userProperties,
-                };
-
-                // 构建新的outputs数据
-                const newOutputs = {
-                  type: 'object',
-                  properties: mergedProperties,
-                };
-
-                console.log('Updating form outputs with:', newOutputs);
-
-                // 使用form API更新outputs
-                formModel.setValueIn('outputs', newOutputs);
-
-                // 同时更新实体定义
-                const entityDefinition = {
-                  entityId: currentEntity.id,
-                  entityName: currentEntity.name,
-                  entityDescription: currentEntity.description,
-                };
-
-                formModel.setValueIn('data.entityDefinition', entityDefinition);
-
-                console.log('Successfully updated Start node form data');
-              } catch (formError) {
-                console.error('Failed to update form data:', formError);
               }
             }
-          } catch (nodeError) {
-            console.error(`Error processing node ${index}:`, nodeError);
           }
         });
+
+        console.log(`EntityPropertySyncer - Successfully updated ${updatedCount} Start nodes`);
+        retryCountRef.current = 0; // 重置重试计数
+        return true;
       } catch (error) {
-        console.error('Error in EntityPropertySyncer:', error);
+        console.error('EntityPropertySyncer - Error in syncEntityToStartNodes:', error);
+        return false;
       }
-    }, 100); // 增加延迟确保节点完全初始化
+    },
+    [selectedEntityId, getEntityCompleteProperties]
+  );
 
-    return () => clearTimeout(timeoutId);
-  }, [selectedEntityId, getEntity, getModulesByIds, document]);
+  // 带重试的同步函数
+  const syncWithRetry = useCallback(
+    (entityId: string, properties?: EntityCompleteProperties) => {
+      // 如果实体Store还在加载中，延迟同步
+      if (loading) {
+        console.log('EntityPropertySyncer - Entity store is loading, delaying sync');
+        setTimeout(() => syncWithRetry(entityId, properties), 500);
+        return;
+      }
 
-  return null; // 这个组件不渲染任何内容，只负责同步数据
+      // 清除之前的定时器
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+
+      const performSync = () => {
+        const entityProperties = properties || getEntityCompleteProperties(entityId);
+        if (!entityProperties) {
+          console.warn('EntityPropertySyncer - No properties found for entity:', entityId);
+          return;
+        }
+
+        console.log(
+          'EntityPropertySyncer - Attempting sync for entity:',
+          entityId,
+          'retry:',
+          retryCountRef.current
+        );
+        const success = syncEntityToStartNodes(entityId, entityProperties);
+
+        if (!success && retryCountRef.current < maxRetries) {
+          retryCountRef.current++;
+          console.log(
+            `EntityPropertySyncer - Retry ${retryCountRef.current}/${maxRetries} for entity:`,
+            entityId
+          );
+
+          // 指数退避重试
+          const delay = Math.pow(2, retryCountRef.current) * 200;
+          syncTimeoutRef.current = setTimeout(performSync, delay);
+        }
+      };
+
+      // 立即执行一次
+      performSync();
+    },
+    [getEntityCompleteProperties, syncEntityToStartNodes, loading]
+  );
+
+  // 监听实体属性变化
+  useEffect(() => {
+    const unsubscribe = onEntityPropertiesChange((entityId, properties) => {
+      console.log('EntityPropertySyncer - Entity properties changed:', entityId);
+      if (entityId === selectedEntityId) {
+        syncWithRetry(entityId, properties);
+      }
+    });
+
+    return unsubscribe;
+  }, [selectedEntityId, onEntityPropertiesChange, syncWithRetry]);
+
+  // 当选择的实体改变时，同步属性
+  useEffect(() => {
+    console.log('EntityPropertySyncer - selectedEntityId changed:', selectedEntityId);
+    console.log('EntityPropertySyncer - entities loaded:', entities.length, 'loading:', loading);
+
+    if (!selectedEntityId) {
+      retryCountRef.current = 0;
+      return;
+    }
+
+    // 等待实体Store加载完成
+    if (loading || entities.length === 0) {
+      console.log('EntityPropertySyncer - Waiting for entities to load...');
+      return;
+    }
+
+    // 使用多个时机确保同步成功
+    // 立即执行一次
+    syncWithRetry(selectedEntityId);
+
+    // 延迟执行，确保所有服务都已初始化
+    const timeoutId = setTimeout(() => {
+      syncWithRetry(selectedEntityId);
+    }, 300);
+
+    // 再次延迟执行，确保所有组件都已挂载
+    const timeoutId2 = setTimeout(() => {
+      syncWithRetry(selectedEntityId);
+    }, 1000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearTimeout(timeoutId2);
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+      retryCountRef.current = 0;
+    };
+  }, [selectedEntityId, syncWithRetry, entities.length, loading]);
+
+  return null;
 };
 
 export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({
@@ -180,12 +218,14 @@ export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({
     <div className={`doc-free-feature-overview ${className || ''}`} style={style}>
       <EnumStoreProvider>
         <FreeLayoutEditorProvider {...editorProps}>
-          <div className="demo-container">
-            <EditorRenderer className="demo-editor" />
-          </div>
-          <DemoTools />
-          <SidebarRenderer />
-          <EntityPropertySyncer selectedEntityId={selectedEntityId} />
+          <SidebarProvider selectedEntityId={selectedEntityId}>
+            <div className="demo-container">
+              <EditorRenderer className="demo-editor" />
+            </div>
+            <DemoTools />
+            <SidebarRenderer />
+            <EntityPropertySyncer selectedEntityId={selectedEntityId} />
+          </SidebarProvider>
         </FreeLayoutEditorProvider>
       </EnumStoreProvider>
     </div>

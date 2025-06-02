@@ -1,24 +1,10 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
-import { apiRequest, buildApiUrl, API_CONFIG } from '../api/config';
+import type { Module, ModuleAttribute } from '../../../services/types';
+import { moduleApi } from '../../../services/api-service';
 
-// 模块属性接口
-export interface ModuleAttribute {
-  id: string;
-  type: string;
-  name: string;
-  description?: string;
-  enumClassId?: string;
-}
-
-// 模块接口
-export interface Module {
-  id: string;
-  name: string;
-  description?: string;
-  deprecated: boolean;
-  attributes: ModuleAttribute[];
-}
+// 重新导出类型
+export type { Module, ModuleAttribute };
 
 // 状态接口
 interface ModuleStoreState {
@@ -56,8 +42,7 @@ export const ModuleStoreProvider: React.FC<ModuleStoreProviderProps> = ({ childr
   const refreshModules = async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const url = buildApiUrl(API_CONFIG.ENDPOINTS.MODULE);
-      const modules = await apiRequest(url);
+      const modules = await moduleApi.getAll();
       setState((prev) => ({ ...prev, modules, loading: false }));
     } catch (error: any) {
       setState((prev) => ({ ...prev, error: error.message, loading: false }));
@@ -68,15 +53,15 @@ export const ModuleStoreProvider: React.FC<ModuleStoreProviderProps> = ({ childr
   const getModule = (id: string): Module | undefined =>
     state.modules.find((module) => module.id === id);
 
+  // 根据ID数组获取多个模块
+  const getModulesByIds = (ids: string[]): Module[] =>
+    state.modules.filter((module) => ids.includes(module.id));
+
   // 添加模块
   const addModule = async (module: Omit<Module, 'deprecated'>) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const url = buildApiUrl(API_CONFIG.ENDPOINTS.MODULE);
-      const newModule = await apiRequest(url, {
-        method: 'POST',
-        body: JSON.stringify({ ...module, deprecated: false }),
-      });
+      const newModule = await moduleApi.create(module);
       setState((prev) => ({
         ...prev,
         modules: [...prev.modules, newModule],
@@ -91,11 +76,7 @@ export const ModuleStoreProvider: React.FC<ModuleStoreProviderProps> = ({ childr
   const updateModule = async (id: string, updates: Partial<Module>) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.MODULE}${id}/`);
-      const updatedModule = await apiRequest(url, {
-        method: 'PUT',
-        body: JSON.stringify(updates),
-      });
+      const updatedModule = await moduleApi.update(id, updates);
       setState((prev) => ({
         ...prev,
         modules: prev.modules.map((module) => (module.id === id ? updatedModule : module)),
@@ -110,8 +91,7 @@ export const ModuleStoreProvider: React.FC<ModuleStoreProviderProps> = ({ childr
   const deleteModule = async (id: string) => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.MODULE}${id}/`);
-      await apiRequest(url, { method: 'DELETE' });
+      await moduleApi.delete(id);
       setState((prev) => ({
         ...prev,
         modules: prev.modules.filter((module) => module.id !== id),
@@ -131,6 +111,7 @@ export const ModuleStoreProvider: React.FC<ModuleStoreProviderProps> = ({ childr
     ...state,
     refreshModules,
     getModule,
+    getModulesByIds,
     addModule,
     updateModule,
     deleteModule,

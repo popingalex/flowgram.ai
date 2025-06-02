@@ -4,12 +4,7 @@ import React from 'react';
 import { Form, Button, List, Popconfirm, Tooltip, Radio } from '@douyinfe/semi-ui';
 import { IconEdit, IconDelete, IconSave, IconClose } from '@douyinfe/semi-icons';
 
-interface EnumClass {
-  id: string;
-  name: string;
-  description: string;
-  values: string[];
-}
+import type { EnumClass } from '../../../services/types';
 
 interface EnumClassItemProps {
   item: EnumClass & { isSystem?: boolean };

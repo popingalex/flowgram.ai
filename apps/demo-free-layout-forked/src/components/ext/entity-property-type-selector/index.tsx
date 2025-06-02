@@ -32,12 +32,10 @@ const parseTypeSelectValue = (value: string[]): Partial<IJsonSchema> => {
   return { type: 'string' };
 };
 
-export const EntityPropertyTypeSelector: React.FC<EntityPropertyTypeSelectorProps> = ({
-  value,
-  onChange,
-  onDataRestrictionClick,
-  disabled = false,
-}) => {
+export const EntityPropertyTypeSelector = React.forwardRef<
+  HTMLDivElement,
+  EntityPropertyTypeSelectorProps
+>(({ value, onChange, onDataRestrictionClick, disabled = false }, ref) => {
   // 判断是否为字符串类型
   const isStringType = value?.type === 'string';
 
@@ -70,90 +68,104 @@ export const EntityPropertyTypeSelector: React.FC<EntityPropertyTypeSelectorProp
 
   const selectValue = useMemo(() => getTypeSelectValue(value), [value]);
 
-  const handleTypeChange = (newValue: any) => {
-    if (onChange && !disabled) {
-      const valueArray = Array.isArray(newValue) ? newValue : [newValue];
-      onChange(parseTypeSelectValue(valueArray));
+  const handleTypeChange = (newValue: unknown) => {
+    if (!onChange || disabled) return;
+
+    // 确保newValue是字符串或字符串数组
+    let valueArray: string[];
+    if (Array.isArray(newValue)) {
+      valueArray = newValue.map((v) => String(v));
+    } else if (typeof newValue === 'string' || typeof newValue === 'number') {
+      valueArray = [String(newValue)];
+    } else {
+      return; // 无效的值类型
     }
+
+    const parsedValue = parseTypeSelectValue(valueArray);
+    onChange(parsedValue);
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%' }}>
+    <div ref={ref} style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%' }}>
       {/* 类型选择器 - 只显示图标 */}
       <div style={{ width: 28, flexShrink: 0 }}>
-        <Cascader
-          size="small"
-          disabled={disabled}
-          triggerRender={() => (
-            <Button
-              size="small"
-              style={{
-                width: '100%',
-                backgroundColor: disabled ? 'var(--semi-color-fill-1)' : undefined,
-              }}
-              disabled={disabled}
-            >
-              {getSchemaIcon(value)}
-            </Button>
-          )}
-          treeData={options}
-          value={selectValue}
-          leafOnly={true}
-          onChange={handleTypeChange}
-        />
+        {disabled ? (
+          // 只读模式：只显示按钮样式，不提供交互
+          <Button size="small" style={{ width: '100%' }}>
+            {getSchemaIcon(value)}
+          </Button>
+        ) : (
+          // 编辑模式：提供完整的Cascader功能
+          <Cascader
+            size="small"
+            triggerRender={() => (
+              <Button size="small" style={{ width: '100%' }}>
+                {getSchemaIcon(value)}
+              </Button>
+            )}
+            treeData={options}
+            value={selectValue}
+            leafOnly={true}
+            onChange={handleTypeChange}
+          />
+        )}
       </div>
 
-      {/* 数据限制按钮 - 固定位置 */}
-      <div style={{ width: 24, flexShrink: 0 }}>
-        {isStringType && !disabled ? (
-          <Tooltip
-            content={
-              <div
+      {/* 数据限制按钮 - 只在编辑模式下显示 */}
+      {!disabled && (
+        <div style={{ width: 24, flexShrink: 0 }}>
+          {isStringType ? (
+            <Tooltip
+              content={
+                <div
+                  style={{
+                    whiteSpace: 'pre-wrap',
+                    lineHeight: '1.4',
+                    maxWidth: 200,
+                  }}
+                >
+                  {tooltipContent}
+                </div>
+              }
+              position="top"
+            >
+              <Button
+                size="small"
+                type={hasDataRestriction ? 'primary' : 'tertiary'}
+                theme={hasDataRestriction ? 'solid' : 'borderless'}
+                icon={<Icon svg={DataRestrictionIcon} />}
+                onClick={onDataRestrictionClick}
                 style={{
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: '1.4',
-                  maxWidth: 200,
+                  width: 24,
+                  height: 24,
+                  padding: '2px',
+                  backgroundColor: hasDataRestriction ? 'var(--semi-color-primary)' : undefined,
+                  color: hasDataRestriction ? 'white' : 'var(--semi-color-text-2)',
+                  border: hasDataRestriction
+                    ? '1px solid var(--semi-color-primary)'
+                    : '1px solid var(--semi-color-border)',
                 }}
-              >
-                {tooltipContent}
-              </div>
-            }
-            position="top"
-          >
+              />
+            </Tooltip>
+          ) : (
             <Button
               size="small"
-              type={hasDataRestriction ? 'primary' : 'tertiary'}
-              theme={hasDataRestriction ? 'solid' : 'borderless'}
-              icon={<Icon svg={DataRestrictionIcon} />}
-              onClick={onDataRestrictionClick}
+              disabled
               style={{
                 width: 24,
                 height: 24,
                 padding: '2px',
-                backgroundColor: hasDataRestriction ? 'var(--semi-color-primary)' : undefined,
-                color: hasDataRestriction ? 'white' : 'var(--semi-color-text-2)',
-                border: hasDataRestriction
-                  ? '1px solid var(--semi-color-primary)'
-                  : '1px solid var(--semi-color-border)',
+                opacity: 0.3,
               }}
             />
-          </Tooltip>
-        ) : (
-          <Button
-            size="small"
-            disabled
-            style={{
-              width: 24,
-              height: 24,
-              padding: '2px',
-              opacity: 0.3,
-            }}
-          />
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
-};
+});
+
+EntityPropertyTypeSelector.displayName = 'EntityPropertyTypeSelector';
 
 // 保持向后兼容
 export const TypeSelector = EntityPropertyTypeSelector;

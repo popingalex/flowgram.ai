@@ -1,0 +1,205 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Flowgram 扩展开发规则
+
+## 🚨 核心约束（绝对遵守）
+- ❌ **禁止修改**：`packages/` 目录下的引擎代码
+- ✅ **自由修改**：`src/components/ext/` 下的所有扩展代码
+- ⚠️ **谨慎修改**：其他原有的工作流编辑器相关代码
+- ⚙ 开发时充分例用semi.designe的功能和样式，尽量避免重复造轮子
+
+## 📋 任务管理机制（保证工作连续性）
+
+### 任务目录结构
+- 在工程根目录创建 `cursor_works/` 作为任务管理目录
+- 复杂任务创建 `cursor_works/{任务简名}.md` 进行详细跟踪
+- 创建 `cursor_works/current_task.md` 记录当前正在执行的复杂任务的文件名
+
+
+### 任务文件要求
+- 每个任务文件包含3-8个步骤的具体操作清单
+- 每完成一步需要记录：完成时间、具体操作、遇到的问题
+- 任务状态：进行中/暂停/完成，暂停需说明原因
+- `current_task.md` 必须指向当前活跃的任务文件
+
+### 任务执行原则
+- 开始新对话时，首先检查 `current_task.md` 了解当前任务
+- 无法单次完成的任务必须创建任务文件跟踪
+- 任务中断时必须更新状态和进度
+
+## 🎯 开发原则
+- **修改前确认*原始工作流编辑器功能？
+- **兼容性优先**：确保"流程自由重写，引擎功能必须保持兼容
+
+## 📁 项目结构
+- **工作目录**：`apps/demo-free-layout-forked/`
+- **扩展组件**：`src/components/ext/` - 可自由修改
+- **原始编辑器**：`src/editor.tsx` - 谨慎修改
+- **引擎代码**：`packages/` - 绝对不能修改
+
+## 🔧 开发流程
+- 使用命令```rush dev:demo-free-layout-forked```启动调试服务，通常在3000端口，避免重复启动，
+- **问题处理**：优先查看原始实现 `demo-free-layout`，理解根本原因
+- **解决方案**：寻找不破坏原有设计的方案，
+
+## 🐛 问题诊断方法论
+
+### UI问题诊断黄金法则
+**"现象优于推测，结构优于逻辑"**
+
+### 诊断顺序（严格按序执行）
+1. **HTML结构检查** - 打开开发者工具，检查DOM元素
+   - 元素是否存在？
+   - 结构是否正确？
+   - 是否有意外的嵌套或缺失？
+
+2. **CSS样式检查** - 检查计算样式
+   - 是否被隐藏？（display: none, visibility: hidden）
+   - 颜色是否与背景相同？
+   - 位置是否异常？（position, z-index）
+   - 尺寸是否为0？
+
+3. **数据流检查** - 使用console.log调试
+   - 数据是否传递到组件？
+   - 数据格式是否正确？
+   - 是否存在undefined/null？
+
+4. **组件逻辑检查** - 最后才深入代码
+   - React渲染逻辑
+   - 事件处理
+   - 状态管理
+
+### 常见问题模式识别
+```javascript
+// 问题：内容不显示
+// 原因排序：DOM结构(60%) > CSS样式(30%) > 数据问题(10%)
+
+// 问题：组件失去焦点
+// 原因：React key不稳定，导致组件重新创建
+
+// 问题：表格列错位
+// 原因：Semi Design可展开表格的自动缩进干扰
+
+// 问题：数据不更新
+// 原因：引用型数据没有创建新引用
+```
+
+## 🎨 Semi Design 使用最佳实践
+
+### Table组件使用要点
+```javascript
+// ✅ 正确：优先使用text参数
+{
+  dataIndex: 'name',
+  render: (text, record) => {
+    return <Input value={text} /> // text是Semi自动传递的正确值
+  }
+}
+
+// ❌ 错误：忽略text参数
+{
+  dataIndex: 'name',
+  render: (text, record) => {
+    return <Input value={record.name} /> // 可能导致显示问题
+  }
+}
+```
+
+### 可展开表格缩进处理
+```javascript
+// 方案1：专门的展开列（推荐）
+columns = [
+  { dataIndex: 'expand', width: 30, render: () => null },
+  { dataIndex: 'content', render: (text) => <Input value={text} /> }
+]
+
+// 方案2：禁用缩进
+<Table indentSize={0} />
+```
+
+### Form组件最佳实践
+- 使用`field`属性进行数据绑定
+- 合理使用`rules`进行验证
+- 使用`initValues`设置初始值
+
+### 模态框和抽屉
+- 合理使用`visible`控制显示
+- 注意`onCancel`和`onOk`的处理
+- 使用`destroyOnClose`清理状态
+
+## 🚀 性能优化原则
+
+### React渲染优化
+- 使用稳定的key值（nanoid）
+- 避免在render中创建新对象
+- 合理使用useMemo和useCallback
+
+### Semi Design组件优化
+- 表格数据使用useMemo缓存
+- 避免频繁更新columns定义
+- 合理设置Table的rowKey
+
+## ⚠️ 常见陷阱避免
+
+### React Key陷阱
+```javascript
+// ❌ 错误：使用可变内容作为key
+key={item.name}  // name改变时组件重建
+
+// ✅ 正确：使用稳定标识符
+key={item.id}    // id不变，组件稳定
+```
+
+### Semi Design Table陷阱
+```javascript
+// ❌ 错误：可展开表格第一列直接放内容
+<Table columns={[
+  { dataIndex: 'name', render: text => <Input value={text} /> }
+]} />
+
+// ✅ 正确：添加专门的展开列
+<Table columns={[
+  { dataIndex: 'expand', width: 30, render: () => null },
+  { dataIndex: 'name', render: text => <Input value={text} /> }
+]} />
+```
+
+### 数据更新陷阱
+```javascript
+// ❌ 错误：直接修改原对象
+data.push(newItem)
+setData(data)
+
+// ✅ 正确：创建新引用
+setData([...data, newItem])
+```
+
+## ✅ 代码修改验证（须确认）
+- 确保不影响原有功能
+- 确保不改变原有界面样式和用户体验
+- 确保功能按预期工作且控制台无错误
+- 验证性能没有明显下降
+- 检查不同浏览器的兼容性
+
+## 📚 调试工具箱
+
+### 必备调试命令
+```javascript
+// 查看组件渲染
+console.log('组件数据:', { props, state })
+
+// 查看DOM结构
+console.log('DOM元素:', document.querySelector('.your-class'))
+
+// 查看事件流
+console.log('事件触发:', eventData)
+```
+
+### Chrome DevTools使用
+- Elements: 检查DOM结构和CSS
+- Console: 查看错误和调试信息
+- Network: 检查API请求
+- React DevTools: 查看组件树和props

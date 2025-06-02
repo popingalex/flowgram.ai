@@ -1,35 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-import { Button, Modal, Input, Select, Space, Typography, List } from '@douyinfe/semi-ui';
-import { IconPlus, IconEdit } from '@douyinfe/semi-icons';
+import { Button, Modal, Input, Space, Typography, List } from '@douyinfe/semi-ui';
+import { IconPlus } from '@douyinfe/semi-icons';
+
+import { useEnumStore } from '../entity-property-type-selector/enum-store';
+import type { EnumClass } from '../../../services/types';
 
 const { Text } = Typography;
-
-// 枚举类定义
-export interface EnumClass {
-  id: string;
-  name: string;
-  items: string[];
-}
-
-// 模拟的枚举类数据（后续应该从数据服务获取）
-const mockEnumClasses: EnumClass[] = [
-  {
-    id: 'vehicle',
-    name: '汽车类型',
-    items: ['推土机', '挖掘机', '装载机', '压路机'],
-  },
-  {
-    id: 'color',
-    name: '颜色',
-    items: ['红色', '蓝色', '绿色', '黄色'],
-  },
-  {
-    id: 'size',
-    name: '尺寸',
-    items: ['小', '中', '大', '特大'],
-  },
-];
 
 interface EnumClassSelectorProps {
   value?: string; // 当前选中的枚举类ID
@@ -39,11 +16,13 @@ interface EnumClassSelectorProps {
 
 export function EnumClassSelector({ value, onChange, disabled }: EnumClassSelectorProps) {
   const [visible, setVisible] = useState(false);
-  const [enumClasses, setEnumClasses] = useState<EnumClass[]>(mockEnumClasses);
   const [newClassName, setNewClassName] = useState('');
+  const [newClassDescription, setNewClassDescription] = useState('');
   const [newClassItems, setNewClassItems] = useState<string[]>(['']);
 
-  const selectedEnumClass = enumClasses.find((ec) => ec.id === value);
+  const { getAllEnumClasses, addEnumClass, getEnumClass } = useEnumStore();
+  const enumClasses = getAllEnumClasses();
+  const selectedEnumClass = getEnumClass(value || '');
 
   const handleSelectEnumClass = (enumClass: EnumClass) => {
     onChange?.(enumClass.id, enumClass);
@@ -56,16 +35,18 @@ export function EnumClassSelector({ value, onChange, disabled }: EnumClassSelect
     const validItems = newClassItems.filter((item) => item.trim());
     if (validItems.length === 0) return;
 
-    const newEnumClass: EnumClass = {
+    const newEnumClass: Omit<EnumClass, 'createdAt' | 'updatedAt'> = {
       id: `custom_${Date.now()}`,
       name: newClassName.trim(),
-      items: validItems,
+      description: newClassDescription.trim() || newClassName.trim(),
+      values: validItems,
     };
 
-    setEnumClasses([...enumClasses, newEnumClass]);
-    onChange?.(newEnumClass.id, newEnumClass);
+    addEnumClass(newEnumClass);
+    onChange?.(newEnumClass.id, newEnumClass as EnumClass);
     setVisible(false);
     setNewClassName('');
+    setNewClassDescription('');
     setNewClassItems(['']);
   };
 
@@ -114,7 +95,7 @@ export function EnumClassSelector({ value, onChange, disabled }: EnumClassSelect
                   <div>
                     <Text strong>{enumClass.name}</Text>
                     <div style={{ marginTop: 4 }}>
-                      <Text type="tertiary">{enumClass.items.join(', ')}</Text>
+                      <Text type="tertiary">{enumClass.values.join(', ')}</Text>
                     </div>
                   </div>
                 }
@@ -136,6 +117,13 @@ export function EnumClassSelector({ value, onChange, disabled }: EnumClassSelect
               placeholder="枚举类名称（如：汽车类型）"
               value={newClassName}
               onChange={setNewClassName}
+              style={{ marginBottom: 12 }}
+            />
+
+            <Input
+              placeholder="枚举类描述（可选）"
+              value={newClassDescription}
+              onChange={setNewClassDescription}
               style={{ marginBottom: 12 }}
             />
 

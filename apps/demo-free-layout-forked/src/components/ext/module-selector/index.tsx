@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 
+import { IJsonSchema } from '@flowgram.ai/form-materials';
 import {
   Modal,
   Input,
@@ -26,7 +27,11 @@ import {
   IconChevronDown,
 } from '@douyinfe/semi-icons';
 
-import { useModuleStore, Module } from '../entity-property-type-selector/module-store';
+import {
+  useModuleStore,
+  Module,
+  ModuleAttribute,
+} from '../entity-property-type-selector/module-store';
 import { EntityPropertiesEditor } from '../entity-properties-editor';
 
 const { Text } = Typography;
@@ -110,65 +115,24 @@ const ModuleItem: React.FC<ModuleItemProps> = ({
     };
   };
 
-  const handleModuleChange = (updatedSchema: any) => {
-    // 将JSONSchema格式转换回模块属性格式并更新
-    const properties = updatedSchema.properties || {};
+  const handleModuleChange = (updatedSchema: IJsonSchema) => {
+    if (!updatedSchema.properties) return;
 
-    // 直接保持原有属性，只更新内容，不重构ID
-    const attributes = module.attributes.map((originalAttr) => {
-      // 处理被污染的ID，取最后一部分作为属性名
-      const parts = originalAttr.id.split('/');
-      const propertyKey = parts[parts.length - 1]; // 取最后一部分
-      const propertyData = properties[propertyKey];
-
-      if (propertyData) {
-        // 更新现有属性的内容，保持原有ID
-        return {
-          ...originalAttr,
-          name: propertyData.title || propertyKey,
-          type:
-            propertyData.type === 'number'
-              ? 'n'
-              : propertyData.type === 'string'
-              ? 's'
-              : propertyData.type === 'array'
-              ? '[s]'
-              : 's',
-          description: propertyData.description,
-        };
-      }
-      return originalAttr; // 保持未修改的属性
+    // 将JSONSchema转换回Module格式
+    const properties = updatedSchema.properties;
+    const newAttributes: ModuleAttribute[] = Object.entries(properties).map(([id, property]) => {
+      const prop = property as IJsonSchema;
+      return {
+        id,
+        name: prop.title || id,
+        type: prop.type === 'number' ? 'n' : prop.type === 'array' ? 's[]' : 's',
+        description: prop.description,
+      };
     });
 
-    // 添加新属性（如果有的话）
-    const existingKeys = module.attributes.map((attr) => {
-      const parts = attr.id.split('/');
-      return parts[parts.length - 1]; // 取最后一部分
-    });
-
-    Object.keys(properties).forEach((key) => {
-      if (!existingKeys.includes(key)) {
-        // 新属性直接使用key作为ID，不添加任何前缀
-        attributes.push({
-          id: key,
-          name: properties[key].title || key,
-          type:
-            properties[key].type === 'number'
-              ? 'n'
-              : properties[key].type === 'string'
-              ? 's'
-              : properties[key].type === 'array'
-              ? '[s]'
-              : 's',
-          description: properties[key].description,
-        });
-      }
-    });
-
-    // 更新模块数据
     const updatedModule: Module = {
       ...module,
-      attributes,
+      attributes: newAttributes,
     };
 
     onModuleChange(module.id, updatedModule);
@@ -420,11 +384,11 @@ export const ModuleSelectorModal: React.FC<ModuleSelectorModalProps> = ({
   };
 
   const handleModuleChange = (moduleId: string, updatedModule: Module) => {
-    updateModule(updatedModule);
+    updateModule(moduleId, updatedModule);
   };
 
   const handleCreateNew = () => {
-    const newModule: Module = {
+    const newModule: Omit<Module, 'deprecated'> = {
       id: `module-${Date.now()}`,
       name: '新模块',
       description: '请编辑描述',

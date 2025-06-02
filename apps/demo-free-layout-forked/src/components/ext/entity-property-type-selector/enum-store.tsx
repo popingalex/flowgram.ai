@@ -1,16 +1,10 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 
-import { MOCK_ENUM_CLASSES } from '../api/mock-data';
+import type { EnumClass } from '../../../services/types';
+import { enumApi } from '../../../services/api-service';
 
-// 枚举类接口
-export interface EnumClass {
-  id: string;
-  name: string;
-  description: string;
-  values: string[];
-  createdAt?: string;
-  updatedAt?: string;
-}
+// 重新导出类型
+export type { EnumClass };
 
 // 状态接口
 interface EnumStoreState {
@@ -28,9 +22,9 @@ type EnumStoreAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null };
 
-// 初始状态 - 使用mock数据
+// 初始状态
 const initialState: EnumStoreState = {
-  enumClasses: MOCK_ENUM_CLASSES,
+  enumClasses: {},
   loading: false,
   error: null,
 };
@@ -111,8 +105,7 @@ interface EnumStoreContextType {
   addEnumClass: (enumClass: Omit<EnumClass, 'createdAt' | 'updatedAt'>) => void;
   updateEnumClass: (id: string, updates: Partial<EnumClass>) => void;
   deleteEnumClass: (id: string) => void;
-  // 未来可以添加与服务器同步的方法
-  syncWithServer?: () => Promise<void>;
+  refreshEnumClasses: () => Promise<void>;
 }
 
 const EnumStoreContext = createContext<EnumStoreContextType | undefined>(undefined);
@@ -124,6 +117,19 @@ interface EnumStoreProviderProps {
 
 export const EnumStoreProvider: React.FC<EnumStoreProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(enumStoreReducer, initialState);
+
+  // 从API加载枚举类
+  const refreshEnumClasses = async () => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const enumClasses = await enumApi.getAll();
+      dispatch({ type: 'SET_ENUM_CLASSES', payload: enumClasses });
+    } catch (error: any) {
+      dispatch({ type: 'SET_ERROR', payload: error.message });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
 
   // 便捷方法
   const getEnumClass = (id: string): EnumClass | undefined => state.enumClasses[id];
@@ -147,21 +153,10 @@ export const EnumStoreProvider: React.FC<EnumStoreProviderProps> = ({ children }
     dispatch({ type: 'DELETE_ENUM_CLASS', payload: id });
   };
 
-  // 未来可以实现与服务器同步
-  const syncWithServer = async () => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      // TODO: 实现与服务器的同步逻辑
-      // const response = await fetch('/api/enum-classes');
-      // const enumClasses = await response.json();
-      // dispatch({ type: 'SET_ENUM_CLASSES', payload: enumClasses });
-      console.log('同步功能待实现');
-    } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: '同步失败' });
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
+  // 初始化时加载数据
+  useEffect(() => {
+    refreshEnumClasses();
+  }, []);
 
   const contextValue: EnumStoreContextType = {
     state,
@@ -172,7 +167,7 @@ export const EnumStoreProvider: React.FC<EnumStoreProviderProps> = ({ children }
     addEnumClass,
     updateEnumClass,
     deleteEnumClass,
-    syncWithServer,
+    refreshEnumClasses,
   };
 
   return <EnumStoreContext.Provider value={contextValue}>{children}</EnumStoreContext.Provider>;

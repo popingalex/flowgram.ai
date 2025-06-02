@@ -1,23 +1,10 @@
-// 统一的API Mock系统
-// 基于真实后台数据结构
+// 统一的Mock数据文件
+// 只包含测试数据，类型定义已移至types.ts
 
-// Mock配置 - 简单的开关
-export const MOCK_CONFIG = {
-  ENABLED: true, // 设置为false使用真实API
-  DELAY: 300, // mock延迟时间
-};
+import type { Module, Entity, EnumClass } from './types';
 
-// 切换mock模式的函数
-export const toggleMockMode = () => {
-  MOCK_CONFIG.ENABLED = !MOCK_CONFIG.ENABLED;
-  console.log(`Mock模式已${MOCK_CONFIG.ENABLED ? '启用' : '禁用'}`);
-};
-
-// 获取当前mock状态
-export const isMockEnabled = () => MOCK_CONFIG.ENABLED;
-
-// 真实的模块数据 - 从后台API获取
-const REAL_MODULES = [
+// 模块Mock数据
+export const MOCK_MODULES: Module[] = [
   {
     id: 'container',
     name: '容器',
@@ -181,16 +168,6 @@ const REAL_MODULES = [
         type: 's',
         name: 'type',
       },
-      {
-        id: '0',
-        type: 's',
-        name: '0',
-      },
-      {
-        id: '1',
-        type: 's',
-        name: 'loading_area',
-      },
     ],
   },
   {
@@ -227,8 +204,8 @@ const REAL_MODULES = [
   },
 ];
 
-// 真实的实体数据 - 从后台API获取（只取前几个作为示例，完整数据太长）
-const REAL_ENTITIES = [
+// 实体Mock数据
+export const MOCK_ENTITIES: Entity[] = [
   {
     id: 'vehicle',
     name: '载具',
@@ -313,9 +290,6 @@ const REAL_ENTITIES = [
     deprecated: false,
     attributes: [
       {
-        id: 'transform/position',
-      },
-      {
         id: 'slope_name',
         type: 's',
         name: '名称',
@@ -338,9 +312,6 @@ const REAL_ENTITIES = [
     name: '泥石流',
     deprecated: false,
     attributes: [
-      {
-        id: 'transform/position',
-      },
       {
         id: 'region',
         type: 'n[]',
@@ -372,15 +343,13 @@ const REAL_ENTITIES = [
         name: '物质状态',
       },
     ],
+    bundles: [],
   },
   {
     id: 'landslide',
     name: '滑坡体',
     deprecated: false,
     attributes: [
-      {
-        id: 'transform/position',
-      },
       {
         id: 'landslide_amount',
         type: 'n',
@@ -515,33 +484,98 @@ const REAL_ENTITIES = [
         name: '出水流量',
       },
     ],
+    bundles: [],
   },
 ];
 
-// Mock API处理函数
-export const mockApiHandler = async (url: string, options?: RequestInit): Promise<any> => {
-  console.log(`[MOCK] ${options?.method || 'GET'} ${url}`);
-
-  // 模拟延迟
-  await new Promise((resolve) => setTimeout(resolve, MOCK_CONFIG.DELAY));
-
-  const method = options?.method || 'GET';
-
-  // 模块API
-  if (url.includes('/cm/module/')) {
-    if (method === 'GET') {
-      return url.endsWith('/cm/module/') ? REAL_MODULES : REAL_MODULES[0];
-    }
-    return { success: true };
-  }
-
-  // 实体API
-  if (url.includes('/cm/entity/')) {
-    if (method === 'GET') {
-      return url.endsWith('/cm/entity/') ? REAL_ENTITIES : REAL_ENTITIES[0];
-    }
-    return { success: true };
-  }
-
-  throw new Error(`Mock not implemented for: ${url}`);
+// 枚举类Mock数据
+export const MOCK_ENUM_CLASSES: Record<string, EnumClass> = {
+  'vehicle-types': {
+    id: 'vehicle-types',
+    name: '车辆类型',
+    description: '工程车辆分类',
+    values: ['推土机', '挖掘机', '装载机', '压路机', '起重机', '混凝土搅拌车', '自卸车'],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  colors: {
+    id: 'colors',
+    name: '颜色',
+    description: '常用颜色选项',
+    values: ['红色', '蓝色', '绿色', '黄色', '黑色', '白色', '银色', '灰色'],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  sizes: {
+    id: 'sizes',
+    name: '尺寸',
+    description: '标准尺寸规格',
+    values: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  'vip-levels': {
+    id: 'vip-levels',
+    name: 'VIP等级',
+    description: '客户VIP等级分类',
+    values: ['普通会员', '银卡会员', '金卡会员', '白金会员', '钻石会员'],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  'fuel-types': {
+    id: 'fuel-types',
+    name: '燃料类型',
+    description: '车辆燃料类型',
+    values: ['汽油', '柴油', '电动', '混合动力', '天然气'],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  'order-priorities': {
+    id: 'order-priorities',
+    name: '订单优先级',
+    description: '订单处理优先级',
+    values: ['低', '普通', '高', '紧急'],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  'delivery-methods': {
+    id: 'delivery-methods',
+    name: '配送方式',
+    description: '订单配送方式',
+    values: ['标准配送', '快速配送', '次日达', '当日达', '自提'],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  brands: {
+    id: 'brands',
+    name: '品牌',
+    description: '商品品牌',
+    values: ['苹果', '三星', '华为', '小米', 'OPPO', 'vivo', '一加'],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  departments: {
+    id: 'departments',
+    name: '部门',
+    description: '公司部门',
+    values: ['技术部', '产品部', '运营部', '市场部', '销售部', '人事部', '财务部'],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  positions: {
+    id: 'positions',
+    name: '职位',
+    description: '员工职位',
+    values: [
+      '初级工程师',
+      '中级工程师',
+      '高级工程师',
+      '技术专家',
+      '技术经理',
+      '产品经理',
+      '项目经理',
+    ],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
 };

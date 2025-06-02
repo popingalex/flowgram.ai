@@ -4,7 +4,7 @@ import { Field } from '@flowgram.ai/free-layout-editor';
 import { Input, Space, Tag, Typography } from '@douyinfe/semi-ui';
 
 import { SidebarContext } from '../../context';
-import { useEntityStore } from '../../components/ext/entity-property-type-selector/entity-store';
+import { useEntityStore } from '../../components/ext/entity-store';
 
 const { Text } = Typography;
 

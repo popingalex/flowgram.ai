@@ -1,100 +1,50 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+  useEffect,
+} from 'react';
 
-import { useModuleStore, Module } from '../entity-property-type-selector/module-store';
+import { nanoid } from 'nanoid';
 
-// 属性类型
-export interface Attribute {
-  id: string;
-  name?: string;
-  type?: string;
-  description?: string;
-  enumClassId?: string;
-}
+import { useModuleStore } from '../entity-property-type-selector/module-store';
+import type { Entity, Attribute } from '../../../services/types';
+import { entityApi } from '../../../services/api-service';
+import {
+  StoreEntityData,
+  StoreAttribute,
+  JSONSchemaEntityData,
+  JSONSchemaProperty,
+  EntityCompleteProperties,
+  isStoreEntityData,
+  isJSONSchemaEntityData,
+} from './types';
 
-// 实体类型 - 继承自模块
-export interface Entity extends Module {
-  bundle_ids: string[]; // 绑定的模块ID列表
-}
+// 重新导出类型
+export type { Entity, Attribute };
+export type { EntityCompleteProperties, JSONSchemaEntityData, JSONSchemaProperty } from './types';
 
 // Store接口
 interface EntityStoreContextType {
   entities: Entity[];
   getEntity: (id: string) => Entity | undefined;
-  getEntityOwnAttributes: (entity: Entity) => Attribute[]; // 获取实体自身属性（ID不含'/'）
-  getEntityModuleAttributes: (entity: Entity) => Attribute[]; // 获取来自模块的属性（ID含'/'）
+  getEntityOwnAttributes: (entity: Entity) => Attribute[]; // 获取实体自身属性
+  getEntityModuleAttributes: (entity: Entity) => Attribute[]; // 获取来自模块的属性
+  getEntityCompleteProperties: (entityId: string) => EntityCompleteProperties | null; // 获取完整属性结构
   refreshEntities: () => Promise<void>;
   updateEntity: (entityId: string, updates: Partial<Entity>) => void;
   addModuleToEntity: (entityId: string, moduleId: string) => void;
   removeModuleFromEntity: (entityId: string, moduleId: string) => void;
   loading: boolean;
+  // 新增：属性变化事件
+  onEntityPropertiesChange: (
+    callback: (entityId: string, properties: EntityCompleteProperties) => void
+  ) => () => void;
 }
 
 const EntityStoreContext = createContext<EntityStoreContextType | undefined>(undefined);
-
-// 模拟API调用
-const fetchEntitiesFromAPI = async (): Promise<Entity[]> => {
-  try {
-    const response = await fetch('/api/entities');
-    if (!response.ok) {
-      throw new Error('Failed to fetch entities');
-    }
-    return await response.json();
-  } catch (error) {
-    console.warn('Failed to fetch entities from API, using mock data:', error);
-
-    // 模拟数据（基于数据库真实数据，但已整合了模块属性）
-    return [
-      {
-        id: 'terrain',
-        name: '地形',
-        description: undefined,
-        attributes: [
-          // 假设terrain模块的属性（ID带'/'）
-          { id: 'terrain/height', name: '高度', type: 'n' },
-          { id: 'terrain/material', name: '材质', type: 's' },
-        ],
-        bundle_ids: ['terrain'],
-      },
-      {
-        id: 'river_node',
-        name: '河流节点',
-        description: undefined,
-        attributes: [
-          // 实体自身属性（ID不带'/'）
-          { id: 'width', name: '宽度', type: 'n' },
-          { id: 'depth', name: '深度', type: 'n' },
-          { id: 'elevation', name: '高程', type: 'n' },
-          { id: 'inputs', name: '输入', type: '(node:s,control:n,velocity:n)[3][]' },
-          { id: 'outputs', name: '输出', type: '(node:s,control:n,velocity:n)[3][]' },
-          // 来自模块的属性（ID带'/'）
-          { id: 'transform/position', name: '位置', type: 'n[3]' },
-        ],
-        bundle_ids: [],
-      },
-      {
-        id: 'vehicle',
-        name: '载具',
-        description: undefined,
-        attributes: [
-          // 实体自身属性
-          { id: 'vehicle_yard_id', name: '集结点id', type: 's' },
-          // 来自模块的属性
-          { id: 'transform/position', name: '位置', type: 'n[3]' },
-          { id: 'transform/rotation', name: '旋转', type: 'n[3]' },
-          { id: 'controlled/status', name: '状态', type: 's' },
-          { id: 'vehicle/type', name: '载具类型', type: 's' },
-        ],
-        bundle_ids: ['mobile', 'transform', 'controlled', 'container', 'vehicle'],
-      },
-    ];
-  }
-};
-
-// 工具函数：根据属性ID判断是否为实体自身属性
-const isOwnAttribute = (attributeId: string): boolean => !attributeId.includes('/');
-
-// 工具函数：根据属性ID判断是否为模块属性
-const isModuleAttribute = (attributeId: string): boolean => attributeId.includes('/');
 
 // Provider组件
 export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -102,10 +52,69 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [loading, setLoading] = useState(false);
   const { getModulesByIds } = useModuleStore();
 
+  // 属性变化监听器
+  const [propertyChangeListeners, setPropertyChangeListeners] = useState<
+    Array<(entityId: string, properties: EntityCompleteProperties) => void>
+  >([]);
+
+  // 缓存nanoid映射，避免重复生成
+  const nanoidCache = new Map<string, string>();
+
+  const generateStableNanoid = useCallback((key: string): string => {
+    if (!nanoidCache.has(key)) {
+      nanoidCache.set(key, nanoid());
+    }
+    return nanoidCache.get(key)!;
+  }, []);
+
+  // 将Store格式的属性转换为JSONSchema格式
+  const convertToJSONSchemaProperty = useCallback(
+    (attr: Attribute, isEntityProp = false, moduleId?: string): JSONSchemaProperty => {
+      const nanoidKey = generateStableNanoid(
+        isEntityProp ? `entity_${attr.id}` : `module_${moduleId}_${attr.id}`
+      );
+
+      const propertyValue: JSONSchemaProperty = {
+        // 保留所有原始属性作为meta属性（除了会冲突的字段）
+        id: attr.id,
+        name: attr.name || attr.id, // 如果name为空，使用id作为默认值
+        description: attr.description,
+        enumClassId: attr.enumClassId,
+        // 转换后的JSONSchema字段
+        type:
+          attr.type === 'n'
+            ? 'number'
+            : attr.type === 's'
+            ? 'string'
+            : attr.type?.includes('[')
+            ? 'array'
+            : 'string',
+        ...(attr.type?.includes('[') && {
+          items: {
+            type:
+              attr.type?.replace(/\[|\]/g, '') === 'n'
+                ? 'number'
+                : attr.type?.replace(/\[|\]/g, '') === 's'
+                ? 'string'
+                : 'string',
+          },
+        }),
+        // 索引信息
+        _id: nanoidKey,
+        // 分类标记
+        ...(isEntityProp && { isEntityProperty: true }),
+        ...(!isEntityProp && { isModuleProperty: true, moduleId }),
+      };
+
+      return propertyValue;
+    },
+    [generateStableNanoid]
+  );
+
   const refreshEntities = useCallback(async () => {
     setLoading(true);
     try {
-      const fetchedEntities = await fetchEntitiesFromAPI();
+      const fetchedEntities = await entityApi.getAll();
       setEntities(fetchedEntities);
     } catch (error) {
       console.error('Failed to refresh entities:', error);
@@ -119,76 +128,196 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
     [entities]
   );
 
-  const getEntityOwnAttributes = useCallback(
-    (entity: Entity) => entity.attributes.filter((attr) => isOwnAttribute(attr.id)),
-    []
-  );
+  const getEntityOwnAttributes = useCallback((entity: Entity) => entity.attributes, []);
 
   const getEntityModuleAttributes = useCallback(
-    (entity: Entity) => entity.attributes.filter((attr) => isModuleAttribute(attr.id)),
+    (entity: Entity) => {
+      if (!entity.bundles || entity.bundles.length === 0) return [];
+
+      const modules = getModulesByIds(entity.bundles);
+      const moduleAttributes: Attribute[] = [];
+
+      modules.forEach((module) => {
+        module.attributes.forEach((attr) => {
+          moduleAttributes.push(attr);
+        });
+      });
+
+      return moduleAttributes;
+    },
+    [getModulesByIds]
+  );
+
+  // 获取实体的完整属性结构（两种格式）
+  const getEntityCompleteProperties = useCallback(
+    (entityId: string): EntityCompleteProperties | null => {
+      const entity = getEntity(entityId);
+      if (!entity) {
+        console.warn(`Entity not found: ${entityId}`);
+        return null;
+      }
+
+      // 获取实体自身属性
+      const entityAttributes = getEntityOwnAttributes(entity);
+
+      // 获取模块属性
+      const moduleAttributes = getEntityModuleAttributes(entity);
+
+      // 构建JSONSchema格式的属性集合
+      const properties: Record<string, JSONSchemaProperty> = {};
+
+      // 添加实体自身属性
+      entityAttributes.forEach((attr) => {
+        const nanoidKey = generateStableNanoid(`entity_${attr.id}`);
+        properties[nanoidKey] = convertToJSONSchemaProperty(attr, true);
+      });
+
+      // 添加模块属性
+      moduleAttributes.forEach((attr) => {
+        // 解析模块属性ID格式：moduleId/attrId
+        const [moduleId, attrId] = attr.id.includes('/')
+          ? attr.id.split('/', 2)
+          : ['unknown', attr.id];
+
+        const nanoidKey = generateStableNanoid(`module_${moduleId}_${attrId}`);
+        properties[nanoidKey] = convertToJSONSchemaProperty(attr, false, moduleId);
+      });
+
+      const jsonSchemaData: JSONSchemaEntityData = {
+        type: 'object',
+        properties,
+      };
+
+      // 验证数据结构
+      if (!isJSONSchemaEntityData(jsonSchemaData)) {
+        console.error('Generated JSONSchema data is invalid:', jsonSchemaData);
+        return null;
+      }
+
+      // 返回两种相同格式的数据（都是nanoid索引）
+      return {
+        allProperties: jsonSchemaData, // 用于节点显示
+        editableProperties: jsonSchemaData, // 用于抽屉编辑
+      };
+    },
+    [
+      getEntity,
+      getEntityOwnAttributes,
+      getEntityModuleAttributes,
+      convertToJSONSchemaProperty,
+      generateStableNanoid,
+    ]
+  );
+
+  // 触发属性变化事件
+  const notifyPropertyChange = useCallback(
+    (entityId: string) => {
+      const properties = getEntityCompleteProperties(entityId);
+      if (properties) {
+        propertyChangeListeners.forEach((listener) => {
+          try {
+            listener(entityId, properties);
+          } catch (error) {
+            console.error('Error in property change listener:', error);
+          }
+        });
+      }
+    },
+    [getEntityCompleteProperties, propertyChangeListeners]
+  );
+
+  // 用于跟踪需要通知的实体变化
+  const [pendingNotifications, setPendingNotifications] = useState<Set<string>>(new Set());
+
+  // 使用useEffect处理属性变化通知，避免在更新函数中直接调用setState
+  useEffect(() => {
+    if (pendingNotifications.size > 0) {
+      pendingNotifications.forEach((entityId) => {
+        notifyPropertyChange(entityId);
+      });
+      setPendingNotifications(new Set());
+    }
+  }, [pendingNotifications, notifyPropertyChange]);
+
+  // 添加到待通知列表
+  const schedulePropertyChangeNotification = useCallback((entityId: string) => {
+    setPendingNotifications((prev) => new Set([...prev, entityId]));
+  }, []);
+
+  // 注册属性变化监听器
+  const onEntityPropertiesChange = useCallback(
+    (callback: (entityId: string, properties: EntityCompleteProperties) => void) => {
+      setPropertyChangeListeners((prev) => [...prev, callback]);
+
+      // 返回取消监听的函数
+      return () => {
+        setPropertyChangeListeners((prev) => prev.filter((listener) => listener !== callback));
+      };
+    },
     []
   );
 
-  const updateEntity = useCallback((entityId: string, updates: Partial<Entity>) => {
-    setEntities((prev) =>
-      prev.map((entity) => (entity.id === entityId ? { ...entity, ...updates } : entity))
-    );
-  }, []);
+  const updateEntity = useCallback(
+    (entityId: string, updates: Partial<Entity>) => {
+      setEntities((prev) =>
+        prev.map((entity) => {
+          if (entity.id === entityId) {
+            const updatedEntity = { ...entity, ...updates };
+            // 安排属性变化通知
+            schedulePropertyChangeNotification(entityId);
+            return updatedEntity;
+          }
+          return entity;
+        })
+      );
+    },
+    [schedulePropertyChangeNotification]
+  );
 
   const addModuleToEntity = useCallback(
     (entityId: string, moduleId: string) => {
-      const modules = getModulesByIds([moduleId]);
-      if (modules.length === 0) return;
-
-      const module = modules[0];
       setEntities((prev) =>
         prev.map((entity) => {
           if (entity.id !== entityId) return entity;
 
           // 检查是否已绑定
-          if (entity.bundle_ids.includes(moduleId)) return entity;
+          if (entity.bundles.includes(moduleId)) return entity;
 
-          // 添加模块属性到实体属性列表
-          const newAttributes = [...entity.attributes];
-          module.attributes.forEach((moduleAttr) => {
-            // 检查是否已存在相同ID的属性
-            if (!newAttributes.some((attr) => attr.id === moduleAttr.id)) {
-              newAttributes.push(moduleAttr);
-            }
-          });
-
-          return {
+          const updatedEntity = {
             ...entity,
-            bundle_ids: [...entity.bundle_ids, moduleId],
-            attributes: newAttributes,
+            bundles: [...entity.bundles, moduleId],
           };
+
+          // 安排属性变化通知
+          schedulePropertyChangeNotification(entityId);
+
+          return updatedEntity;
         })
       );
     },
-    [getModulesByIds]
+    [schedulePropertyChangeNotification]
   );
 
-  const removeModuleFromEntity = useCallback((entityId: string, moduleId: string) => {
-    setEntities((prev) =>
-      prev.map((entity) => {
-        if (entity.id !== entityId) return entity;
+  const removeModuleFromEntity = useCallback(
+    (entityId: string, moduleId: string) => {
+      setEntities((prev) =>
+        prev.map((entity) => {
+          if (entity.id !== entityId) return entity;
 
-        // 移除模块ID
-        const newBundleIds = entity.bundle_ids.filter((id) => id !== moduleId);
+          const updatedEntity = {
+            ...entity,
+            bundles: entity.bundles.filter((id) => id !== moduleId),
+          };
 
-        // 移除来自该模块的属性
-        const newAttributes = entity.attributes.filter(
-          (attr) => !attr.id.startsWith(`${moduleId}/`)
-        );
+          // 安排属性变化通知
+          schedulePropertyChangeNotification(entityId);
 
-        return {
-          ...entity,
-          bundle_ids: newBundleIds,
-          attributes: newAttributes,
-        };
-      })
-    );
-  }, []);
+          return updatedEntity;
+        })
+      );
+    },
+    [schedulePropertyChangeNotification]
+  );
 
   // 组件挂载时加载实体数据
   React.useEffect(() => {
@@ -200,21 +329,22 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
     getEntity,
     getEntityOwnAttributes,
     getEntityModuleAttributes,
+    getEntityCompleteProperties,
     refreshEntities,
     updateEntity,
     addModuleToEntity,
     removeModuleFromEntity,
+    onEntityPropertiesChange,
     loading,
   };
 
   return <EntityStoreContext.Provider value={value}>{children}</EntityStoreContext.Provider>;
 };
 
-// Hook
 export const useEntityStore = (): EntityStoreContextType => {
   const context = useContext(EntityStoreContext);
-  if (!context) {
-    throw new Error('useEntityStore must be used within a EntityStoreProvider');
+  if (context === undefined) {
+    throw new Error('useEntityStore must be used within an EntityStoreProvider');
   }
   return context;
 };

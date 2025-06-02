@@ -39,7 +39,12 @@ export function useVariableTree(params: {
     }
 
     if (ASTMatch.isCustomType(_type)) {
-      return <Icon size="small" svg={VariableTypeIcons[_type.typeName.toLowerCase()]} />;
+      const typeName = _type.typeName;
+      if (typeName && typeof typeName === 'string') {
+        return <Icon size="small" svg={VariableTypeIcons[typeName.toLowerCase()]} />;
+      }
+      // 如果typeName无效，返回默认图标
+      return <Icon size="small" svg={VariableTypeIcons.object} />;
     }
 
     return <Icon size="small" svg={VariableTypeIcons[variable.type?.kind.toLowerCase()]} />;

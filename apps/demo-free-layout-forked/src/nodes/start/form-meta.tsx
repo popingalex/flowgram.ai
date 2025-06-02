@@ -1,4 +1,4 @@
-import { useContext, useEffect } from 'react';
+import React, { useContext } from 'react';
 
 import {
   Field,
@@ -8,79 +8,100 @@ import {
   ValidateTrigger,
 } from '@flowgram.ai/free-layout-editor';
 import { IJsonSchema } from '@flowgram.ai/form-materials';
-import { Toast } from '@douyinfe/semi-ui';
+import { Toast, Typography, Divider, Form, Input } from '@douyinfe/semi-ui';
 
 import { FlowNodeJSON } from '../../typings';
 import { useIsSidebar } from '../../hooks';
-import { FormHeader, FormContent, FormOutputs, EntityForm } from '../../form-components';
+import {
+  FormHeader,
+  FormContent,
+  FormOutputs,
+  FormInputs,
+  EntityForm,
+} from '../../form-components';
 import { SidebarContext } from '../../context';
-import { EntityPropertiesEditor } from '../../components/ext/entity-properties-editor';
+import { PropertyTableAdapter } from '../../components/ext/property-table/property-table-adapter';
+import { useEntityStore } from '../../components/ext/entity-store';
 
-// 包装组件，确保EntityPropertiesEditor能够访问Store
-const EntityPropertiesEditorWrapper: React.FC<{
-  value: any;
-  onChange: (value: any) => void;
-}> = ({ value, onChange }) => {
-  const { selectedEntityId } = useContext(SidebarContext);
+const { Text } = Typography;
 
-  // 导航到模块管理页面的回调
-  const handleNavigateToModule = (moduleId: string) => {
-    // 触发关联模块弹窗，并聚焦到指定模块
-    // 这需要与EntityPropertiesEditor组件通信，让它打开模块选择器并聚焦到指定模块
-    // 我们通过设置一个状态来实现这个功能
-
-    // 由于这个函数在EntityPropertiesEditor内部被调用，
-    // 我们需要让EntityPropertiesEditor自己处理这个逻辑
-    console.log(`Request to focus on module: ${moduleId}`);
-  };
-
-  return (
-    <EntityPropertiesEditor
-      value={value}
-      onChange={onChange}
-      currentEntityId={selectedEntityId || undefined}
-      onNavigateToModule={handleNavigateToModule}
-      hideModuleGrouping={false}
-    />
-  );
-};
+// 扩展IJsonSchema类型以包含我们需要的字段
+interface ExtendedJsonSchema extends IJsonSchema {
+  id?: string;
+  _id?: string;
+  title?: string;
+}
 
 export const renderForm = ({ form }: FormRenderProps<FlowNodeJSON>) => {
   const isSidebar = useIsSidebar();
   const { selectedEntityId } = useContext(SidebarContext);
+  const { getEntity, updateEntity } = useEntityStore();
 
-  if (isSidebar) {
-    return (
-      <>
-        <FormHeader />
-        <FormContent>
-          <div style={{ marginBottom: '16px' }}>
-            <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: '600' }}>实体定义</h4>
-            <EntityForm name="data.entityDefinition" />
-          </div>
-          <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '16px' }}>
-            <Field
-              name="outputs"
-              render={({ field: { value, onChange } }: FieldRenderProps<IJsonSchema>) => (
-                <EntityPropertiesEditorWrapper
-                  value={value as any}
-                  onChange={(value: any) => onChange(value as IJsonSchema)}
-                />
-              )}
-            />
-          </div>
-        </FormContent>
-      </>
-    );
-  }
+  const currentEntity = selectedEntityId ? getEntity(selectedEntityId) : null;
+
+  // 处理实体信息变化
+  const handleEntityChange = (field: string, value: string) => {
+    if (!currentEntity) return;
+
+    updateEntity(currentEntity.id, { [field]: value });
+  };
+
   return (
     <>
       <FormHeader />
       <FormContent>
-        <EntityForm name="data.entityDefinition" />
-        <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '16px', marginTop: '16px' }}>
+        <FormInputs />
+        {isSidebar ? (
+          <>
+            {/* 抽屉模式下的实体Meta信息 - 可编辑 */}
+            {currentEntity && (
+              <>
+                <div style={{ padding: '8px 0', marginBottom: '8px' }}>
+                  <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>
+                    实体信息
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>ID</div>
+                      <Input value={currentEntity.id} readonly size="small" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                        名称
+                      </div>
+                      <Input value={currentEntity.name} readonly size="small" />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                        描述
+                      </div>
+                      <Input
+                        value={currentEntity.description || ''}
+                        readonly
+                        size="small"
+                        placeholder="请输入实体描述"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <Divider margin="8px" />
+              </>
+            )}
+            <Field name="data.outputs">
+              {({ field: { value, onChange } }: FieldRenderProps<IJsonSchema>) => (
+                <PropertyTableAdapter
+                  value={value}
+                  onChange={onChange}
+                  currentEntityId={selectedEntityId ?? undefined}
+                  isEditMode={true} // 抽屉模式，可编辑
+                  compact={false} // 非紧凑模式
+                />
+              )}
+            </Field>
+          </>
+        ) : (
           <FormOutputs />
-        </div>
+        )}
       </FormContent>
     </>
   );

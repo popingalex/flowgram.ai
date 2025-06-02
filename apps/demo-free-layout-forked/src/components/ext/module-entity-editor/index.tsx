@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 
-import { Card, Tabs, TabPane, Typography, Space, Button, Form } from '@douyinfe/semi-ui';
+import { IJsonSchema } from '@flowgram.ai/form-materials';
+import { Card, Tabs, TabPane, Typography, Space, Button, Form, Divider } from '@douyinfe/semi-ui';
 import { IconPlus, IconSetting } from '@douyinfe/semi-icons';
 
 import { ModuleSelectorModal } from '../module-selector';
-import { useEntityStore, Entity } from '../entity-store';
+import { useEntityStore, Entity, Attribute } from '../entity-store';
 import { useModuleStore } from '../entity-property-type-selector/module-store';
 import { EntityPropertiesEditor } from '../entity-properties-editor';
 
@@ -27,22 +28,20 @@ export const ModuleEntityEditor: React.FC<ModuleEntityEditorProps> = ({
 
   if (!entity) {
     return (
-      <Card>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <Text type="tertiary">请选择要编辑的{isModule ? '模块' : '实体'}</Text>
-        </div>
-      </Card>
+      <div style={{ padding: '24px', textAlign: 'center' }}>
+        <Text type="tertiary">请选择一个{isModule ? '模块' : '实体'}</Text>
+      </div>
     );
   }
 
   // 获取实体的自身属性和模块属性
   const ownAttributes = getEntityOwnAttributes(entity);
   const moduleAttributes = getEntityModuleAttributes(entity);
-  const boundModules = getModulesByIds(entity.bundle_ids);
+  const boundModules = getModulesByIds(entity.bundles);
 
-  // 转换为JSONSchema格式
-  const attributesToJsonSchema = (attributes: any[]) => {
-    const properties: Record<string, any> = {};
+  // 将属性数组转换为JSONSchema格式
+  const attributesToJsonSchema = (attributes: Attribute[]): IJsonSchema => {
+    const properties: Record<string, IJsonSchema> = {};
 
     attributes.forEach((attr) => {
       properties[attr.id] = {
@@ -65,12 +64,25 @@ export const ModuleEntityEditor: React.FC<ModuleEntityEditorProps> = ({
     };
   };
 
-  const handleOwnPropertiesChange = (value: any) => {
-    // TODO: 更新实体的自身属性
-    console.log('Own properties changed:', value);
-    onChange?.({
+  // 处理自身属性变化
+  const handleOwnPropertiesChange = (value: IJsonSchema) => {
+    if (!entity || !onChange) return;
+
+    // 将JSONSchema转换回属性数组
+    const properties = value.properties || {};
+    const newAttributes: Attribute[] = Object.entries(properties).map(([id, property]) => {
+      const prop = property as IJsonSchema;
+      return {
+        id,
+        name: prop.title || id,
+        type: prop.type === 'number' ? 'n' : prop.type === 'array' ? 's[]' : 's',
+        description: prop.description,
+      };
+    });
+
+    onChange({
       ...entity,
-      // 这里需要将JSONSchema转换回属性数组格式
+      attributes: newAttributes,
     });
   };
 
@@ -79,7 +91,7 @@ export const ModuleEntityEditor: React.FC<ModuleEntityEditorProps> = ({
     console.log('Module selection confirmed:', selectedModuleIds);
     onChange?.({
       ...entity,
-      bundle_ids: selectedModuleIds,
+      bundles: selectedModuleIds,
     });
     setModuleSelectorVisible(false);
   };
@@ -110,7 +122,7 @@ export const ModuleEntityEditor: React.FC<ModuleEntityEditorProps> = ({
       >
         {entity.description && <Text type="secondary">{entity.description}</Text>}
 
-        {!isModule && entity.bundle_ids.length > 0 && (
+        {!isModule && entity.bundles.length > 0 && (
           <div style={{ marginTop: '12px' }}>
             <Text size="small" strong>
               绑定的模块:
@@ -315,7 +327,7 @@ export const ModuleEntityEditor: React.FC<ModuleEntityEditorProps> = ({
       {/* 模块选择器 */}
       <ModuleSelectorModal
         visible={moduleSelectorVisible}
-        selectedModuleIds={entity.bundle_ids}
+        selectedModuleIds={entity.bundles}
         onConfirm={handleModuleSelectionConfirm}
         onCancel={() => setModuleSelectorVisible(false)}
       />
