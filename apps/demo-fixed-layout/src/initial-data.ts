@@ -106,8 +106,8 @@ export const initialData: FlowDocumentJSON = {
           },
           blocks: [
             {
-              id: 'branch_0',
-              type: 'block',
+              id: 'case_0',
+              type: 'case',
               data: {
                 title: 'If_0',
                 inputsValues: {
@@ -126,8 +126,8 @@ export const initialData: FlowDocumentJSON = {
               blocks: [],
             },
             {
-              id: 'branch_1',
-              type: 'block',
+              id: 'case_1',
+              type: 'case',
               data: {
                 title: 'If_1',
                 inputsValues: {

@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "rm -rf ./doc_build && rspress build",
-    "docs": "tsx ./scripts/auto-generate.ts",
+    "build": "NODE_OPTIONS='--max-old-space-size=8192' && rm -rf ./doc_build && rspress build",
+    "docs": "NODE_OPTIONS='--max-old-space-size=8192' tsx ./scripts/auto-generate.ts",
     "dev": "rspress dev",
     "lint": "eslint ./components --cache",
     "preview": "rspress preview",

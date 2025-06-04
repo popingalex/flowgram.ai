@@ -5,8 +5,13 @@ import iconIf from '../../assets/icon-if.png';
 import { formMeta } from './form-meta';
 
 let id = 2;
-export const BlockNodeRegistry: FlowNodeRegistry = {
-  type: 'block',
+export const CaseNodeRegistry: FlowNodeRegistry = {
+  type: 'case',
+  /**
+   * 分支节点需要继承自 block
+   * Branch nodes need to inherit from 'block'
+   */
+  extend: 'block',
   meta: {
     copyDisable: true,
   },
@@ -15,19 +20,13 @@ export const BlockNodeRegistry: FlowNodeRegistry = {
     description: 'Execute the branch when the condition is met.',
   },
   canAdd: () => false,
-  canDelete: (ctx, node) => {
-    if (node.originParent!.flowNodeType === 'tryCatch') {
-      return node.parent!.blocks.length >= 2;
-    }
-    return node.parent!.blocks.length >= 3;
-  },
+  canDelete: (ctx, node) => node.parent!.blocks.length >= 3,
   onAdd(ctx, from) {
-    const isTryCatch = from.flowNodeType === 'tryCatch';
     return {
       id: `if_${nanoid(5)}`,
-      type: isTryCatch ? 'catchBlock' : 'block',
+      type: 'case',
       data: {
-        title: isTryCatch ? `Catch Block ${id++}` : `If_${id++}`,
+        title: `If_${id++}`,
         inputs: {
           type: 'object',
           required: ['condition'],

@@ -1,19 +1,19 @@
-import { Field, FieldRenderProps } from '@flowgram.ai/free-layout-editor';
+import { useState } from 'react';
+
 import { useClientContext, CommandService } from '@flowgram.ai/free-layout-editor';
-import { Typography, Button } from '@douyinfe/semi-ui';
+import { Button } from '@douyinfe/semi-ui';
 import { IconSmallTriangleDown, IconSmallTriangleLeft } from '@douyinfe/semi-icons';
 
-import { Feedback } from '../feedback';
 import { FlowCommandId } from '../../shortcuts';
 import { useIsSidebar, useNodeRenderContext } from '../../hooks';
 import { NodeMenu } from '../../components/node-menu';
 import { getIcon } from './utils';
-import { Header, Operators, Title } from './styles';
-
-const { Text } = Typography;
+import { TitleInput } from './title-input';
+import { Header, Operators } from './styles';
 
 export function FormHeader() {
   const { node, expanded, toggleExpand, readonly } = useNodeRenderContext();
+  const [titleEdit, updateTitleEdit] = useState<boolean>(false);
   const ctx = useClientContext();
   const isSidebar = useIsSidebar();
   const handleExpand = (e: React.MouseEvent) => {
@@ -27,16 +27,7 @@ export function FormHeader() {
   return (
     <Header>
       {getIcon(node)}
-      <Title>
-        <Field name="title">
-          {({ field: { value, onChange }, fieldState }: FieldRenderProps<string>) => (
-            <div style={{ height: 24 }}>
-              <Text ellipsis={{ showTooltip: true }}>{value}</Text>
-              <Feedback errors={fieldState?.errors} />
-            </div>
-          )}
-        </Field>
-      </Title>
+      <TitleInput readonly={readonly} updateTitleEdit={updateTitleEdit} titleEdit={titleEdit} />
       {node.renderData.expandable && !isSidebar && (
         <Button
           type="primary"
@@ -48,7 +39,7 @@ export function FormHeader() {
       )}
       {readonly ? undefined : (
         <Operators>
-          <NodeMenu node={node} deleteNode={handleDelete} />
+          <NodeMenu node={node} deleteNode={handleDelete} updateTitleEdit={updateTitleEdit} />
         </Operators>
       )}
     </Header>

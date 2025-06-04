@@ -27,7 +27,7 @@ export const ConditionNodeRegistry: FlowNodeRegistry = {
       blocks: [
         {
           id: nanoid(5),
-          type: 'block',
+          type: 'case',
           data: {
             title: 'If_0',
             inputsValues: {
@@ -47,7 +47,7 @@ export const ConditionNodeRegistry: FlowNodeRegistry = {
         },
         {
           id: nanoid(5),
-          type: 'block',
+          type: 'case',
           data: {
             title: 'If_1',
             inputsValues: {
