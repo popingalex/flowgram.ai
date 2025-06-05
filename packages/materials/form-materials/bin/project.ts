@@ -1,10 +1,25 @@
-import { execSync } from 'child_process';
-import fs from 'fs';
 import path from 'path';
+import fs from 'fs';
+import { execSync } from 'child_process';
 
-export function getProjectInfo() {
+// Added type definitions
+interface PackageJson {
+  dependencies: { [key: string]: string };
+  devDependencies?: { [key: string]: string };
+  peerDependencies?: { [key: string]: string };
+  [key: string]: any;
+}
+
+export interface ProjectInfo {
+  projectPath: string;
+  packageJsonPath: string;
+  packageJson: PackageJson;
+  flowgramVersion: string;
+}
+
+export function getProjectInfo(): ProjectInfo {
   // get nearest package.json
-  let projectPath = process.cwd();
+  let projectPath: string = process.cwd();
 
   while (projectPath !== '/' && !fs.existsSync(path.join(projectPath, 'package.json'))) {
     projectPath = path.join(projectPath, '..');
@@ -14,12 +29,11 @@ export function getProjectInfo() {
     throw new Error('Please run this command in a valid project');
   }
 
-  const packageJsonPath = path.join(projectPath, 'package.json');
-
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const packageJsonPath: string = path.join(projectPath, 'package.json');
+  const packageJson: PackageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 
   // fixed layout or free layout
-  const flowgramVersion =
+  const flowgramVersion: string | undefined =
     packageJson.dependencies['@flowgram.ai/fixed-layout-editor'] ||
     packageJson.dependencies['@flowgram.ai/free-layout-editor'] ||
     packageJson.dependencies['@flowgram.ai/editor'];
@@ -34,12 +48,12 @@ export function getProjectInfo() {
     projectPath,
     packageJsonPath,
     packageJson,
-    flowgramVersion,
+    flowgramVersion, // TypeScript will ensure this is string due to the check above
   };
 }
 
-export function findRushJson(startPath) {
-  let currentPath = startPath;
+export function findRushJson(startPath: string): string | null {
+  let currentPath: string = startPath;
   while (currentPath !== '/' && !fs.existsSync(path.join(currentPath, 'rush.json'))) {
     currentPath = path.join(currentPath, '..');
   }
@@ -49,7 +63,7 @@ export function findRushJson(startPath) {
   return null;
 }
 
-export function installDependencies(packages, projectInfo) {
+export function installDependencies(packages: string[], projectInfo: ProjectInfo): void {
   if (fs.existsSync(path.join(projectInfo.projectPath, 'yarn.lock'))) {
     execSync(`yarn add ${packages.join(' ')}`, { stdio: 'inherit' });
     return;

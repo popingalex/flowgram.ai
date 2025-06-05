@@ -16,6 +16,18 @@ class FixedLayoutModel {
     return await this.page.locator('.gedit-flow-activity-node').count();
   }
 
+  public async isStartNodeExist() {
+    return await this.page.locator('[data-node-id="start_0"]').count();
+  }
+
+  public async isEndNodeExist() {
+    return await this.page.locator('[data-node-id="end_0"]').count();
+  }
+
+  public async isConditionNodeExist() {
+    return await this.page.locator('[data-node-id="$blockIcon$condition_0"]').count();
+  }
+
   public async insert(searchText: string, { from, to }: InsertEdgeOptions) {
     const preConditionNodes = await this.page.locator('.gedit-flow-activity-node');
     const preCount = await preConditionNodes.count();

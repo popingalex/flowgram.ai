@@ -581,8 +581,8 @@ export class FlowDocument<T = FlowDocumentJSON> implements Disposable {
     return this.entityManager.getEntities(FlowNodeEntity);
   }
 
-  toString(): string {
-    return this.originTree.toString();
+  toString(showType?: boolean): string {
+    return this.originTree.toString(showType);
   }
 
   /**
