@@ -1,119 +1,60 @@
-import React, { useState } from 'react';
+import React from 'react';
 
-import { IJsonSchema } from '@flowgram.ai/form-materials';
-import { Button, Space, Typography, Card, Divider } from '@douyinfe/semi-ui';
-
+import { SidebarPropertyEditor } from './sidebar-property-editor';
 import { PropertyTableAdapter } from './property-table-adapter';
+import { DrawerPropertyTable } from './drawer-property-table';
 
-const { Title, Text } = Typography;
-
-// 模拟数据
-const mockJsonSchema: IJsonSchema = {
-  type: 'object',
-  properties: {
-    nanoid1: {
-      id: 'vehicle_yard_id',
-      name: '集结点id',
-      type: 'string',
-      description: '载具所在的集结点标识符',
-      enumClassId: 'yard_enum',
-      _id: 'nanoid1',
-      isEntityProperty: true,
-    } as any,
-    nanoid2: {
-      id: 'task_id',
-      name: '任务id',
-      type: 'string',
-      description: '当前执行的任务标识符',
-      _id: 'nanoid2',
-      isEntityProperty: true,
-    } as any,
-    nanoid3: {
-      id: 'controlled/action_progress',
-      name: '行为进度',
-      type: 'number',
-      description: '当前行为的执行进度',
-      _id: 'nanoid3',
-      isModuleProperty: true,
-      moduleId: 'controlled',
-    } as any,
-    nanoid4: {
-      id: 'mobile/path',
-      name: '路径',
-      type: 'array',
-      items: { type: 'string' },
-      description: '移动路径点列表',
-      _id: 'nanoid4',
-      isModuleProperty: true,
-      moduleId: 'mobile',
-    } as any,
-    nanoid5: {
-      id: 'custom_field',
-      name: '自定义字段',
-      type: 'string',
-      description: '用户自定义的字段',
-      _id: 'nanoid5',
-    } as any,
+const mockProperties = [
+  {
+    id: 'vehicle_yard_id',
+    name: '集结点id',
+    type: 's',
+    description: '车辆集结点的唯一标识符',
   },
-};
+  {
+    id: 'task_id',
+    name: '任务id',
+    type: 's',
+    description: '当前执行任务的标识符',
+  },
+  {
+    id: 'mobile/path',
+    name: '路径',
+    type: 'array',
+    description: '移动路径点列表',
+    isModuleProperty: true,
+    moduleId: 'mobile',
+  },
+];
 
-export const PropertyTableTestPage: React.FC = () => {
-  const [schema, setSchema] = useState<IJsonSchema>(mockJsonSchema);
+export const TestPage: React.FC = () => (
+  <div style={{ padding: '20px', maxWidth: '800px' }}>
+    <h2>属性表格组件测试页面</h2>
 
-  const handleSchemaChange = (newSchema: IJsonSchema) => {
-    console.log('Schema changed:', newSchema);
-    setSchema(newSchema);
-  };
-
-  return (
-    <div style={{ padding: '24px', maxWidth: '1200px' }}>
-      <Title heading={2}>PropertyTable 测试页面</Title>
-      <Text type="secondary">测试PropertyTable组件的不同模式和功能</Text>
-
-      <Divider />
-
-      {/* 节点模式（只读） */}
-      <Card
-        title="节点模式（只读）"
-        style={{ marginBottom: '24px' }}
-        headerExtraContent={
-          <Text type="tertiary" size="small">
-            compact=true, isEditMode=false
-          </Text>
-        }
-      >
-        <PropertyTableAdapter
-          value={schema}
-          currentEntityId="vehicle"
-          isEditMode={false}
-          compact={true}
-        />
-      </Card>
-
-      {/* 抽屉编辑模式 */}
-      <Card
-        title="抽屉编辑模式"
-        headerExtraContent={
-          <Text type="tertiary" size="small">
-            compact=false, isEditMode=true
-          </Text>
-        }
-      >
-        <PropertyTableAdapter
-          value={schema}
-          onChange={handleSchemaChange}
-          currentEntityId="vehicle"
-          isEditMode={true}
-          compact={false}
-        />
-      </Card>
-
-      <Divider />
-
-      {/* 调试信息 */}
-      <Card title="当前Schema数据">
-        <pre style={{ fontSize: '12px', overflow: 'auto' }}>{JSON.stringify(schema, null, 2)}</pre>
-      </Card>
+    <div style={{ marginBottom: '40px' }}>
+      <h3>节点模式 (PropertyTableAdapter - node)</h3>
+      <PropertyTableAdapter title="实体属性" properties={mockProperties} mode="node" />
     </div>
-  );
-};
+
+    <div style={{ marginBottom: '40px' }}>
+      <h3>抽屉模式 (PropertyTableAdapter - drawer)</h3>
+      <PropertyTableAdapter title="实体属性" properties={mockProperties} mode="drawer" />
+    </div>
+
+    <div style={{ marginBottom: '40px' }}>
+      <h3>抽屉专用组件 (DrawerPropertyTable)</h3>
+      <DrawerPropertyTable title="实体属性详情" properties={mockProperties} />
+    </div>
+
+    <div style={{ marginBottom: '40px' }}>
+      <h3>侧边栏编辑器 (SidebarPropertyEditor)</h3>
+      <SidebarPropertyEditor
+        title="属性编辑器"
+        properties={mockProperties}
+        onAdd={() => console.log('添加属性')}
+        onEdit={(prop) => console.log('编辑属性:', prop)}
+        onDelete={(prop) => console.log('删除属性:', prop)}
+      />
+    </div>
+  </div>
+);

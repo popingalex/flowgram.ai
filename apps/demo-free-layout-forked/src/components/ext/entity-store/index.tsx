@@ -30,6 +30,7 @@ export type { EntityCompleteProperties, JSONSchemaEntityData, JSONSchemaProperty
 interface EntityStoreContextType {
   entities: Entity[];
   getEntity: (id: string) => Entity | undefined;
+  getEntityByStableId: (stableId: string) => Entity | undefined; // 通过稳定的_indexId查找实体
   getEntityOwnAttributes: (entity: Entity) => Attribute[]; // 获取实体自身属性
   getEntityModuleAttributes: (entity: Entity) => Attribute[]; // 获取来自模块的属性
   getEntityCompleteProperties: (entityId: string) => EntityCompleteProperties | null; // 获取完整属性结构
@@ -42,6 +43,10 @@ interface EntityStoreContextType {
   onEntityPropertiesChange: (
     callback: (entityId: string, properties: EntityCompleteProperties) => void
   ) => () => void;
+  // 新增：schema缓存功能
+  getEntitySchema: (entityId: string) => any | null;
+  setEntitySchema: (entityId: string, schema: any) => void;
+  clearSchemaCache: (entityId?: string) => void;
 }
 
 const EntityStoreContext = createContext<EntityStoreContextType | undefined>(undefined);
@@ -60,6 +65,9 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
   // 缓存nanoid映射，避免重复生成
   const nanoidCache = new Map<string, string>();
 
+  // Schema缓存
+  const [schemaCache, setSchemaCache] = useState<Map<string, any>>(new Map());
+
   const generateStableNanoid = useCallback((key: string): string => {
     if (!nanoidCache.has(key)) {
       nanoidCache.set(key, nanoid());
@@ -69,11 +77,12 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   // 将Store格式的属性转换为JSONSchema格式
   const convertToJSONSchemaProperty = useCallback(
-    (attr: Attribute, isEntityProp = false, moduleId?: string): JSONSchemaProperty => {
-      const nanoidKey = generateStableNanoid(
-        isEntityProp ? `entity_${attr.id}` : `module_${moduleId}_${attr.id}`
-      );
-
+    (
+      attr: Attribute,
+      isEntityProp = false,
+      moduleId?: string,
+      indexId?: string
+    ): JSONSchemaProperty => {
       const propertyValue: JSONSchemaProperty = {
         // 保留所有原始属性作为meta属性（除了会冲突的字段）
         id: attr.id,
@@ -100,7 +109,14 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
           },
         }),
         // 索引信息
-        _id: nanoidKey,
+        _indexId: (() => {
+          const id = indexId || attr._indexId;
+          if (!id) {
+            console.error('Attribute missing _indexId:', attr);
+            throw new Error(`Attribute ${attr.id} is missing _indexId. This should not happen.`);
+          }
+          return id;
+        })(),
         // 分类标记
         ...(isEntityProp && { isEntityProperty: true }),
         ...(!isEntityProp && { isModuleProperty: true, moduleId }),
@@ -108,16 +124,58 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
 
       return propertyValue;
     },
-    [generateStableNanoid]
+    []
   );
 
   const refreshEntities = useCallback(async () => {
     setLoading(true);
     try {
       const fetchedEntities = await entityApi.getAll();
-      setEntities(fetchedEntities);
+
+      // 检查返回的数据是否有效
+      if (!fetchedEntities || !Array.isArray(fetchedEntities)) {
+        console.warn('Invalid entities data received:', fetchedEntities);
+        setEntities([]);
+        return;
+      }
+
+      // 为没有索引ID的实体和属性生成稳定的索引，并持久化到原始数据中
+      const entitiesWithIndex = fetchedEntities.map((entity) => {
+        // 为实体生成稳定的_indexId
+        if (!entity._indexId) {
+          entity._indexId = nanoid();
+        }
+
+        return {
+          ...entity,
+          attributes: (entity.attributes || []).map((attr) => {
+            if (!attr._indexId) {
+              // 生成新的nanoid并持久化到原始属性中
+              attr._indexId = nanoid();
+            }
+            return attr;
+          }),
+        };
+      });
+
+      setEntities(entitiesWithIndex);
+
+      // 打印实体store，验证nanoid是否正确保存
+      console.log('🔍 EntityStore 同步后的数据:', {
+        entities: entitiesWithIndex.map((entity) => ({
+          id: entity.id,
+          name: entity.name,
+          _indexId: entity._indexId, // 显示实体的稳定索引
+          attributes: entity.attributes.map((attr) => ({
+            id: attr.id,
+            name: attr.name,
+            _indexId: attr._indexId,
+          })),
+        })),
+      });
     } catch (error) {
       console.error('Failed to refresh entities:', error);
+      setEntities([]); // 出错时设置为空数组
     } finally {
       setLoading(false);
     }
@@ -125,6 +183,11 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
 
   const getEntity = useCallback(
     (id: string) => entities.find((entity) => entity.id === id),
+    [entities]
+  );
+
+  const getEntityByStableId = useCallback(
+    (stableId: string) => entities.find((entity) => entity._indexId === stableId),
     [entities]
   );
 
@@ -139,6 +202,7 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
 
       modules.forEach((module) => {
         module.attributes.forEach((attr) => {
+          // ModuleStore已经为属性添加了_indexId，直接使用
           moduleAttributes.push(attr);
         });
       });
@@ -151,7 +215,12 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
   // 获取实体的完整属性结构（两种格式）
   const getEntityCompleteProperties = useCallback(
     (entityId: string): EntityCompleteProperties | null => {
-      const entity = getEntity(entityId);
+      // 先尝试通过业务ID查找，如果找不到再尝试通过稳定ID查找
+      let entity = getEntity(entityId);
+      if (!entity) {
+        entity = getEntityByStableId(entityId);
+      }
+
       if (!entity) {
         console.warn(`Entity not found: ${entityId}`);
         return null;
@@ -166,21 +235,29 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
       // 构建JSONSchema格式的属性集合
       const properties: Record<string, JSONSchemaProperty> = {};
 
-      // 添加实体自身属性
+      // 添加实体自身属性 - 直接使用已有的_indexId，不再重新生成
       entityAttributes.forEach((attr) => {
-        const nanoidKey = generateStableNanoid(`entity_${attr.id}`);
-        properties[nanoidKey] = convertToJSONSchemaProperty(attr, true);
+        if (!attr._indexId) {
+          console.warn('属性缺少_indexId，这不应该发生:', attr);
+          return;
+        }
+        const indexId = attr._indexId;
+        properties[indexId] = convertToJSONSchemaProperty(attr, true, undefined, indexId);
       });
 
-      // 添加模块属性
+      // 添加模块属性 - 直接使用已有的_indexId，不再重新生成
       moduleAttributes.forEach((attr) => {
         // 解析模块属性ID格式：moduleId/attrId
         const [moduleId, attrId] = attr.id.includes('/')
           ? attr.id.split('/', 2)
           : ['unknown', attr.id];
 
-        const nanoidKey = generateStableNanoid(`module_${moduleId}_${attrId}`);
-        properties[nanoidKey] = convertToJSONSchemaProperty(attr, false, moduleId);
+        if (!attr._indexId) {
+          console.warn('模块属性缺少_indexId，这不应该发生:', attr);
+          return;
+        }
+        const indexId = attr._indexId;
+        properties[indexId] = convertToJSONSchemaProperty(attr, false, moduleId, indexId);
       });
 
       const jsonSchemaData: JSONSchemaEntityData = {
@@ -195,17 +272,19 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
       }
 
       // 返回两种相同格式的数据（都是nanoid索引）
-      return {
+      const result = {
         allProperties: jsonSchemaData, // 用于节点显示
         editableProperties: jsonSchemaData, // 用于抽屉编辑
       };
+
+      return result;
     },
     [
       getEntity,
+      getEntityByStableId,
       getEntityOwnAttributes,
       getEntityModuleAttributes,
       convertToJSONSchemaProperty,
-      generateStableNanoid,
     ]
   );
 
@@ -262,7 +341,20 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
       setEntities((prev) =>
         prev.map((entity) => {
           if (entity.id === entityId) {
-            const updatedEntity = { ...entity, ...updates };
+            let processedUpdates = { ...updates };
+
+            // 如果更新包含attributes，确保每个属性都有_indexId
+            if (updates.attributes) {
+              processedUpdates.attributes = updates.attributes.map((attr) => {
+                if (!attr._indexId) {
+                  // 为新属性生成nanoid
+                  return { ...attr, _indexId: nanoid() };
+                }
+                return attr;
+              });
+            }
+
+            const updatedEntity = { ...entity, ...processedUpdates };
             // 安排属性变化通知
             schedulePropertyChangeNotification(entityId);
             return updatedEntity;
@@ -319,6 +411,28 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
     [schedulePropertyChangeNotification]
   );
 
+  // Schema缓存方法
+  const getEntitySchema = useCallback(
+    (entityId: string) => schemaCache.get(entityId) || null,
+    [schemaCache]
+  );
+
+  const setEntitySchema = useCallback((entityId: string, schema: any) => {
+    setSchemaCache((prev) => new Map(prev).set(entityId, schema));
+  }, []);
+
+  const clearSchemaCache = useCallback((entityId?: string) => {
+    if (entityId) {
+      setSchemaCache((prev) => {
+        const newCache = new Map(prev);
+        newCache.delete(entityId);
+        return newCache;
+      });
+    } else {
+      setSchemaCache(new Map());
+    }
+  }, []);
+
   // 组件挂载时加载实体数据
   React.useEffect(() => {
     refreshEntities();
@@ -327,6 +441,7 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
   const value: EntityStoreContextType = {
     entities,
     getEntity,
+    getEntityByStableId,
     getEntityOwnAttributes,
     getEntityModuleAttributes,
     getEntityCompleteProperties,
@@ -336,6 +451,9 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
     removeModuleFromEntity,
     onEntityPropertiesChange,
     loading,
+    getEntitySchema,
+    setEntitySchema,
+    clearSchemaCache,
   };
 
   return <EntityStoreContext.Provider value={value}>{children}</EntityStoreContext.Provider>;

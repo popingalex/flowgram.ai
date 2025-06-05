@@ -7,6 +7,7 @@ export interface ModuleAttribute {
   name: string;
   description?: string;
   enumClassId?: string;
+  _indexId?: string; // 稳定的索引ID，用作React key
 }
 
 // 模块接口
@@ -25,6 +26,7 @@ export interface Attribute {
   type?: string;
   description?: string;
   enumClassId?: string;
+  _indexId?: string; // 稳定的索引ID，用作React key
 }
 
 // 实体接口
@@ -35,6 +37,7 @@ export interface Entity {
   deprecated: boolean;
   attributes: Attribute[];
   bundles: string[];
+  _indexId?: string; // 稳定的索引ID，用作React key
 }
 
 // 枚举类接口

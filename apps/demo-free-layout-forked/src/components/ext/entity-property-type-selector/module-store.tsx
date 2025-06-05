@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
+import { nanoid } from 'nanoid';
+
 import type { Module, ModuleAttribute } from '../../../services/types';
 import { moduleApi } from '../../../services/api-service';
 
@@ -43,7 +45,33 @@ export const ModuleStoreProvider: React.FC<ModuleStoreProviderProps> = ({ childr
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const modules = await moduleApi.getAll();
-      setState((prev) => ({ ...prev, modules, loading: false }));
+
+      // 为模块属性生成稳定的_indexId（仅在同步时生成一次）
+      const modulesWithIndex = modules.map((module) => ({
+        ...module,
+        attributes: module.attributes.map((attr) => {
+          if (!attr._indexId) {
+            // 生成新的nanoid并持久化到原始属性中
+            attr._indexId = nanoid();
+          }
+          return attr;
+        }),
+      }));
+
+      // 打印模块store，验证nanoid是否正确保存
+      console.log('🔍 ModuleStore 同步后的数据:', {
+        modules: modulesWithIndex.map((module) => ({
+          id: module.id,
+          name: module.name,
+          attributes: module.attributes.map((attr) => ({
+            id: attr.id,
+            name: attr.name,
+            _indexId: attr._indexId,
+          })),
+        })),
+      });
+
+      setState((prev) => ({ ...prev, modules: modulesWithIndex, loading: false }));
     } catch (error: any) {
       setState((prev) => ({ ...prev, error: error.message, loading: false }));
     }

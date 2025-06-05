@@ -3,6 +3,7 @@ import React, { useContext } from 'react';
 import { Field } from '@flowgram.ai/free-layout-editor';
 import { Input, Space, Tag, Typography } from '@douyinfe/semi-ui';
 
+import { useEntityListActions } from '../../stores';
 import { SidebarContext } from '../../context';
 import { useEntityStore } from '../../components/ext/entity-store';
 
@@ -22,8 +23,9 @@ export function EntityForm({ name }: EntityFormProps) {
   const { selectedEntityId } = useContext(SidebarContext);
   const { getEntity } = useEntityStore();
 
-  // 获取当前选中的实体
-  const currentEntity = selectedEntityId ? getEntity(selectedEntityId) : null;
+  // 获取实体数据
+  const { getEntityByStableId } = useEntityListActions();
+  const currentEntity = selectedEntityId ? getEntityByStableId(selectedEntityId) : null;
 
   return (
     <Field name={name}>

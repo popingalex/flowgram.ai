@@ -27,7 +27,7 @@ export const ErrorIcon = () => (
       color: 'red',
       left: -6,
       top: -6,
-      zIndex: 1,
+      // zIndex: 1,
       background: 'white',
       borderRadius: 8,
     }}

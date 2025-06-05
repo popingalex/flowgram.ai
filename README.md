@@ -113,6 +113,7 @@ rush build
 rush dev:docs # docs
 rush dev:demo-fixed-layout
 rush dev:demo-free-layout
+rush dev:demo-free-layout-forked
 ```
 
 After that, you can start to develop projects inside this repository.

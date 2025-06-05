@@ -23,14 +23,14 @@ export const ZoomSelect = () => {
           <Dropdown.Item onClick={() => playground.config.updateZoom(0.5)}>
             Zoom to 50%
           </Dropdown.Item>
+          <Dropdown.Item onClick={() => playground.config.updateZoom(0.75)}>
+            Zoom to 75%
+          </Dropdown.Item>
           <Dropdown.Item onClick={() => playground.config.updateZoom(1)}>
             Zoom to 100%
           </Dropdown.Item>
           <Dropdown.Item onClick={() => playground.config.updateZoom(1.5)}>
             Zoom to 150%
-          </Dropdown.Item>
-          <Dropdown.Item onClick={() => playground.config.updateZoom(2.0)}>
-            Zoom to 200%
           </Dropdown.Item>
         </Dropdown.Menu>
       }

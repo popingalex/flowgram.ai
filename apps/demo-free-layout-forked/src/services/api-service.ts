@@ -16,7 +16,7 @@ const API_CONFIG = {
 };
 
 // 全局mock模式状态
-let isMockMode = false;
+let isMockMode = true; // 临时启用Mock模式避免API错误
 
 // 切换mock模式
 export const toggleMockMode = () => {

@@ -69,7 +69,16 @@ export const EntityPropertyTypeSelector = React.forwardRef<
   const selectValue = useMemo(() => getTypeSelectValue(value), [value]);
 
   const handleTypeChange = (newValue: unknown) => {
-    if (!onChange || disabled) return;
+    console.log('EntityPropertyTypeSelector handleTypeChange:', {
+      newValue,
+      disabled,
+      onChange: !!onChange,
+    });
+
+    if (!onChange || disabled) {
+      console.log('EntityPropertyTypeSelector: onChange not available or disabled');
+      return;
+    }
 
     // 确保newValue是字符串或字符串数组
     let valueArray: string[];
@@ -78,10 +87,12 @@ export const EntityPropertyTypeSelector = React.forwardRef<
     } else if (typeof newValue === 'string' || typeof newValue === 'number') {
       valueArray = [String(newValue)];
     } else {
+      console.log('EntityPropertyTypeSelector: invalid value type:', typeof newValue);
       return; // 无效的值类型
     }
 
     const parsedValue = parseTypeSelectValue(valueArray);
+    console.log('EntityPropertyTypeSelector: calling onChange with:', parsedValue);
     onChange(parsedValue);
   };
 

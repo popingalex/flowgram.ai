@@ -30,8 +30,11 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
          * @param value - The output data to synchronize.
          */
         const syncOutputs = (value: any) => {
+          console.log(`[SyncVariablePlugin] Syncing outputs for node ${node.id}:`, value);
+
           if (!value) {
             // If the output data is empty, clear the variable
+            console.log(`[SyncVariablePlugin] Clearing variable for node ${node.id}`);
             variableData.clearVar();
             return;
           }
@@ -43,6 +46,12 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
           if (typeAST) {
             // Use the node's title or its ID as the title for the variable
             const title = form?.getValueIn('title') || node.id;
+
+            // console.log(`[SyncVariablePlugin] Setting variable for node ${node.id}:`, {
+            //   title,
+            //   key: node.id,
+            //   typeAST,
+            // });
 
             // Set the variable in the variable engine
             variableData.setVar(
@@ -58,6 +67,9 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
             );
           } else {
             // If the AST cannot be created, clear the variable
+            console.warn(
+              `[SyncVariablePlugin] Failed to create AST for node ${node.id}, clearing variable`
+            );
             variableData.clearVar();
           }
         };
@@ -72,6 +84,17 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
               syncOutputs(form.getValueIn('outputs'));
             }
           });
+
+          // For Start nodes, also listen for data.outputs changes (entity property sync)
+          const nodeRegistry = node.getNodeRegistry?.();
+          if (nodeRegistry?.type === 'start') {
+            form.onFormValuesChange((props) => {
+              if (props.name.match(/^data\.outputs/)) {
+                // console.log(`[SyncVariablePlugin] Start node data.outputs changed:`, props);
+                syncOutputs(form.getValueIn('data.outputs'));
+              }
+            });
+          }
         }
       });
     },

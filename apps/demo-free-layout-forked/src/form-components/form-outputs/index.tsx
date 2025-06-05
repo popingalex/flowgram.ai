@@ -1,68 +1,111 @@
-import React, { useContext } from 'react';
+import React, { useMemo, useContext } from 'react';
 
+import { nanoid } from 'nanoid';
 import { Field, FieldRenderProps } from '@flowgram.ai/free-layout-editor';
 import { IJsonSchema } from '@flowgram.ai/form-materials';
-import { Input, Typography, Divider } from '@douyinfe/semi-ui';
 
-import { useIsSidebar } from '../../hooks';
+import { PropertiesEdit } from '../properties-edit';
+import { useCurrentEntity, useCurrentEntityActions } from '../../stores';
+import { useCloned } from '../../hooks/use-cloned';
+import { useIsSidebar, useNodeRenderContext } from '../../hooks';
 import { SidebarContext } from '../../context';
-import { PropertyTableAdapter } from '../../components/ext/property-table/property-table-adapter';
-import { useEntityStore } from '../../components/ext/entity-store';
+import {
+  EntityAttributeTable,
+  EntityAttributeData,
+} from '../../components/ext/property-table/entity-attribute-table';
+import {
+  EditableEntityAttributeTable,
+  EditableEntityAttribute,
+} from '../../components/ext/editable-entity-attribute-table';
 
-const { Text } = Typography;
+interface FormOutputsProps {
+  isSidebar?: boolean;
+}
 
-export function FormOutputs() {
-  const isSidebar = useIsSidebar();
-  const { selectedEntityId } = useContext(SidebarContext);
-  const { getEntity } = useEntityStore();
+export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {}) {
+  const hookIsSidebar = useIsSidebar();
+  const isSidebar = propIsSidebar !== undefined ? propIsSidebar : hookIsSidebar;
+  const { node } = useNodeRenderContext();
 
+  // 抽屉模式：显示可编辑的属性表格
   if (isSidebar) {
-    return null;
+    // 使用Zustand当前实体store
+    const { editingEntity } = useCurrentEntity();
+
+    if (!editingEntity) {
+      return <div>No entity selected</div>;
+    }
+
+    // 转换存储格式到显示格式
+    const attributes: EditableEntityAttribute[] =
+      editingEntity.attributes?.map((attr) => ({
+        _indexId: (attr as any)._indexId || nanoid(),
+        id: attr.id,
+        name: attr.name || '',
+        type: attr.type === 's' ? 'string' : attr.type === 'n' ? 'number' : attr.type || 'string',
+        description: attr.description,
+        enumClassId: attr.enumClassId,
+        isEntityProperty: (attr as any).isEntityProperty,
+        isModuleProperty: (attr as any).isModuleProperty,
+        moduleId: (attr as any).moduleId,
+      })) || [];
+
+    return (
+      <EditableEntityAttributeTable
+        attributes={attributes}
+        onChange={() => {
+          // onChange现在是空函数，因为EditableEntityAttributeTable内部直接使用Zustand store更新
+          // 这个prop保留是为了兼容，但实际不会被调用
+        }}
+      />
+    );
   }
 
-  const currentEntity = selectedEntityId ? getEntity(selectedEntityId) : null;
+  // 判断是否为Start节点
+  const isStartNode = node?.type === 'start' || node?.type === 'FlowNodeEntity';
 
   return (
-    <div>
-      {/* 实体Meta信息 - 表单形式 */}
-      {currentEntity && (
-        <>
-          <div style={{ padding: '8px 0', marginBottom: '8px' }}>
-            <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>
-              实体信息
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div>
-                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>ID</div>
-                <Input value={currentEntity.id} readonly size="small" />
-              </div>
-              <div>
-                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>名称</div>
-                <Input value={currentEntity.name} readonly size="small" />
-              </div>
-              {currentEntity.description && (
-                <div>
-                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>描述</div>
-                  <Input value={currentEntity.description} readonly size="small" />
-                </div>
-              )}
-            </div>
-          </div>
-          <Divider margin="8px" />
-        </>
-      )}
+    <Field name="data.outputs">
+      {({ field: { value } }: FieldRenderProps<IJsonSchema>) => {
+        // 转换数据为EntityAttributeData格式
+        const nodeAttributes: EntityAttributeData[] = useMemo(() => {
+          const properties = value?.properties || {};
 
-      {/* 属性信息 - 表格形式 */}
-      <Field name="data.outputs">
-        {({ field: { value } }: FieldRenderProps<IJsonSchema>) => (
-          <PropertyTableAdapter
-            value={value}
-            currentEntityId={selectedEntityId ?? undefined}
-            isEditMode={false} // 节点模式，只读
-            compact={true} // 紧凑模式
-          />
-        )}
-      </Field>
-    </div>
+          return Object.entries(properties)
+            .filter(([key, property]) => {
+              const prop = property as any;
+
+              // 在Start节点中，显示：
+              // 1. meta属性（基础属性：id/name/description）- 通过key识别
+              // 2. entity属性（扩展属性）
+              // 3. 模块分组（不显示具体的模块属性）
+              if (isStartNode) {
+                // meta属性：通过key识别
+                const isMetaProperty = key.startsWith('__entity_');
+
+                // 显示meta属性和entity属性，不显示模块具体属性
+                return (
+                  isMetaProperty ||
+                  prop.isEntityProperty ||
+                  (prop.isModuleProperty && !prop.id?.includes('/'))
+                );
+              }
+              return true;
+            })
+            .map(([key, property]) => {
+              const prop = property as any;
+              return {
+                key: prop._indexId || key,
+                id: prop.id || key,
+                name: prop.name || prop.title || prop.id || key,
+                type: prop.type || 'string',
+                description: prop.description,
+              };
+            });
+        }, [value, isStartNode]);
+
+        return <EntityAttributeTable attributes={nodeAttributes} />;
+      }}
+    </Field>
   );
 }

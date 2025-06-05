@@ -130,6 +130,40 @@
 
 # 当前任务状态
 
+## 任务: Zustand 状态管理修复
+
+**状态**: ✅ 已完成
+
+**完成时间**: 2025-01-27
+
+## 修复内容
+
+根据 Zustand 官方文档，完成了以下修复：
+
+1. ✅ **SidebarProvider 状态管理**: 恢复 `nodeRender` 状态，修复侧边栏显示问题
+2. ✅ **selectedEntityId 同步**: 修复外部 props 与 Zustand store 的同步问题
+3. ✅ **组件更新方法**: 将 `setClonedEntity` 改为 `updateEntityProperty`，避免状态重置
+4. ✅ **Context 类型定义**: 完善 `SidebarContext` 类型定义
+
+## 验证结果
+
+需要用户验证以下功能：
+- [ ] 侧边栏是否正常显示
+- [ ] Meta 属性编辑是否触发 `isDirty` 状态
+- [ ] 非 Meta 属性编辑是否保持输入状态
+- [ ] 保存/撤销按钮是否正确响应
+
+## 相关文档
+
+- `cursor_works/zustand_fix_summary.md` - 详细修复总结
+- Zustand 官方文档参考已应用
+
+## 下一步
+
+等待用户验证功能是否正常工作。
+
+# 当前任务状态
+
 ## 任务：实体属性编辑架构重大修复
 **状态**: ✅ 已完成
 **开始时间**: 2024-12-19
@@ -284,3 +318,5 @@ if (updatedProperty.name && updatedProperty.name !== originalPropertyName) {
 2. **右侧抽屉功能完全恢复**：点击节点能够正确打开右侧抽屉，显示详细的属性编辑界面
 3. **模块属性完美分组**：在Start节点和右侧抽屉中，模块属性都按照模块进行了清晰的分组显示
 4. **实体切换功能正常**：切换实体时所有相关组件都能实时更新
+
+form-outputs-architecture-fix.md

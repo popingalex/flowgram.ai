@@ -25,7 +25,7 @@ export interface ExtendedJsonSchemaProperty extends IJsonSchema {
   title: string; // JSONSchema标准字段 - 显示名称（中文）
 
   // 索引信息
-  _id: string; // nanoid索引ID - React key专用，永远不变
+  _indexId: string; // nanoid索引ID - React key专用，永远不变
 
   // 分类标记
   isEntityProperty?: boolean; // 实体直接属性
@@ -83,7 +83,7 @@ export interface JSONSchemaProperty {
   };
 
   // 索引信息
-  _id: string; // nanoid索引ID - 与properties的key相同
+  _indexId: string; // nanoid索引ID - 与properties的key相同
 
   // 分类标记
   isEntityProperty?: boolean; // 实体直接属性
@@ -122,7 +122,7 @@ export function isValidExtendedProperty(prop: any): prop is ExtendedJsonSchemaPr
     prop !== null &&
     typeof prop.id === 'string' &&
     typeof prop.title === 'string' &&
-    typeof prop._id === 'string' &&
+    typeof prop._indexId === 'string' &&
     typeof prop.type === 'string' &&
     !('name' in prop) // 确保没有name字段
   );
@@ -145,9 +145,9 @@ export function isValidPropertiesSchema(schema: any): schema is EntityProperties
       return false;
     }
 
-    // 验证key是nanoid格式（_id字段应该与key相同）
-    if (prop._id !== key) {
-      console.error(`Property key ${key} does not match _id ${prop._id}`);
+    // 验证key是nanoid格式（_indexId字段应该与key相同）
+    if (prop._indexId !== key) {
+      console.error(`Property key ${key} does not match _indexId ${prop._indexId}`);
       return false;
     }
   }

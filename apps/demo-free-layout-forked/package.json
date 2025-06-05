@@ -42,7 +42,9 @@
     "nanoid": "^4.0.2",
     "react": "^18",
     "react-dom": "^18",
-    "styled-components": "^5"
+    "styled-components": "^5",
+    "@csstools/normalize.css": "~12.1.1",
+    "zustand": "~5.0.5"
   },
   "devDependencies": {
     "@flowgram.ai/ts-config": "workspace:*",

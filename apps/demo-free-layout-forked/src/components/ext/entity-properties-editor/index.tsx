@@ -59,7 +59,7 @@ const generateId = () => nanoid();
 
 // 扩展的属性接口，包含索引ID和分类信息
 interface ExtendedProperty {
-  _id: string; // 索引ID - React key专用，永远不变（nanoid生成）
+  _indexId: string; // 索引ID - React key专用，永远不变（nanoid生成）
   propertyName: string; // 属性键名
   type: string;
   title?: string; // 语义化ID - 用户可编辑
@@ -76,6 +76,7 @@ interface EntityPropertiesEditorProps {
   config?: ConfigType;
   hideModuleButton?: boolean;
   hideModuleGrouping?: boolean;
+  hideEntityInfo?: boolean;
   disabled?: boolean;
   onNavigateToModule?: (moduleId: string) => void;
   currentEntityId?: string;
@@ -88,6 +89,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
   config,
   hideModuleButton = false,
   hideModuleGrouping = false,
+  hideEntityInfo = false,
   disabled = false,
   onNavigateToModule,
   currentEntityId,
@@ -118,20 +120,20 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
     const updatedProperties: Record<string, any> = {};
 
     Object.entries(properties).forEach(([propertyName, property]) => {
-      if (!(property as any)._id) {
+      if (!(property as any)._indexId) {
         needsUpdate = true;
         updatedProperties[propertyName] = {
           ...property,
-          _id: nanoid(),
+          _indexId: nanoid(),
         };
-        console.log(`为属性 ${propertyName} 生成nanoid:`, updatedProperties[propertyName]._id);
+        console.log(`为属性 ${propertyName} 生成nanoid:`, updatedProperties[propertyName]._indexId);
       } else {
         updatedProperties[propertyName] = property;
       }
     });
 
     if (needsUpdate) {
-      console.log('检测到缺少_id的属性，立即更新JSONSchema');
+      console.log('检测到缺少_indexId的属性，立即更新JSONSchema');
       const updatedSchema = {
         ...value,
         type: 'object',
@@ -152,18 +154,23 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
       // 检查是否为nanoid索引格式（从EntityStore传来的editableProperties）
       const isNanoidFormat = key.length > 10 && key.includes('-'); // 简单的nanoid检测
 
-      let _id: string;
+      let _indexId: string;
       let propertyName: string; // 英文标识符
       let title: string; // 中文名称
 
       if (isNanoidFormat) {
         // nanoid索引格式：key是nanoid，从property中获取真实的id和name
-        _id = key;
+        _indexId = key;
         propertyName = (property as any).id || key; // 使用property.id作为英文标识符
         title = (property as any).name || (property as any).title || propertyName; // 使用property.name作为中文名称
       } else {
-        // 属性名索引格式：key是属性名，_id从property._id获取或生成
-        _id = (property as any)._id || nanoid();
+        // 属性名索引格式：key是属性名，_indexId从property._indexId获取
+        const propertyId = (property as any)._indexId;
+        if (!propertyId) {
+          console.error('Property missing _indexId in non-nanoid format:', property);
+          throw new Error(`Property ${key} is missing _indexId. This should not happen.`);
+        }
+        _indexId = propertyId;
         propertyName = key; // key本身就是英文标识符
         title = (property as any).name || (property as any).title || key; // 获取中文名称
       }
@@ -186,7 +193,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
       }
 
       extendedProps.push({
-        _id,
+        _indexId,
         propertyName, // 英文标识符
         type: property.type || 'string',
         title, // 中文名称
@@ -201,7 +208,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
     return extendedProps;
   }, [value?.properties, currentEntity, getEntityOwnAttributes]);
 
-  // 更新JSONSchema，确保每个属性都有_id字段
+  // 更新JSONSchema，确保每个属性都有_indexId字段
   const updateJSONSchema = (extendedProps: ExtendedProperty[]): IJsonSchema => {
     const properties: Record<string, any> = {};
 
@@ -217,7 +224,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
         title: prop.title,
         description: prop.description,
         id: prop.propertyName, // 保存真实的属性ID
-        _id: prop._id, // 确保_id字段被保存
+        _indexId: prop._indexId, // 确保_indexId字段被保存
         // 保存属性分类信息
         isEntityProperty: !prop.isUserAdded && !prop.isModuleProperty, // 实体直接属性
         isModuleProperty: prop.isModuleProperty, // 模块属性
@@ -228,7 +235,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
 
       if (isOriginalNanoidFormat) {
         // 如果原始格式是nanoid索引，保持nanoid索引格式
-        properties[prop._id] = propertyValue;
+        properties[prop._indexId] = propertyValue;
       } else {
         // 如果原始格式是属性名索引，保持属性名索引格式
         properties[prop.propertyName] = propertyValue;
@@ -296,7 +303,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
       'Extended Properties:',
       buildExtendedProperties.map((prop) => ({
         propertyName: prop.propertyName,
-        _id: prop._id,
+        _indexId: prop._indexId,
         title: prop.title,
         isUserAdded: prop.isUserAdded,
         isModuleProperty: prop.isModuleProperty,
@@ -339,7 +346,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
     selectedModules.forEach((module) => {
       module.attributes.forEach((attr) => {
         nonCompleteModuleProps.push({
-          _id: nanoid(), // 使用nanoid作为索引
+          _indexId: nanoid(), // 使用nanoid作为索引
           propertyName: `${module.id}/${attr.id}`,
           type:
             attr.type === 'n'
@@ -376,7 +383,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
     // 创建新的扩展属性
     const timestamp = Date.now();
     const newProperty: ExtendedProperty = {
-      _id: nanoid(), // 使用nanoid作为索引
+      _indexId: nanoid(), // 使用nanoid作为索引
       propertyName: `new_property_${timestamp}`,
       type: 'string',
       title: '新属性',
@@ -398,7 +405,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
 
   // 删除属性功能
   const handleRemoveProperty = (propertyId: string) => {
-    const updatedProps = buildExtendedProperties.filter((prop) => prop._id !== propertyId);
+    const updatedProps = buildExtendedProperties.filter((prop) => prop._indexId !== propertyId);
     const updatedSchema = updateJSONSchema(updatedProps);
     onChange?.(updatedSchema);
 
@@ -409,7 +416,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
   const handleEditProperty = (propertyId: string, updatedFields: Partial<ExtendedProperty>) => {
     // 更新扩展属性列表
     const updatedProps = buildExtendedProperties.map((prop) =>
-      prop._id === propertyId ? { ...prop, ...updatedFields } : prop
+      prop._indexId === propertyId ? { ...prop, ...updatedFields } : prop
     );
 
     // 转换回JSONSchema并更新
@@ -461,8 +468,9 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
 
   return (
     <div style={{ padding: compact ? '12px' : '24px', maxWidth: '100%' }}>
+      =start=
       {/* 实体Meta属性展示区域 */}
-      {currentEntity && (
+      {currentEntity && !hideEntityInfo && (
         <Card
           style={{ marginBottom: compact ? '8px' : '16px' }}
           bodyStyle={{ padding: compact ? '8px' : '16px' }}
@@ -502,7 +510,6 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
           </div>
         </Card>
       )}
-
       {/* 属性配置区域 */}
       <Card
         style={{ marginBottom: compact ? '8px' : '16px' }}
@@ -584,13 +591,15 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
               <UIProperties>
                 {entityDirectProperties.map((property) => (
                   <PropertyEdit
-                    key={property._id} // 使用nanoid作为React key
+                    key={property._indexId} // 使用nanoid作为React key
                     property={property}
                     config={config}
                     enumClassId={getPropertyEnumClassId(property.propertyName)}
                     isReadOnly={false}
-                    onChange={(updatedFields) => handleEditProperty(property._id, updatedFields)}
-                    onRemove={() => handleRemoveProperty(property._id)}
+                    onChange={(updatedFields) =>
+                      handleEditProperty(property._indexId, updatedFields)
+                    }
+                    onRemove={() => handleRemoveProperty(property._indexId)}
                     onDataRestrictionClick={() => handleDataRestrictionClick(property)}
                     disabled={disabled}
                     value={value}
@@ -689,15 +698,15 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
                         <UIProperties>
                           {moduleProps.map((property) => (
                             <PropertyEdit
-                              key={property._id} // 使用nanoid作为React key
+                              key={property._indexId} // 使用nanoid作为React key
                               property={property}
                               config={config}
                               enumClassId={getPropertyEnumClassId(property.propertyName)}
                               isReadOnly={true} // 模块属性只读
                               onChange={(updatedFields) =>
-                                handleEditProperty(property._id, updatedFields)
+                                handleEditProperty(property._indexId, updatedFields)
                               }
-                              onRemove={() => handleRemoveProperty(property._id)}
+                              onRemove={() => handleRemoveProperty(property._indexId)}
                               onDataRestrictionClick={() => {}}
                               disabled={true}
                               value={value}
@@ -801,15 +810,15 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
                         <UIProperties>
                           {moduleProps.map((property) => (
                             <PropertyEdit
-                              key={property._id} // 使用nanoid作为React key
+                              key={property._indexId} // 使用nanoid作为React key
                               property={property}
                               config={config}
                               enumClassId={getPropertyEnumClassId(property.propertyName)}
                               isReadOnly={false} // 部分关联的模块属性可以删除
                               onChange={(updatedFields) =>
-                                handleEditProperty(property._id, updatedFields)
+                                handleEditProperty(property._indexId, updatedFields)
                               }
-                              onRemove={() => handleRemoveProperty(property._id)}
+                              onRemove={() => handleRemoveProperty(property._indexId)}
                               onDataRestrictionClick={() => handleDataRestrictionClick(property)}
                               disabled={disabled}
                               value={value}
@@ -845,13 +854,15 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
                   .flat()
                   .map((property) => (
                     <PropertyEdit
-                      key={property._id} // 使用nanoid作为React key
+                      key={property._indexId} // 使用nanoid作为React key
                       property={property}
                       config={config}
                       enumClassId={getPropertyEnumClassId(property.propertyName)}
                       isReadOnly={false}
-                      onChange={(updatedFields) => handleEditProperty(property._id, updatedFields)}
-                      onRemove={() => handleRemoveProperty(property._id)}
+                      onChange={(updatedFields) =>
+                        handleEditProperty(property._indexId, updatedFields)
+                      }
+                      onRemove={() => handleRemoveProperty(property._indexId)}
                       onDataRestrictionClick={() => handleDataRestrictionClick(property)}
                       disabled={disabled}
                       value={value}
@@ -880,13 +891,15 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
               <UIProperties>
                 {userCustomProperties.map((property) => (
                   <PropertyEdit
-                    key={property._id} // 使用nanoid作为React key
+                    key={property._indexId} // 使用nanoid作为React key
                     property={property}
                     config={config}
                     enumClassId={getPropertyEnumClassId(property.propertyName)}
                     isReadOnly={false}
-                    onChange={(updatedFields) => handleEditProperty(property._id, updatedFields)}
-                    onRemove={() => handleRemoveProperty(property._id)}
+                    onChange={(updatedFields) =>
+                      handleEditProperty(property._indexId, updatedFields)
+                    }
+                    onRemove={() => handleRemoveProperty(property._indexId)}
                     onDataRestrictionClick={() => handleDataRestrictionClick(property)}
                     disabled={disabled}
                     value={value}
@@ -897,7 +910,6 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
           </div>
         )}
       </Card>
-
       {/* 模块选择器 */}
       <ModuleSelectorModal
         visible={moduleSelectorVisible}
@@ -909,7 +921,6 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
         }}
         focusModuleId={focusModuleId}
       />
-
       <DataRestrictionModal
         visible={dataRestrictionVisible}
         onCancel={handleDataRestrictionCancel}
@@ -918,9 +929,10 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
         propertyInfo={{
           name: currentEditingProperty?.propertyName,
           type: currentEditingProperty?.type,
-          key: currentEditingProperty?._id,
+          key: currentEditingProperty?._indexId,
         }}
       />
+      =end=
     </div>
   );
 };

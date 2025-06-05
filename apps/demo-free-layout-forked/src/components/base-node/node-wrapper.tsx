@@ -41,6 +41,11 @@ export const NodeWrapper: React.FC<NodeWrapperProps> = (props) => {
         onClick={(e) => {
           selectNode(e);
           if (!isDragging) {
+            console.log('NodeWrapper - 点击节点，设置边栏:', {
+              nodeId: nodeRender.node.id,
+              nodeType: nodeRender.node.getNodeRegistry?.()?.type,
+              hasForm: !!nodeRender.form,
+            });
             sidebar.setNodeRender(nodeRender);
             // 可选：将 isScrollToView 设为 true，可以让节点选中后滚动到画布中间
             // Optional: Set isScrollToView to true to scroll the node to the center of the canvas after it is selected.

@@ -1,4 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo } from 'react';
+import React from 'react';
 
 import {
   PlaygroundEntityContext,
@@ -8,6 +9,7 @@ import {
 import { SideSheet, Button } from '@douyinfe/semi-ui';
 import { IconClose } from '@douyinfe/semi-icons';
 
+import { EntityPropertiesEditor } from '../entity-properties-editor';
 import { FlowNodeMeta } from '../../typings';
 import { SidebarContext, IsSidebarContext, NodeRenderContext } from '../../context';
 
@@ -18,6 +20,13 @@ export const SidebarRenderer = () => {
   const handleClose = useCallback(() => {
     setNodeRender(undefined);
   }, []);
+
+  // 获取抽屉容器，避免遮挡导航栏
+  const getPopupContainer = useCallback(() => {
+    const container = document.querySelector('.semi-layout-content');
+    return (container as HTMLElement) || document.body;
+  }, []);
+
   /**
    * Listen readonly
    */
@@ -66,6 +75,7 @@ export const SidebarRenderer = () => {
   if (playground.config.readonly) {
     return null;
   }
+
   /**
    * Add key to rerender the sidebar when the node changes
    */
@@ -83,7 +93,7 @@ export const SidebarRenderer = () => {
               position: 'absolute',
               top: '16px',
               right: '16px',
-              zIndex: 1000,
+              // zIndex: 1000,
             }}
           />
           {nodeRender.form?.render()}
@@ -96,9 +106,11 @@ export const SidebarRenderer = () => {
     <SideSheet
       mask={false}
       visible={visible}
-      width={800}
+      width={600}
       closable={false}
-      // 移除 onCancel 以防止点击外部关闭
+      getPopupContainer={getPopupContainer}
+      disableScroll={false}
+      // zIndex={1050}
     >
       <IsSidebarContext.Provider value={true}>{content}</IsSidebarContext.Provider>
     </SideSheet>
