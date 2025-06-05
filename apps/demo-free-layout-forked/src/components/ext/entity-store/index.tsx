@@ -139,7 +139,7 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
         return;
       }
 
-      // 为没有索引ID的实体和属性生成稳定的索引，并持久化到原始数据中
+      // 规范化数据：确保所有必填字段都有值，并生成稳定的索引
       const entitiesWithIndex = fetchedEntities.map((entity) => {
         // 为实体生成稳定的_indexId
         if (!entity._indexId) {
@@ -149,11 +149,14 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
         return {
           ...entity,
           attributes: (entity.attributes || []).map((attr) => {
-            if (!attr._indexId) {
-              // 生成新的nanoid并持久化到原始属性中
-              attr._indexId = nanoid();
-            }
-            return attr;
+            // 确保所有必填字段都有值
+            const normalizedAttr = {
+              ...attr,
+              _indexId: attr._indexId || nanoid(), // 确保有_indexId
+              name: attr.name || attr.id || '未命名属性', // 确保有name，fallback到id
+              type: attr.type || 'string', // 确保有type，默认为string
+            };
+            return normalizedAttr;
           }),
         };
       });

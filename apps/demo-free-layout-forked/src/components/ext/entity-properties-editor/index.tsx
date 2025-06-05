@@ -144,7 +144,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
     }
   }, [value, onChange]); // 每次value变化时都检查
 
-  // 从JSONSchema构建扩展属性列表
+  // 从JSONSchema构建扩展属性列表 - 使用深度比较避免不必要的重建
   const buildExtendedProperties = useMemo((): ExtendedProperty[] => {
     const properties = value?.properties || {};
     const extendedProps: ExtendedProperty[] = [];
@@ -206,7 +206,12 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
     });
 
     return extendedProps;
-  }, [value?.properties, currentEntity, getEntityOwnAttributes]);
+  }, [
+    // 使用JSON序列化进行深度比较，避免浅层对象引用变化导致的重建
+    JSON.stringify(value?.properties || {}),
+    currentEntity?.id, // 只依赖实体ID，而不是整个实体对象
+    currentEntity?.bundles?.join(',') || '', // 只依赖bundles数组的内容
+  ]);
 
   // 更新JSONSchema，确保每个属性都有_indexId字段
   const updateJSONSchema = (extendedProps: ExtendedProperty[]): IJsonSchema => {
@@ -414,16 +419,52 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
 
   // 编辑属性功能 - 使用稳定的ID标识属性
   const handleEditProperty = (propertyId: string, updatedFields: Partial<ExtendedProperty>) => {
-    // 更新扩展属性列表
-    const updatedProps = buildExtendedProperties.map((prop) =>
-      prop._indexId === propertyId ? { ...prop, ...updatedFields } : prop
-    );
+    // 最精确的更新：只修改具体的属性字段，不重建任何容器对象
+    if (!value?.properties) return;
 
-    // 转换回JSONSchema并更新
-    const updatedSchema = updateJSONSchema(updatedProps);
+    // 查找要更新的属性（支持nanoid索引和属性名索引两种格式）
+    let targetKey: string | null = null;
+
+    // 先尝试直接匹配（nanoid格式）
+    if (value.properties[propertyId]) {
+      targetKey = propertyId;
+    } else {
+      // 遍历查找_indexId匹配的属性（属性名格式）
+      for (const [key, property] of Object.entries(value.properties)) {
+        if ((property as any)._indexId === propertyId) {
+          targetKey = key;
+          break;
+        }
+      }
+    }
+
+    if (!targetKey) {
+      console.error('Property not found for update:', propertyId);
+      return;
+    }
+
+    // 只更新具体字段，完全避免重建容器
+    const targetProperty = value.properties[targetKey];
+    const updatedProperty = {
+      ...targetProperty,
+      // 根据字段类型映射到JSONSchema格式
+      ...(updatedFields.title && { title: updatedFields.title, name: updatedFields.title }),
+      ...(updatedFields.propertyName && { id: updatedFields.propertyName }),
+      ...(updatedFields.type && { type: updatedFields.type }),
+      ...(updatedFields.description && { description: updatedFields.description }),
+    };
+
+    // 只重建最小必要的对象层级
+    const updatedSchema = {
+      ...value,
+      properties: {
+        ...value.properties,
+        [targetKey]: updatedProperty,
+      },
+    };
+
     onChange?.(updatedSchema);
-
-    console.log('Updated property:', propertyId, updatedFields);
+    console.log('Updated property field only:', propertyId, updatedFields);
   };
 
   // 切换模块折叠状态
@@ -937,7 +978,7 @@ export const EntityPropertiesEditor: React.FC<EntityPropertiesEditorProps> = ({
   );
 };
 
-function PropertyEdit(props: {
+const PropertyEdit = React.memo(function PropertyEdit(props: {
   property: ExtendedProperty;
   config?: ConfigType;
   enumClassId?: string;
@@ -1104,7 +1145,7 @@ function PropertyEdit(props: {
       </UIPropertyRight>
     </>
   );
-}
+});
 
 // 保持向后兼容
 export { EntityPropertiesEditor as JsonSchemaEditor };

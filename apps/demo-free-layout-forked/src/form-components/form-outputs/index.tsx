@@ -5,7 +5,7 @@ import { Field, FieldRenderProps } from '@flowgram.ai/free-layout-editor';
 import { IJsonSchema } from '@flowgram.ai/form-materials';
 
 import { PropertiesEdit } from '../properties-edit';
-import { useCurrentEntity, useCurrentEntityActions } from '../../stores';
+import { useCurrentEntity, useCurrentEntityActions } from '../../stores/current-entity-fixed';
 import { useCloned } from '../../hooks/use-cloned';
 import { useIsSidebar, useNodeRenderContext } from '../../hooks';
 import { SidebarContext } from '../../context';
@@ -29,7 +29,7 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
 
   // 抽屉模式：显示可编辑的属性表格
   if (isSidebar) {
-    // 使用Zustand当前实体store
+    // 使用原有store，直接修改属性
     const { editingEntity } = useCurrentEntity();
 
     if (!editingEntity) {
@@ -54,8 +54,7 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
       <EditableEntityAttributeTable
         attributes={attributes}
         onChange={() => {
-          // onChange现在是空函数，因为EditableEntityAttributeTable内部直接使用Zustand store更新
-          // 这个prop保留是为了兼容，但实际不会被调用
+          // 现在直接修改属性，不需要这个callback
         }}
       />
     );

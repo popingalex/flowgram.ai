@@ -22,11 +22,15 @@ export interface Module {
 // 实体属性接口
 export interface Attribute {
   id: string;
-  name?: string;
-  type?: string;
+  name: string; // 改为必须，与表格组件一致
+  type: string; // 改为必须，与表格组件一致
   description?: string;
   enumClassId?: string;
-  _indexId?: string; // 稳定的索引ID，用作React key
+  _indexId: string; // 改为必须，确保所有属性都有稳定的索引ID
+  // 属性分类信息（运行时添加）
+  isEntityProperty?: boolean;
+  isModuleProperty?: boolean;
+  moduleId?: string;
 }
 
 // 实体接口

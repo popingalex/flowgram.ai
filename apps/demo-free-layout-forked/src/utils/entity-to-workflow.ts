@@ -93,13 +93,15 @@ function convertEntityToOutputs(entity: Entity) {
     _indexId: '__entity_description',
   };
 
+  console.log('wtf', entity.attributes);
   // 2. 实体自身属性 - 使用属性的索引ID
   entity.attributes.forEach((attr) => {
     if (!attr._indexId) {
       console.error('Entity attribute missing _indexId:', attr);
       throw new Error(`Entity attribute ${attr.id} is missing _indexId. This should not happen.`);
     }
-    properties[attr._indexId] = {
+
+    const propertyData: ExtendedJsonSchema = {
       type: attr.type === 'n' ? 'number' : attr.type === 's' ? 'string' : 'string',
       title: attr.name,
       category: 'entity',
@@ -108,6 +110,15 @@ function convertEntityToOutputs(entity: Entity) {
       ...(attr.enumClassId && { enumClassId: attr.enumClassId }),
       isEntityProperty: true,
     };
+
+    // debugger;
+    // 🔍 调试用：为vehicle的vehicle_yard_id属性添加调试nanoid
+    if (entity.id === 'vehicle' && attr.name === '集结点id') {
+      propertyData.debugNanoid = nanoid();
+      console.log('🔍 添加调试nanoid到vehicle_yard_id:', propertyData.debugNanoid);
+    }
+
+    properties[attr._indexId] = propertyData;
   });
 
   // 3. 模块属性将在WorkflowEditor中注入，这里不添加占位符

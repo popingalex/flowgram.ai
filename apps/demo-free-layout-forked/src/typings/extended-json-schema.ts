@@ -27,5 +27,8 @@ export interface ExtendedJsonSchema extends IJsonSchema {
   // 枚举相关
   enumClassId?: string; // 枚举类ID
 
+  // 调试相关
+  debugNanoid?: string; // 🔍 调试用：检测数据是否被重新生成
+
   // 其他扩展字段可以继续添加...
 }

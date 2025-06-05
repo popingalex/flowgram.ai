@@ -190,26 +190,32 @@ const EntityPropertySyncer: React.FC = () => {
 
 export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className }) => {
   const { editingEntity, selectedEntityId } = useCurrentEntity();
-  const { getEntity } = useEntityStore();
+  const { getEntity, getEntityByStableId } = useEntityStore();
   const { getModulesByIds } = useModuleStore();
 
-  // 根据选中的实体动态生成工作流数据
+  // 根据选中的实体动态生成工作流数据（只在选中实体时生成一次）
   const workflowData = React.useMemo(() => {
-    if (!editingEntity) {
+    if (!selectedEntityId) {
       // 没有选中实体时显示空的工作流
       return initialData;
     }
 
+    // 使用原始实体数据生成工作流（不使用editingEntity，避免编辑时重新生成）
+    const originalEntity = getEntityByStableId(selectedEntityId);
+    if (!originalEntity) {
+      return initialData;
+    }
+
     try {
-      // 从编辑中的实体生成工作流数据
-      const workflowData = entityToWorkflowData(editingEntity);
+      // 从原始实体生成工作流数据
+      const workflowData = entityToWorkflowData(originalEntity);
       console.log('Generated workflow data for entity:', selectedEntityId, workflowData);
       return workflowData;
     } catch (error) {
       console.error('Error generating workflow data:', error);
       return initialData;
     }
-  }, [editingEntity, selectedEntityId]);
+  }, [selectedEntityId, getEntity]); // 只依赖selectedEntityId，不依赖editingEntity
 
   const editorProps = useEditorProps(workflowData, nodeRegistries);
 

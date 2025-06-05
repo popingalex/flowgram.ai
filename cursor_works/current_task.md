@@ -320,3 +320,5 @@ if (updatedProperty.name && updatedProperty.name !== originalPropertyName) {
 4. **实体切换功能正常**：切换实体时所有相关组件都能实时更新
 
 form-outputs-architecture-fix.md
+
+input-focus-debug.md
