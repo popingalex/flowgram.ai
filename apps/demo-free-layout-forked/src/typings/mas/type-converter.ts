@@ -70,6 +70,8 @@ export class SimulationTypeConverter {
         return { dimensions: [], attributes: [], primitive: PrimitiveType.NUMBER };
       case 'string':
         return { dimensions: [], attributes: [], primitive: PrimitiveType.STRING };
+      case 'unknown':
+        return { dimensions: [], attributes: [], primitive: PrimitiveType.UNKNOWN };
       case 'array':
         if (property.items) {
           const itemType = this.entityPropertyToTyped(property.items);
@@ -142,6 +144,8 @@ export class SimulationTypeConverter {
             });
           }
           return true;
+        case 'unknown':
+          return true; // unknown类型接受任何值
         default:
           return false;
       }
@@ -179,6 +183,8 @@ export class SimulationTypeConverter {
           return obj;
         }
         return {};
+      case 'unknown':
+        return null; // unknown类型默认为null
       default:
         return null;
     }
@@ -196,6 +202,7 @@ export class SimulationTypeConverter {
       case PrimitiveType.STRING:
         return { type: 'string', default: '' };
       case PrimitiveType.UNKNOWN:
+        return { type: 'unknown' };
       default:
         return { type: 'object' };
     }

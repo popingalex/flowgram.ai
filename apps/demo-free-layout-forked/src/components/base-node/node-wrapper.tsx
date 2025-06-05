@@ -3,6 +3,7 @@ import React, { useState, useContext } from 'react';
 import { WorkflowPortRender } from '@flowgram.ai/free-layout-editor';
 import { useClientContext } from '@flowgram.ai/free-layout-editor';
 
+import { useCurrentEntity } from '../../stores/current-entity-fixed';
 import { useNodeRenderContext } from '../../hooks';
 import { SidebarContext } from '../../context';
 import { scrollToView } from './utils';
@@ -25,6 +26,15 @@ export const NodeWrapper: React.FC<NodeWrapperProps> = (props) => {
   const sidebar = useContext(SidebarContext);
   const form = nodeRender.form;
   const ctx = useClientContext();
+
+  // 获取当前实体的dirty状态
+  const { isDirty } = useCurrentEntity();
+
+  // 检查当前节点是否应该显示dirty状态
+  // 目前简单地对所有Start节点显示dirty状态
+  // TODO: 将来可以通过节点的entityId来精确匹配
+  const isStartNode = nodeRender.node.getNodeRegistry?.()?.type === 'start';
+  const shouldShowDirty = isStartNode && isDirty;
 
   const portsRender = ports.map((p) => <WorkflowPortRender key={p.id} entity={p} />);
 
@@ -60,6 +70,11 @@ export const NodeWrapper: React.FC<NodeWrapperProps> = (props) => {
         data-node-selected={String(selected)}
         style={{
           outline: form?.state.invalid ? '1px solid red' : 'none',
+          // 添加橙色阴影表示dirty状态
+          boxShadow: shouldShowDirty
+            ? '0 0 0 2px rgba(255, 140, 0, 0.3), 0 0 8px rgba(255, 140, 0, 0.2)'
+            : undefined,
+          transition: 'box-shadow 0.2s ease-in-out',
         }}
       >
         {children}

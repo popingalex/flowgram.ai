@@ -9,7 +9,7 @@ import { Attribute } from './attribute';
  */
 export interface EntityPropertyType {
   /** 属性类型 */
-  type: 'string' | 'number' | 'boolean' | 'array' | 'object';
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'unknown';
   /** 属性描述 */
   description?: string;
   /** 默认值 */

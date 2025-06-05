@@ -102,17 +102,21 @@ export const EntityPropertyTypeSelector = React.forwardRef<
       <div style={{ width: 28, flexShrink: 0 }}>
         {disabled ? (
           // 只读模式：只显示按钮样式，不提供交互
-          <Button size="small" style={{ width: '100%' }}>
-            {getSchemaIcon(value)}
-          </Button>
+          <Button
+            size="small"
+            style={{ width: '100%', minWidth: 28, height: 28 }}
+            icon={getSchemaIcon(value)}
+          />
         ) : (
           // 编辑模式：提供完整的Cascader功能
           <Cascader
             size="small"
             triggerRender={() => (
-              <Button size="small" style={{ width: '100%' }}>
-                {getSchemaIcon(value)}
-              </Button>
+              <Button
+                size="small"
+                style={{ width: '100%', minWidth: 28, height: 28 }}
+                icon={getSchemaIcon(value)}
+              />
             )}
             treeData={options}
             value={selectValue}

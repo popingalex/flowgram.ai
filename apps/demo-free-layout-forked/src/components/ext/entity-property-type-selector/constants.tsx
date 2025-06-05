@@ -96,7 +96,7 @@ export const ArrayIcons: { [key: string]: React.ReactNode } = {
   ),
 };
 
-// 基础选项（去除integer）
+// 基础选项（添加unknown类型）
 const baseOptions: CascaderData[] = [
   {
     label: (
@@ -133,6 +133,15 @@ const baseOptions: CascaderData[] = [
       </div>
     ),
     value: 'object',
+  },
+  {
+    label: (
+      <div style={labelStyle}>
+        <Icon size="small" svg={UnknownIcon} />
+        {firstUppercase('unknown')}
+      </div>
+    ),
+    value: 'unknown',
   },
 ];
 

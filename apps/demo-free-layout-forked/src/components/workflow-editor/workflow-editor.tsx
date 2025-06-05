@@ -34,7 +34,7 @@ export interface WorkflowEditorProps {
 
 // 实体属性同步器 - 将编辑中的实体属性同步到工作流文档
 const EntityPropertySyncer: React.FC = () => {
-  const { editingEntity } = useCurrentEntity();
+  const { editingEntity, originalEntity } = useCurrentEntity();
   const { getEntityCompleteProperties, onEntityPropertiesChange, loading, entities } =
     useEntityStore();
   const document = useService(WorkflowDocument);
@@ -44,7 +44,7 @@ const EntityPropertySyncer: React.FC = () => {
 
   // 同步实体属性到Start节点
   const syncEntityToStartNodes = useCallback(
-    (entityId: string, properties: EntityCompleteProperties) => {
+    (entityId: string, editingEntityData?: any) => {
       if (!document) {
         console.warn('EntityPropertySyncer - Document service not available');
         return false;
@@ -54,6 +54,39 @@ const EntityPropertySyncer: React.FC = () => {
         // 查找所有Start节点并更新
         const allNodes = document.getAllNodes();
         let updatedCount = 0;
+
+        // 🎯 使用编辑中的实体数据而不是原始数据
+        let properties;
+        if (editingEntityData) {
+          // 当有编辑中的实体数据时，从编辑数据生成属性
+          // 这里需要模拟EntityStore的getEntityCompleteProperties逻辑
+          // 但使用editingEntity而不是原始entity
+          properties = getEntityCompletePropertiesFromEditingEntity(editingEntityData);
+        } else {
+          // 回退到原始逻辑
+          properties = getEntityCompleteProperties(entityId);
+        }
+
+        if (!properties) {
+          console.warn('EntityPropertySyncer - No properties found for entity:', entityId);
+          return false;
+        }
+
+        console.log('🔄 EntityPropertySyncer - 开始同步实体属性:', {
+          entityId,
+          totalNodes: allNodes.length,
+          propertiesCount: Object.keys((properties.allProperties as any)?.properties || {}).length,
+          使用编辑数据: !!editingEntityData,
+          detailedProperties: Object.entries((properties.allProperties as any)?.properties || {})
+            .slice(0, 5)
+            .map(([key, prop]) => ({
+              key,
+              id: (prop as any).id,
+              name: (prop as any).name,
+              isEntityProperty: (prop as any).isEntityProperty,
+              isModuleProperty: (prop as any).isModuleProperty,
+            })),
+        });
 
         // 遍历所有节点，同步实体属性到outputs
         allNodes.forEach((node: WorkflowNodeEntity) => {
@@ -76,15 +109,43 @@ const EntityPropertySyncer: React.FC = () => {
                 const currentOutputs = (formModel as FormModelV2).getValueIn('data.outputs');
                 const newOutputs = properties.allProperties;
 
+                // 强制更新，因为我们知道编辑数据已经改变
+                const forceUpdate = !!editingEntityData;
+
                 // 检查是否需要更新
-                if (JSON.stringify(currentOutputs) !== JSON.stringify(newOutputs)) {
+                if (forceUpdate || JSON.stringify(currentOutputs) !== JSON.stringify(newOutputs)) {
+                  console.log('🔄 EntityPropertySyncer - 更新节点属性:', {
+                    nodeId: node.id,
+                    oldPropertiesCount: Object.keys((currentOutputs as any)?.properties || {})
+                      .length,
+                    newPropertiesCount: Object.keys((newOutputs as any)?.properties || {}).length,
+                    forceUpdate,
+                  });
+
                   // 更新节点数据
                   (formModel as FormModelV2).setValueIn('data.outputs', newOutputs);
+
+                  // 🎯 强制触发表单重新渲染
+                  const formModelAny = formModel as any;
+                  if (formModelAny.validateField) {
+                    formModelAny.validateField('data.outputs');
+                  }
+
+                  // 🎯 强制触发表单变化事件
+                  if (formModelAny.notifyFormChange) {
+                    formModelAny.notifyFormChange(['data.outputs'], newOutputs);
+                  }
+
                   updatedCount++;
                 }
               }
             }
           }
+        });
+
+        console.log('🔄 EntityPropertySyncer - 同步完成:', {
+          entityId,
+          updatedNodes: updatedCount,
         });
 
         retryCountRef.current = 0; // 重置重试计数
@@ -94,15 +155,77 @@ const EntityPropertySyncer: React.FC = () => {
         return false;
       }
     },
-    [editingEntity?._indexId, getEntityCompleteProperties]
+    [getEntityCompleteProperties]
   );
+
+  // 🎯 新增：从编辑中的实体数据生成完整属性结构
+  const getEntityCompletePropertiesFromEditingEntity = useCallback((editingEntity: any) => {
+    if (!editingEntity || !editingEntity.attributes) {
+      return null;
+    }
+
+    try {
+      // 简化版本：直接使用editingEntity的attributes构建JSONSchema
+      const properties: Record<string, any> = {};
+
+      // 🚫 移除重复的基础属性，这些已经在节点的基础信息区域显示了
+      // 不再添加 __entity_id、__entity_name、__entity_description
+
+      // 只添加实体自身的扩展属性
+      editingEntity.attributes.forEach((attr: any) => {
+        if (!attr._indexId) {
+          console.warn('编辑实体属性缺少_indexId:', attr);
+          return;
+        }
+
+        const indexId = attr._indexId;
+        properties[indexId] = {
+          ...attr, // 保留所有原始属性
+          // 转换type格式
+          type:
+            attr.type === 'n'
+              ? 'number'
+              : attr.type === 's'
+              ? 'string'
+              : attr.type?.includes('[')
+              ? 'array'
+              : 'string',
+          ...(attr.type?.includes('[') && {
+            items: {
+              type:
+                attr.type?.replace(/\[|\]/g, '') === 'n'
+                  ? 'number'
+                  : attr.type?.replace(/\[|\]/g, '') === 's'
+                  ? 'string'
+                  : 'string',
+            },
+          }),
+          _indexId: indexId,
+          isEntityProperty: true,
+        };
+      });
+
+      const jsonSchemaData = {
+        type: 'object',
+        properties,
+      };
+
+      return {
+        allProperties: jsonSchemaData,
+        editableProperties: jsonSchemaData,
+      };
+    } catch (error) {
+      console.error('Error generating properties from editing entity:', error);
+      return null;
+    }
+  }, []);
 
   // 带重试的同步函数
   const syncWithRetry = useCallback(
-    (entityId: string, properties?: EntityCompleteProperties) => {
+    (entityId: string, editingEntityData?: any) => {
       // 如果实体Store还在加载中，延迟同步
       if (loading) {
-        setTimeout(() => syncWithRetry(entityId, properties), 500);
+        setTimeout(() => syncWithRetry(entityId, editingEntityData), 500);
         return;
       }
 
@@ -112,13 +235,7 @@ const EntityPropertySyncer: React.FC = () => {
       }
 
       const performSync = () => {
-        const entityProperties = properties || getEntityCompleteProperties(entityId);
-        if (!entityProperties) {
-          console.warn('EntityPropertySyncer - No properties found for entity:', entityId);
-          return;
-        }
-
-        const success = syncEntityToStartNodes(entityId, entityProperties);
+        const success = syncEntityToStartNodes(entityId, editingEntityData);
 
         if (!success && retryCountRef.current < maxRetries) {
           retryCountRef.current++;
@@ -132,24 +249,10 @@ const EntityPropertySyncer: React.FC = () => {
       // 立即执行一次
       performSync();
     },
-    [getEntityCompleteProperties, syncEntityToStartNodes, loading]
+    [syncEntityToStartNodes, loading]
   );
 
-  // 监听实体属性变化
-  useEffect(() => {
-    if (!editingEntity) return;
-
-    const unsubscribe = onEntityPropertiesChange((entityId, properties) => {
-      // 比较业务ID，因为onEntityPropertiesChange传递的是业务ID
-      if (entityId === editingEntity.id) {
-        syncWithRetry(entityId, properties);
-      }
-    });
-
-    return unsubscribe;
-  }, [editingEntity?._indexId, onEntityPropertiesChange, syncWithRetry]);
-
-  // 当选择的实体改变时，同步属性
+  // 🎯 统一的实体同步逻辑 - 处理初始加载和实时更新
   useEffect(() => {
     if (!editingEntity) {
       retryCountRef.current = 0;
@@ -161,29 +264,32 @@ const EntityPropertySyncer: React.FC = () => {
       return;
     }
 
-    // 使用业务ID进行同步（getEntityCompleteProperties支持业务ID查找）
-    // 立即执行一次
-    syncWithRetry(editingEntity.id);
+    console.log('🔄 EntityPropertySyncer - 实体同步触发:', {
+      entityId: editingEntity.id,
+      attributesCount: editingEntity.attributes?.length || 0,
+      isDirty: JSON.stringify(editingEntity) !== JSON.stringify(originalEntity),
+    });
 
-    // 延迟执行，确保所有服务都已初始化
-    const timeoutId = setTimeout(() => {
-      syncWithRetry(editingEntity.id);
-    }, 300);
-
-    // 再次延迟执行，确保所有组件都已挂载
-    const timeoutId2 = setTimeout(() => {
-      syncWithRetry(editingEntity.id);
-    }, 1000);
+    // 使用编辑中的实体数据进行同步，添加防抖避免频繁更新
+    const debounceTimer = setTimeout(() => {
+      // 对于编辑中的实体，使用编辑数据；对于初始加载，使用原始数据
+      const hasChanges = JSON.stringify(editingEntity) !== JSON.stringify(originalEntity);
+      syncWithRetry(editingEntity.id, hasChanges ? editingEntity : undefined);
+    }, 100); // 100ms防抖
 
     return () => {
-      clearTimeout(timeoutId);
-      clearTimeout(timeoutId2);
+      clearTimeout(debounceTimer);
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
       }
-      retryCountRef.current = 0;
     };
-  }, [editingEntity?._indexId, syncWithRetry, entities.length, loading]);
+  }, [
+    editingEntity?.id,
+    JSON.stringify(editingEntity?.attributes || []), // 🎯 关键修复：使用序列化版本作为依赖
+    loading,
+    entities.length,
+    syncWithRetry,
+  ]); // 修复依赖数组，确保属性内容变化时也能触发
 
   return null;
 };

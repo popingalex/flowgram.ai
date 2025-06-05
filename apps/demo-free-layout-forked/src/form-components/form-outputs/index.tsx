@@ -13,10 +13,7 @@ import {
   EntityAttributeTable,
   EntityAttributeData,
 } from '../../components/ext/property-table/entity-attribute-table';
-import {
-  EditableEntityAttributeTable,
-  EditableEntityAttribute,
-} from '../../components/ext/editable-entity-attribute-table';
+import { EditableEntityAttributeTable } from '../../components/ext/editable-entity-attribute-table';
 
 interface FormOutputsProps {
   isSidebar?: boolean;
@@ -36,32 +33,24 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
       return <div>No entity selected</div>;
     }
 
-    // 转换存储格式到显示格式
-    const attributes: EditableEntityAttribute[] =
-      editingEntity.attributes?.map((attr) => ({
-        _indexId: (attr as any)._indexId || nanoid(),
-        id: attr.id,
-        name: attr.name || '',
-        type: attr.type === 's' ? 'string' : attr.type === 'n' ? 'number' : attr.type || 'string',
-        description: attr.description,
-        enumClassId: attr.enumClassId,
-        isEntityProperty: (attr as any).isEntityProperty,
-        isModuleProperty: (attr as any).isModuleProperty,
-        moduleId: (attr as any).moduleId,
-      })) || [];
-
-    return (
-      <EditableEntityAttributeTable
-        attributes={attributes}
-        onChange={() => {
-          // 现在直接修改属性，不需要这个callback
-        }}
-      />
-    );
+    // 直接使用EditableEntityAttributeTable，它会从store获取数据
+    return <EditableEntityAttributeTable />;
   }
 
+  // 节点模式：显示只读的属性表格
   // 判断是否为Start节点
   const isStartNode = node?.type === 'start' || node?.type === 'FlowNodeEntity';
+
+  // 🎯 获取当前实体状态，用于生成唯一key强制重新渲染
+  const { editingEntity, isDirty } = useCurrentEntity();
+
+  // 生成一个基于实体状态的key，当实体数据变化时强制重新渲染
+  const renderKey = React.useMemo(() => {
+    if (!editingEntity) return 'no-entity';
+    return `entity-${editingEntity._indexId}-${isDirty ? 'dirty' : 'clean'}-${
+      JSON.stringify(editingEntity.attributes || []).length
+    }`;
+  }, [editingEntity?._indexId, isDirty, editingEntity?.attributes?.length]);
 
   return (
     <Field name="data.outputs">
@@ -70,38 +59,52 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
         const nodeAttributes: EntityAttributeData[] = useMemo(() => {
           const properties = value?.properties || {};
 
+          console.log('🔍 FormOutputs - 节点属性转换调试:', {
+            isStartNode,
+            propertiesCount: Object.keys(properties).length,
+            properties: Object.entries(properties).map(([key, prop]) => ({
+              key,
+              propId: (prop as any).id,
+              propName: (prop as any).name,
+              isEntityProperty: (prop as any).isEntityProperty,
+              isModuleProperty: (prop as any).isModuleProperty,
+            })),
+          });
+
           return Object.entries(properties)
             .filter(([key, property]) => {
               const prop = property as any;
 
-              // 在Start节点中，显示：
-              // 1. meta属性（基础属性：id/name/description）- 通过key识别
-              // 2. entity属性（扩展属性）
-              // 3. 模块分组（不显示具体的模块属性）
+              // 在Start节点中，只显示实体的扩展属性
+              // 基础属性（实体ID、名称、描述）已经在节点顶部显示了
               if (isStartNode) {
-                // meta属性：通过key识别
-                const isMetaProperty = key.startsWith('__entity_');
-
-                // 显示meta属性和entity属性，不显示模块具体属性
-                return (
-                  isMetaProperty ||
-                  prop.isEntityProperty ||
-                  (prop.isModuleProperty && !prop.id?.includes('/'))
-                );
+                // 只显示实体属性，不显示模块具体属性
+                return prop.isEntityProperty || (prop.isModuleProperty && !prop.id?.includes('/'));
               }
               return true;
             })
             .map(([key, property]) => {
               const prop = property as any;
-              return {
+              const result = {
                 key: prop._indexId || key,
                 id: prop.id || key,
                 name: prop.name || prop.title || prop.id || key,
                 type: prop.type || 'string',
                 description: prop.description,
               };
+
+              console.log('🔍 FormOutputs - 转换后的属性:', {
+                原始key: key,
+                原始propId: prop.id,
+                原始propName: prop.name,
+                转换后: result,
+              });
+
+              return result;
             });
-        }, [value, isStartNode]);
+        }, [value, isStartNode, renderKey]); // 保持renderKey作为依赖，但不作为Field的key
+
+        console.log('🔍 FormOutputs - 最终节点属性数组:', nodeAttributes);
 
         return <EntityAttributeTable attributes={nodeAttributes} />;
       }}
