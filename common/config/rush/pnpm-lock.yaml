@@ -282,11 +282,11 @@ importers:
         specifier: ~12.1.1
         version: 12.1.1
       '@douyinfe/semi-icons':
-        specifier: ^2.72.3
-        version: 2.72.3(react@18.3.1)
+        specifier: ^2.80.0
+        version: 2.80.0(react@18.3.1)
       '@douyinfe/semi-ui':
-        specifier: ^2.72.3
-        version: 2.72.3(acorn@8.14.0)(react-dom@18.3.1)(react@18.3.1)
+        specifier: ^2.80.0
+        version: 2.80.0(acorn@8.14.0)(react-dom@18.3.1)(react@18.3.1)
       '@flowgram.ai/form-materials':
         specifier: workspace:*
         version: link:../../packages/materials/form-materials
