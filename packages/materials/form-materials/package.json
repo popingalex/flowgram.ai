@@ -32,9 +32,9 @@
     "run-bin": "node bin/index.js"
   },
   "dependencies": {
-    "@douyinfe/semi-icons": "^2.72.3",
-    "@douyinfe/semi-illustrations": "^2.36.0",
-    "@douyinfe/semi-ui": "^2.72.3",
+    "@douyinfe/semi-icons": "^2.80.0",
+    "@douyinfe/semi-illustrations": "^2.80.0",
+    "@douyinfe/semi-ui": "^2.80.0",
     "@flowgram.ai/editor": "workspace:*",
     "lodash": "^4.17.21",
     "nanoid": "^4.0.2",
