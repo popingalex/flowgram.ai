@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useCurrentEntityActions } from '../../stores/current-entity';
+import { useCurrentEntityActions } from '../../stores';
 import { Entity } from '../../services/types';
 
 interface EntityEditProviderProps {

@@ -111,6 +111,17 @@ export const SidebarRenderer = () => {
       getPopupContainer={getPopupContainer}
       disableScroll={false}
       // zIndex={1050}
+      style={{
+        scrollbarGutter: 'stable',
+      }}
+      bodyStyle={
+        {
+          padding: '0 12px',
+          overflowY: 'auto',
+          scrollbarWidth: 'thin',
+          scrollbarGutter: 'stable',
+        } as React.CSSProperties
+      }
     >
       <IsSidebarContext.Provider value={true}>{content}</IsSidebarContext.Provider>
     </SideSheet>

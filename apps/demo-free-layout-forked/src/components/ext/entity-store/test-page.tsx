@@ -2,7 +2,7 @@ import React from 'react';
 
 import { Card, Typography, Tag, Spin, Descriptions } from '@douyinfe/semi-ui';
 
-import { ModuleStoreProvider, useModuleStore } from '../entity-property-type-selector/module-store';
+import { ModuleStoreProvider, useModuleStore } from '../../../stores/module.store';
 import { EntityStoreProvider, useEntityStore } from './index';
 
 const { Title, Text } = Typography;

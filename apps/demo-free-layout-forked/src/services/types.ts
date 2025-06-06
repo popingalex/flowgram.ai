@@ -2,21 +2,22 @@
 
 // 模块属性接口
 export interface ModuleAttribute {
+  _indexId?: string; // Add stable index for UI
   id: string;
   type: string;
   name: string;
   description?: string;
   enumClassId?: string;
-  _indexId?: string; // 稳定的索引ID，用作React key
 }
 
 // 模块接口
 export interface Module {
+  _indexId?: string; // Add stable index for UI
   id: string;
   name: string;
   description?: string;
-  deprecated: boolean;
   attributes: ModuleAttribute[];
+  deprecated?: boolean;
 }
 
 // 实体属性接口

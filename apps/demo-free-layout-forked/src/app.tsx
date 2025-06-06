@@ -32,6 +32,7 @@ import {
 } from '@douyinfe/semi-icons';
 
 // 现有的组件
+import { ModuleStoreProvider } from './stores/module.store';
 import {
   useEntityStore,
   EntityEditProvider,
@@ -51,7 +52,6 @@ import {
   EntityStoreProvider,
   useEntityStore as useOldEntityStore,
 } from './components/ext/entity-store';
-import { ModuleStoreProvider } from './components/ext/entity-property-type-selector/module-store';
 import { EnumStoreProvider } from './components/ext/entity-property-type-selector/enum-store';
 import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
 

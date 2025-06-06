@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, Typography, List, Space, Spin } from '@douyinfe/semi-ui';
 
 import { EntityStoreProvider, useEntityStore } from '../entity-store';
-import { ModuleStoreProvider, useModuleStore } from '../entity-property-type-selector/module-store';
+import { ModuleStoreProvider, useModuleStore } from '../../../stores/module.store';
 import { ModuleEntityEditor } from './index';
 
 const { Title, Text } = Typography;

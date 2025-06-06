@@ -4,8 +4,8 @@ import { IJsonSchema } from '@flowgram.ai/form-materials';
 import { Card, Typography, Space, Button } from '@douyinfe/semi-ui';
 
 import { EntityStoreProvider } from '../entity-store';
-import { ModuleStoreProvider } from '../entity-property-type-selector/module-store';
 import { EnumStoreProvider } from '../entity-property-type-selector/enum-store';
+import { ModuleStoreProvider } from '../../../stores/module.store';
 import { EntityPropertiesEditor } from './index';
 
 const { Title, Text } = Typography;

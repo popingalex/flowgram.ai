@@ -3,7 +3,7 @@ import React, { useState, useContext } from 'react';
 import { WorkflowPortRender } from '@flowgram.ai/free-layout-editor';
 import { useClientContext } from '@flowgram.ai/free-layout-editor';
 
-import { useCurrentEntity } from '../../stores/current-entity-fixed';
+import { useCurrentEntity } from '../../stores';
 import { useNodeRenderContext } from '../../hooks';
 import { SidebarContext } from '../../context';
 import { scrollToView } from './utils';

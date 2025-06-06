@@ -16,9 +16,9 @@ import '../../styles/index.css';
 import { DemoTools } from '../tools';
 import { SidebarRenderer, SidebarProvider } from '../sidebar';
 import { useEntityStore, EntityCompleteProperties, Entity } from '../ext/entity-store';
-import { useModuleStore } from '../ext/entity-property-type-selector/module-store';
 import { EnumStoreProvider } from '../ext/entity-property-type-selector/enum-store';
 import { entityToWorkflowData } from '../../utils/entity-to-workflow';
+import { useModuleStore } from '../../stores/module.store';
 import { useCurrentEntity } from '../../stores';
 
 import { nanoid } from 'nanoid';

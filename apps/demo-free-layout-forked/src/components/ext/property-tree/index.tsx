@@ -5,7 +5,7 @@ import { Tree, Typography, Space, Button, Tooltip } from '@douyinfe/semi-ui';
 import { IconChevronDown, IconChevronRight, IconEdit, IconPlus } from '@douyinfe/semi-icons';
 
 import { useEntityStore } from '../entity-store';
-import { useModuleStore } from '../entity-property-type-selector/module-store';
+import { useModuleStore } from '../../../stores/module.store';
 
 const { Text } = Typography;
 

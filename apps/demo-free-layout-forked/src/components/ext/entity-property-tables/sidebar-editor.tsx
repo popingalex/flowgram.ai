@@ -28,10 +28,7 @@ import type { Attribute } from '../entity-store'; // 直接使用Store中的类�
 import { DataRestrictionModal } from '../entity-property-type-selector/data-restriction-modal';
 import { EntityPropertyTypeSelector } from '../entity-property-type-selector';
 import { TypedParser, Primitive } from '../../../typings/mas/typed';
-import {
-  useCurrentEntityActions,
-  useCurrentEntityStore,
-} from '../../../stores/current-entity-fixed';
+import { useCurrentEntityActions, useCurrentEntityStore } from '../../../stores';
 
 interface EditableEntityAttributeTableProps {
   readonly?: boolean;
@@ -175,7 +172,6 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
     );
 
     const handleDelete = (id: string) => {
-      console.log('🔍 删除属性:', id);
       removeAttribute(id);
     };
 
@@ -229,21 +225,13 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
       [stableFieldChange]
     );
 
-    const handleDeleteConfirm = React.useCallback(
-      (recordIndexId: string) => {
-        console.log('Delete confirmed for:', recordIndexId);
-        handleDelete(recordIndexId);
-      },
-      [handleDelete]
-    );
-
     // 🎯 使用useMemo缓存columns，避免每次渲染都重新创建
     const columns = React.useMemo(
       () => [
         {
           title: 'ID',
           key: 'id',
-          width: '30%',
+          width: 120,
           render: (_: any, record: Attribute) => (
             <AttributeIdInput
               attributeId={record._indexId}
@@ -255,7 +243,7 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
         {
           title: '名称',
           key: 'name',
-          width: '35%',
+          width: 200, // 固定宽度，不允许撑开
           render: (_: any, record: Attribute) => (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <AttributeNameInput
@@ -282,9 +270,13 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
           ),
         },
         {
-          title: '控件',
+          title: () => (
+            <Button size="small" icon={<IconPlus />} type="primary" onClick={handleAdd}>
+              添加属性
+            </Button>
+          ),
           key: 'controls',
-          width: '35%',
+          width: 150,
           render: (_: any, record: Attribute) => (
             <Space>
               {/* 1. 属性类型修改（包含内置的数据限制功能） */}
@@ -385,11 +377,17 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
               {/* 3. 删除按钮 */}
               {!readonly && !record.isModuleProperty && (
                 <Popconfirm
-                  title="确定删除这个属性吗？"
-                  onConfirm={() => handleDeleteConfirm(record._indexId)}
+                  title="确定删除此属性吗？"
+                  content="删除后无法恢复"
+                  onConfirm={() => handleDelete(record._indexId)}
                 >
                   <Tooltip content="删除属性">
-                    <Button theme="borderless" size="small" type="danger" icon={<IconDelete />} />
+                    <Button
+                      type="danger"
+                      icon={<IconDelete />}
+                      size="small"
+                      disabled={readonly || record.isModuleProperty}
+                    />
                   </Tooltip>
                 </Popconfirm>
               )}
@@ -397,7 +395,7 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
           ),
         },
       ],
-      [stableFieldChange, readonly, handleTypeChange, handleDescriptionEdit, handleDeleteConfirm]
+      [readonly, stableFieldChange, handleTypeChange, handleDescriptionEdit, handleDelete]
     );
 
     // 🎯 使用useCallback缓存expandedRowRender - 用于复合类型子属性
@@ -449,20 +447,6 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
 
     return (
       <div style={{ width: '100%' }}>
-        {!readonly && (
-          <div style={{ marginBottom: 12 }}>
-            <Button
-              icon={<IconPlus />}
-              onClick={handleAdd}
-              type="primary"
-              theme="solid"
-              size="small"
-            >
-              添加属性
-            </Button>
-          </div>
-        )}
-
         <Table
           columns={columns}
           dataSource={attributes}
@@ -472,34 +456,7 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
           expandedRowRender={expandedRowRender}
           expandedRowKeys={Array.from(expandedRows)}
           hideExpandedColumn={false}
-          expandIcon={(props: any) => {
-            const { expanded, onExpand, record } = props;
-            // 🚨 修复：添加 record 空值检查
-            if (!record || !record.type) {
-              return <div style={{ width: 16 }} />;
-            }
-
-            // 只有复合类型才显示展开图标
-            const typedInfo = TypedParser.fromString(record.type);
-            if (typedInfo.attributes.length === 0) {
-              // 非复合类型，不显示展开图标
-              return <div style={{ width: 16 }} />;
-            }
-
-            // 复合类型，显示展开/收缩图标
-            return (
-              <Button
-                theme="borderless"
-                size="small"
-                icon={expanded ? <IconChevronDown /> : <IconChevronRight />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onExpand(record, e);
-                }}
-                style={{ width: 16, height: 16, padding: 0 }}
-              />
-            );
-          }}
+          indentSize={0}
           onExpand={(expanded, record) => {
             if (expanded && record && (record as any)._indexId) {
               setExpandedRows((prev) => new Set([...prev, (record as any)._indexId]));
@@ -515,7 +472,8 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
             borderRadius: '6px',
             border: '1px solid var(--semi-color-border)',
             overflow: 'hidden',
-            width: '100%', // 确保表格占满容器宽度
+            width: '100%',
+            tableLayout: 'fixed', // 强制使用固定表格布局
           }}
         />
 
@@ -549,3 +507,5 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
 );
 
 EditableEntityAttributeTable.displayName = 'EditableEntityAttributeTable';
+
+export default EditableEntityAttributeTable;

@@ -9,7 +9,7 @@ import React, {
 
 import { nanoid } from 'nanoid';
 
-import { useModuleStore } from '../entity-property-type-selector/module-store';
+import { useModuleStore } from '../../../stores/module.store';
 import type { Entity, Attribute } from '../../../services/types';
 import { entityApi } from '../../../services/api-service';
 import {

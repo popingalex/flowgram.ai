@@ -1,61 +1,65 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 
 import { nanoid } from 'nanoid';
 
+import { useModuleStore } from '../../stores/module.store';
 import { useEntityListActions } from '../../stores';
+import { useIsSidebar } from '../../hooks';
 import { SidebarContext } from '../../context';
+import { ModuleSelectorModal } from '../../components/ext/module-selector';
 import {
-  EntityModuleTable,
-  EntityModuleData,
-} from '../../components/ext/property-table/entity-module-table';
-import {
-  EntityAttributeTable,
-  EntityAttributeData,
-} from '../../components/ext/property-table/entity-attribute-table';
+  NodeDisplay as NodeModuleDisplay,
+  SidebarTree as ModulePropertyTreeTable,
+} from '../../components/ext/module-property-tables';
+import type {
+  NodeModuleData,
+  ModuleTreeData,
+  ModulePropertyData,
+} from '../../components/ext/module-property-tables';
 import { useEntityStore } from '../../components/ext/entity-store';
-import { useModuleStore } from '../../components/ext/entity-property-type-selector/module-store';
 
 interface FormModuleOutputsProps {
   isSidebar?: boolean;
 }
 
-export function FormModuleOutputs({ isSidebar }: FormModuleOutputsProps = {}) {
+export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutputsProps = {}) {
+  const hookIsSidebar = useIsSidebar();
+  const isSidebar = propIsSidebar !== undefined ? propIsSidebar : hookIsSidebar;
   const { selectedEntityId } = useContext(SidebarContext);
-  const { getEntityCompleteProperties } = useEntityStore();
+  const { getEntityCompleteProperties, updateEntity } = useEntityStore();
   const { getEntityByStableId } = useEntityListActions();
   const { getModulesByIds } = useModuleStore();
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [focusModuleId, setFocusModuleId] = useState<string | undefined>();
 
   // 获取实体数据
   const currentEntity = selectedEntityId ? getEntityByStableId(selectedEntityId) : null;
   const entityProperties = currentEntity ? getEntityCompleteProperties(currentEntity.id) : null;
 
-  // 准备实体属性数据
-  const entityAttributes: EntityAttributeData[] = useMemo(() => {
-    if (!entityProperties?.allProperties?.properties) return [];
+  const handleConfigureModules = () => {
+    setFocusModuleId(undefined); // 一般打开，不聚焦
+    setIsModalVisible(true);
+  };
 
-    const properties = entityProperties.allProperties.properties;
-    const result: EntityAttributeData[] = [];
+  const handleNavigateToModule = (moduleId: string) => {
+    setFocusModuleId(moduleId); // 带滚动打开，设置聚焦ID
+    setIsModalVisible(true);
+  };
 
-    Object.entries(properties).forEach(([key, property]) => {
-      const prop = property as any;
+  const handleModalConfirm = (selectedIds: string[]) => {
+    if (currentEntity) {
+      updateEntity(currentEntity.id, { ...currentEntity, bundles: selectedIds });
+    }
+    setIsModalVisible(false);
+  };
 
-      // 只包含实体自身属性和自定义属性
-      if (prop.isEntityProperty || (!prop.isModuleProperty && !prop.isEntityProperty)) {
-        result.push({
-          key: prop._indexId || key,
-          id: prop.id || key,
-          name: prop.name || prop.title || prop.id || key,
-          type: prop.type || 'string',
-          description: prop.description,
-        });
-      }
-    });
+  const handleModalCancel = () => {
+    setIsModalVisible(false);
+  };
 
-    return result;
-  }, [entityProperties]);
-
-  // 准备模块数据
-  const moduleData: EntityModuleData[] = useMemo(() => {
+  // 准备节点模块数据
+  const nodeModuleData: NodeModuleData[] = useMemo(() => {
     if (!currentEntity?.bundles) return [];
 
     const moduleIds = currentEntity.bundles.filter((id) => typeof id === 'string') as string[];
@@ -75,15 +79,74 @@ export function FormModuleOutputs({ isSidebar }: FormModuleOutputsProps = {}) {
     }));
   }, [currentEntity, getModulesByIds]);
 
+  // 准备边栏树形模块数据
+  const treeModuleData: ModuleTreeData[] = useMemo(() => {
+    if (!currentEntity?.bundles) return [];
+
+    const moduleIds = currentEntity.bundles.filter((id) => typeof id === 'string') as string[];
+    const modules = getModulesByIds(moduleIds);
+
+    console.log('🔍 FormModuleOutputs - 模块数据:', {
+      moduleIds,
+      modules: modules.map((m) => ({
+        id: m.id,
+        name: m.name,
+        attributeCount: m.attributes?.length,
+        attributes: m.attributes?.map((attr) => ({
+          id: attr.id,
+          name: attr.name,
+          type: attr.type,
+        })),
+      })),
+    });
+
+    return modules.map((module) => ({
+      key: `module-${module.id}`,
+      id: module.id,
+      name: module.name,
+      attributeCount: module.attributes?.length || 0,
+      children:
+        module.attributes?.map((attr) => ({
+          key: `${module.id}-${attr.id}`,
+          id: attr.id,
+          name: attr.name,
+          type: attr.type,
+          description: attr.description,
+        })) || [],
+    }));
+  }, [currentEntity, getModulesByIds]);
+
   if (!currentEntity) {
     return null;
   }
 
-  return (
-    <div>
-      {moduleData.length > 0 && (
-        <EntityModuleTable modules={moduleData} mode={isSidebar ? 'sidebar' : 'node'} />
-      )}
-    </div>
-  );
+  // 边栏模式：使用树形表格
+  if (isSidebar) {
+    return (
+      <>
+        {treeModuleData.length > 0 ? (
+          <ModulePropertyTreeTable
+            modules={treeModuleData}
+            onNavigateToModule={handleNavigateToModule}
+            onConfigureModules={handleConfigureModules}
+          />
+        ) : null}
+
+        {isModalVisible && currentEntity && (
+          <ModuleSelectorModal
+            visible={isModalVisible}
+            onConfirm={handleModalConfirm}
+            onCancel={handleModalCancel}
+            selectedModuleIds={
+              currentEntity.bundles.filter((id) => typeof id === 'string') as string[]
+            }
+            focusModuleId={focusModuleId}
+          />
+        )}
+      </>
+    );
+  }
+
+  // 节点模式：使用简单模块显示
+  return nodeModuleData.length > 0 ? <NodeModuleDisplay modules={nodeModuleData} /> : null;
 }

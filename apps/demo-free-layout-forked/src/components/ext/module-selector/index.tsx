@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 
 import { IJsonSchema } from '@flowgram.ai/form-materials';
 import {
@@ -27,12 +27,9 @@ import {
   IconChevronDown,
 } from '@douyinfe/semi-icons';
 
-import {
-  useModuleStore,
-  Module,
-  ModuleAttribute,
-} from '../entity-property-type-selector/module-store';
 import { EntityPropertiesEditor } from '../entity-properties-editor';
+import { useModuleStore, Module, ModuleAttribute } from '../../../stores/module.store';
+import { EditableModuleTreeTable } from './EditableModuleTreeTable';
 
 const { Text } = Typography;
 
@@ -50,7 +47,7 @@ interface ModuleItemProps {
   onToggle: (moduleId: string) => void;
   onModuleChange: (moduleId: string, updatedModule: Module) => void;
   onDelete: (moduleId: string, e: React.MouseEvent) => void;
-  itemRef?: (el: HTMLDivElement | null) => void;
+  itemRef: (el: HTMLDivElement | null) => void;
 }
 
 const ModuleItem: React.FC<ModuleItemProps> = ({
@@ -326,50 +323,35 @@ export const ModuleSelectorModal: React.FC<ModuleSelectorModalProps> = ({
   // 模块项的引用
   const moduleItemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (visible) {
       setTempSelectedIds(selectedModuleIds);
     }
   }, [visible, selectedModuleIds]);
 
-  // 当focusModuleId变化时，滚动到对应的模块
-  React.useEffect(() => {
+  const filteredModules = useMemo(
+    () =>
+      modules.filter((module) => {
+        const searchTermLower = searchText.toLowerCase();
+        const nameMatch = module.name.toLowerCase().includes(searchTermLower);
+        const idMatch = module.id.toLowerCase().includes(searchTermLower);
+        const descriptionMatch =
+          module.description?.toLowerCase().includes(searchTermLower) || false;
+        return nameMatch || idMatch || descriptionMatch;
+      }),
+    [modules, searchText]
+  );
+
+  useEffect(() => {
     if (visible && focusModuleId && moduleItemRefs.current[focusModuleId]) {
-      // 延迟执行滚动，确保DOM已渲染
       setTimeout(() => {
-        const targetElement = moduleItemRefs.current[focusModuleId];
-        if (targetElement) {
-          targetElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
-
-          // 高亮效果
-          targetElement.style.transition = 'box-shadow 0.3s ease-in-out';
-          targetElement.style.boxShadow = '0 0 10px var(--semi-color-primary)';
-
-          // 3秒后移除高亮
-          setTimeout(() => {
-            targetElement.style.boxShadow = '';
-          }, 3000);
-        }
-      }, 100);
+        moduleItemRefs.current[focusModuleId]?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }, 100); // Small delay to ensure modal is rendered and list is filtered
     }
-  }, [visible, focusModuleId]);
-
-  // 过滤模块
-  const filteredModules = useMemo(() => {
-    if (!searchText) return modules;
-    return modules.filter(
-      (module) =>
-        module.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        module.description?.toLowerCase().includes(searchText.toLowerCase()) ||
-        module.id.toLowerCase().includes(searchText.toLowerCase()) ||
-        module.attributes.some((attr) =>
-          attr.name?.toLowerCase().includes(searchText.toLowerCase())
-        )
-    );
-  }, [searchText, modules]);
+  }, [visible, focusModuleId, filteredModules]);
 
   const handleModuleToggle = (moduleId: string) => {
     setTempSelectedIds((prev) =>
@@ -410,83 +392,15 @@ export const ModuleSelectorModal: React.FC<ModuleSelectorModalProps> = ({
 
   return (
     <Modal
-      title="选择并配置模块"
+      title="模块配置"
       visible={visible}
+      onOk={handleConfirm}
       onCancel={handleCancel}
-      width={700}
-      footer={
-        <Space>
-          <Button onClick={handleCancel}>取消</Button>
-          <Button type="primary" onClick={handleConfirm}>
-            确定
-          </Button>
-        </Space>
-      }
+      width={800}
+      height={600}
+      bodyStyle={{ overflow: 'auto' }}
     >
-      {/* 搜索栏和新建按钮 */}
-      <div style={{ marginBottom: 16 }}>
-        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Input
-            prefix={<IconSearch />}
-            placeholder="搜索模块..."
-            value={searchText}
-            onChange={setSearchText}
-            style={{ width: 350 }}
-          />
-          <Button type="primary" icon={<IconPlus />} onClick={handleCreateNew}>
-            新建模块
-          </Button>
-        </Space>
-      </div>
-
-      {/* 当前选择提示 */}
-      {tempSelectedIds.length > 0 && (
-        <div
-          style={{
-            padding: '4px 12px',
-            marginBottom: 16,
-            backgroundColor: 'var(--semi-color-primary-light-default)',
-            borderRadius: 6,
-            border: '1px solid var(--semi-color-primary-light-hover)',
-          }}
-        >
-          <Text type="secondary">
-            已选择 {tempSelectedIds.length} 个模块:{' '}
-            {tempSelectedIds.map((id) => (
-              <Tag key={id} color="blue" style={{ marginRight: '4px' }}>
-                {modules.find((m) => m.id === id)?.name || id}
-              </Tag>
-            ))}
-          </Text>
-        </div>
-      )}
-
-      {/* 模块列表 */}
-      <div style={{ height: '480px', overflow: 'auto', padding: '0 8px' }}>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '50px' }}>加载中...</div>
-        ) : filteredModules.length === 0 ? (
-          <Empty title="暂无匹配的模块" description="尝试调整搜索条件" style={{ marginTop: 100 }} />
-        ) : (
-          <List
-            dataSource={filteredModules}
-            split={false}
-            renderItem={(module) => (
-              <ModuleItem
-                key={module.id}
-                module={module}
-                isSelected={tempSelectedIds.includes(module.id)}
-                onToggle={handleModuleToggle}
-                onModuleChange={handleModuleChange}
-                onDelete={handleDeleteModule}
-                itemRef={(el) => {
-                  moduleItemRefs.current[module.id] = el;
-                }}
-              />
-            )}
-          />
-        )}
-      </div>
+      <EditableModuleTreeTable />
     </Modal>
   );
 };

@@ -5,15 +5,15 @@ import { Field, FieldRenderProps } from '@flowgram.ai/free-layout-editor';
 import { IJsonSchema } from '@flowgram.ai/form-materials';
 
 import { PropertiesEdit } from '../properties-edit';
-import { useCurrentEntity, useCurrentEntityActions } from '../../stores/current-entity-fixed';
+import { useCurrentEntity, useCurrentEntityActions } from '../../stores';
 import { useCloned } from '../../hooks/use-cloned';
 import { useIsSidebar, useNodeRenderContext } from '../../hooks';
 import { SidebarContext } from '../../context';
 import {
-  EntityAttributeTable,
-  EntityAttributeData,
-} from '../../components/ext/property-table/entity-attribute-table';
-import { EditableEntityAttributeTable } from '../../components/ext/editable-entity-attribute-table';
+  UnifiedDisplay as UnifiedPropertyDisplay,
+  PropertyData,
+} from '../../components/ext/entity-property-tables';
+import { SidebarEditor as EditableEntityAttributeTable } from '../../components/ext/entity-property-tables';
 
 interface FormOutputsProps {
   isSidebar?: boolean;
@@ -55,8 +55,8 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
   return (
     <Field name="data.outputs">
       {({ field: { value } }: FieldRenderProps<IJsonSchema>) => {
-        // 转换数据为EntityAttributeData格式
-        const nodeAttributes: EntityAttributeData[] = useMemo(() => {
+        // 转换数据为PropertyData格式
+        const nodeProperties: PropertyData[] = useMemo(() => {
           const properties = value?.properties || {};
 
           console.log('🔍 FormOutputs - 节点属性转换调试:', {
@@ -91,6 +91,7 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
                 name: prop.name || prop.title || prop.id || key,
                 type: prop.type || 'string',
                 description: prop.description,
+                required: prop.isPropertyRequired,
               };
 
               console.log('🔍 FormOutputs - 转换后的属性:', {
@@ -104,9 +105,9 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
             });
         }, [value, isStartNode, renderKey]); // 保持renderKey作为依赖，但不作为Field的key
 
-        console.log('🔍 FormOutputs - 最终节点属性数组:', nodeAttributes);
+        console.log('🔍 FormOutputs - 最终节点属性数组:', nodeProperties);
 
-        return <EntityAttributeTable attributes={nodeAttributes} />;
+        return <UnifiedPropertyDisplay properties={nodeProperties} mode="node" />;
       }}
     </Field>
   );

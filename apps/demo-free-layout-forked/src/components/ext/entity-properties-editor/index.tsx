@@ -39,9 +39,9 @@ import {
 
 import { ModuleSelectorModal } from '../module-selector';
 import { useEntityStore, Attribute } from '../entity-store';
-import { useModuleStore } from '../entity-property-type-selector/module-store';
 import { useEnumStore } from '../entity-property-type-selector/enum-store';
 import { DataRestrictionModal } from '../entity-property-type-selector/data-restriction-modal';
+import { useModuleStore } from '../../../stores/module.store';
 import {
   CustomUIContainer,
   CustomUIRow,
