@@ -2,18 +2,14 @@ import React from 'react';
 
 import { Table, Tooltip, Tag } from '@douyinfe/semi-ui';
 
-export interface ModuleAttributeInfo {
-  id: string;
-  name: string;
-  type: string;
-}
+import { ModuleAttribute } from '../../../services/types';
 
 export interface NodeModuleData {
   key: string;
   id: string;
   name: string;
   attributeCount: number;
-  attributes: ModuleAttributeInfo[];
+  attributes: ModuleAttribute[];
 }
 
 interface NodeModuleDisplayProps {
@@ -60,7 +56,7 @@ export const NodeModuleDisplay: React.FC<NodeModuleDisplayProps> = ({ modules })
                 <div style={{ fontWeight: 'bold' }}>类型</div>
                 {record.attributes.map((attr, index) => (
                   <React.Fragment key={index}>
-                    <div>{attr.id}</div>
+                    <div>{attr.displayId || attr.id}</div>
                     <div>{attr.name}</div>
                     <div>{attr.type}</div>
                   </React.Fragment>

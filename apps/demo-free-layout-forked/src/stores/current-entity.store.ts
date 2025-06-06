@@ -172,17 +172,61 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
       // 删除属性
       removeAttribute: (attributeIndexId) => {
         set((state) => {
-          if (!state.editingEntity || !state.originalEntity || !state.editingEntity.attributes)
+          console.log('🗑️ Store: 开始删除属性:', {
+            attributeIndexId,
+            hasEditingEntity: !!state.editingEntity,
+            hasAttributes: !!state.editingEntity?.attributes,
+            attributesCount: state.editingEntity?.attributes?.length || 0,
+          });
+
+          if (!state.editingEntity || !state.originalEntity) {
+            console.error('🗑️ Store: 没有正在编辑的实体');
             return;
+          }
+
+          if (!state.editingEntity.attributes) {
+            console.error('🗑️ Store: 实体没有属性数组');
+            state.editingEntity.attributes = [];
+            return;
+          }
 
           const index = state.editingEntity.attributes.findIndex(
             (attr: any) => attr._indexId === attributeIndexId
           );
 
+          console.log('🗑️ Store: 查找结果:', {
+            attributeIndexId,
+            foundIndex: index,
+            属性列表: state.editingEntity.attributes.map((attr: any) => ({
+              id: attr.id,
+              name: attr.name,
+              _indexId: attr._indexId,
+            })),
+          });
+
           if (index !== -1) {
+            const deletedAttr = state.editingEntity.attributes[index];
+
+            // 使用Immer的splice方法删除
             state.editingEntity.attributes.splice(index, 1);
+
             state.isDirty = true;
             state.error = null;
+
+            console.log('🗑️ Store: 删除成功:', {
+              deletedAttr: {
+                id: deletedAttr.id,
+                name: deletedAttr.name,
+                _indexId: deletedAttr._indexId,
+              },
+              remainingCount: state.editingEntity.attributes.length,
+              isDirty: state.isDirty,
+            });
+          } else {
+            console.warn('🗑️ Store: 未找到要删除的属性:', {
+              searchingFor: attributeIndexId,
+              availableIds: state.editingEntity.attributes.map((attr: any) => attr._indexId),
+            });
           }
         });
       },

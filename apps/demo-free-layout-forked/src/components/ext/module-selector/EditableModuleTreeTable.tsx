@@ -187,7 +187,7 @@ export const EditableModuleTreeTable = () => {
         dataSource={dataSource}
         pagination={false}
         rowExpandable={(record) => !!(record?.children && record.children.length > 0)}
-        defaultExpandAllRows={true}
+        // defaultExpandAllRows={true}
         hideExpandedColumn={false}
       />
     </div>

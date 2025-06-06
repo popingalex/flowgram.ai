@@ -38,7 +38,7 @@ export function FormEntityMetas({ isSidebar }: FormEntityMetasProps) {
           onChange={(value) => handleMetaChange('id', value)}
           size="small"
           placeholder="实体ID"
-          disabled={!isInSidebar}
+          readonly={!isInSidebar}
         />
       </FormItem>
 
@@ -48,7 +48,7 @@ export function FormEntityMetas({ isSidebar }: FormEntityMetasProps) {
           onChange={(value) => handleMetaChange('name', value)}
           size="small"
           placeholder="实体名称"
-          disabled={!isInSidebar}
+          readonly={!isInSidebar}
         />
       </FormItem>
 
@@ -58,7 +58,7 @@ export function FormEntityMetas({ isSidebar }: FormEntityMetasProps) {
           onChange={(value) => handleMetaChange('description', value)}
           size="small"
           placeholder="实体描述"
-          disabled={!isInSidebar}
+          readonly={!isInSidebar}
         />
       </FormItem>
     </>

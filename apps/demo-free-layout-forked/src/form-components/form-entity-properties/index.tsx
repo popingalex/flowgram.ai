@@ -9,7 +9,10 @@ import { useNodeRenderContext } from '../../hooks';
 export const FormEntityProperties: React.FC = () => {
   const { node } = useNodeRenderContext();
 
-  if (!node?.entity?.attributes || node.entity.attributes.length === 0) {
+  // 从node的扩展信息中获取entity
+  const entity = node?.getExtInfo()?.entity;
+
+  if (!entity?.attributes || entity.attributes.length === 0) {
     return null;
   }
 
@@ -57,11 +60,11 @@ export const FormEntityProperties: React.FC = () => {
         }}
       >
         <IconInfoCircle style={{ marginRight: 4 }} />
-        实体属性
+        属性
       </div>
       <Table
         columns={columns}
-        dataSource={node.entity.attributes}
+        dataSource={entity.attributes}
         pagination={false}
         size="small"
         rowKey="id"

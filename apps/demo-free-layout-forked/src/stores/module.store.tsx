@@ -58,6 +58,7 @@ export const useModuleStore = create<ModuleStore>()(
             attributes: (m.attributes || []).map((a) => ({
               ...a,
               _indexId: a._indexId || nanoid(),
+              displayId: a.displayId || a.id.split('/').pop() || a.id, // 去掉模块前缀，只保留属性名
             })),
           }));
           set({ modules: modulesWithIndex, loading: false });
@@ -79,6 +80,7 @@ export const useModuleStore = create<ModuleStore>()(
             attributes: (module.attributes || []).map((attr) => ({
               ...attr,
               _indexId: nanoid(),
+              displayId: attr.displayId || attr.id.split('/').pop() || attr.id, // 去掉模块前缀，只保留属性名
             })),
           };
           state.modules.push(newModule);
@@ -93,6 +95,7 @@ export const useModuleStore = create<ModuleStore>()(
             attributes: (module.attributes || []).map((attr) => ({
               ...attr,
               _indexId: nanoid(),
+              displayId: attr.displayId || attr.id.split('/').pop() || attr.id, // 去掉模块前缀，只保留属性名
             })),
           };
           state.modules.push(newModule);
@@ -119,18 +122,42 @@ export const useModuleStore = create<ModuleStore>()(
           const module = state.modules.find((m) => m.id === moduleId);
           if (module) {
             if (!module.attributes) module.attributes = [];
-            module.attributes.push({ ...attribute, _indexId: nanoid() });
+            module.attributes.push({
+              ...attribute,
+              _indexId: nanoid(),
+              displayId: attribute.displayId || attribute.id.split('/').pop() || attribute.id, // 去掉模块前缀，只保留属性名
+            });
           }
         });
       },
 
       removeAttributeFromModule: (moduleId, attributeId) => {
         set((state) => {
+          console.log('🗑️ ModuleStore: 删除模块属性:', { moduleId, attributeId });
           const module = state.modules.find((m) => m.id === moduleId);
           if (module?.attributes) {
-            const attrIndex = module.attributes.findIndex((a) => a.id === attributeId);
+            // 先尝试用ID查找，再尝试用_indexId查找
+            let attrIndex = module.attributes.findIndex((a) => a.id === attributeId);
+            if (attrIndex === -1) {
+              attrIndex = module.attributes.findIndex((a) => a._indexId === attributeId);
+            }
+
+            console.log('🗑️ ModuleStore: 查找结果:', {
+              attrIndex,
+              attributesCount: module.attributes.length,
+              searchingFor: attributeId,
+              availableIds: module.attributes.map((a) => ({ id: a.id, _indexId: a._indexId })),
+            });
+
             if (attrIndex > -1) {
+              const deletedAttr = module.attributes[attrIndex];
               module.attributes.splice(attrIndex, 1);
+              console.log('🗑️ ModuleStore: 删除成功:', {
+                deletedAttr: { id: deletedAttr.id, _indexId: deletedAttr._indexId },
+                remainingCount: module.attributes.length,
+              });
+            } else {
+              console.warn('🗑️ ModuleStore: 未找到要删除的属性');
             }
           }
         });

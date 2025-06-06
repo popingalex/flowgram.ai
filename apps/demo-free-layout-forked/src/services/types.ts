@@ -8,6 +8,7 @@ export interface ModuleAttribute {
   name: string;
   description?: string;
   enumClassId?: string;
+  displayId?: string; // 去掉模块前缀的属性ID，用于显示
 }
 
 // 模块接口

@@ -45,266 +45,240 @@ interface ModuleItemProps {
   module: Module;
   isSelected: boolean;
   onToggle: (moduleId: string) => void;
-  onModuleChange: (moduleId: string, updatedModule: Module) => void;
   onDelete: (moduleId: string, e: React.MouseEvent) => void;
-  itemRef: (el: HTMLDivElement | null) => void;
+  onChange: (moduleId: string, updatedModule: Module) => void;
+  forwardRef?: React.RefObject<HTMLDivElement>;
 }
 
 const ModuleItem: React.FC<ModuleItemProps> = ({
   module,
   isSelected,
   onToggle,
-  onModuleChange,
   onDelete,
-  itemRef,
+  onChange,
+  forwardRef,
 }) => {
-  const [attributesCollapsed, setAttributesCollapsed] = useState(true); // 默认收起
-  const [hasChanges, setHasChanges] = useState(false); // 跟踪是否有修改
-  const [originalModule, setOriginalModule] = useState<Module>(module); // 保存原始数据
+  const [isEditing, setIsEditing] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [editingModule, setEditingModule] = useState<Module>(module);
+  const [hasChanges, setHasChanges] = useState(false);
 
-  // 当模块数据变化时，检查是否有修改
-  React.useEffect(() => {
-    const hasModuleChanges = JSON.stringify(module) !== JSON.stringify(originalModule);
-    setHasChanges(hasModuleChanges);
-  }, [module, originalModule]);
-
-  // 保存修改
-  const handleSave = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setOriginalModule(module); // 更新原始数据
+  useEffect(() => {
+    setEditingModule(module);
     setHasChanges(false);
-    // 这里可以添加实际的保存逻辑，比如调用API
+  }, [module]);
+
+  const handleToggle = () => {
+    onToggle(module.id);
   };
 
-  // 撤销修改
-  const handleCancel = (e: React.MouseEvent) => {
+  const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onModuleChange(module.id, originalModule); // 恢复到原始数据
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    onChange(module.id, editingModule);
+    setIsEditing(false);
     setHasChanges(false);
   };
 
-  // 将模块转换为JSONSchema格式
-  const moduleToJsonSchema = (module: Module) => {
-    const properties: Record<string, any> = {};
-
-    module.attributes.forEach((attr) => {
-      // 使用属性的原始ID，但如果包含模块前缀则去掉
-      const parts = attr.id.split('/');
-      const propertyKey = parts[parts.length - 1]; // 取最后一部分
-
-      properties[propertyKey] = {
-        type:
-          attr.type === 'n'
-            ? 'number'
-            : attr.type === 's'
-            ? 'string'
-            : attr.type?.includes('[')
-            ? 'array'
-            : 'string',
-        title: propertyKey, // 直接使用处理后的propertyKey作为显示名称
-        description: attr.description,
-      };
-    });
-
-    return {
-      type: 'object',
-      properties,
-    };
+  const handleCancel = () => {
+    setEditingModule(module);
+    setIsEditing(false);
+    setHasChanges(false);
   };
 
-  const handleModuleChange = (updatedSchema: IJsonSchema) => {
-    if (!updatedSchema.properties) return;
-
-    // 将JSONSchema转换回Module格式
-    const properties = updatedSchema.properties;
-    const newAttributes: ModuleAttribute[] = Object.entries(properties).map(([id, property]) => {
-      const prop = property as IJsonSchema;
-      return {
-        id,
-        name: prop.title || id,
-        type: prop.type === 'number' ? 'n' : prop.type === 'array' ? 's[]' : 's',
-        description: prop.description,
-      };
-    });
-
-    const updatedModule: Module = {
-      ...module,
-      attributes: newAttributes,
-    };
-
-    onModuleChange(module.id, updatedModule);
+  const handleFieldChange = (field: keyof Module, value: any) => {
+    setEditingModule((prev) => ({ ...prev, [field]: value }));
+    setHasChanges(true);
   };
 
-  const jsonSchemaValue = moduleToJsonSchema(module);
+  const handleExpandToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsExpanded(!isExpanded);
+  };
 
   return (
     <div
-      ref={itemRef}
+      ref={forwardRef}
       style={{
         marginBottom: '8px',
+        border: '1px solid var(--semi-color-border)',
+        borderRadius: '6px',
+        backgroundColor: isSelected
+          ? 'var(--semi-color-primary-light-default)'
+          : 'var(--semi-color-bg-2)',
+        transition: 'all 0.2s',
       }}
     >
-      <List.Item
+      {/* 模块标题行 */}
+      <div
         style={{
-          padding: '16px',
-          border: isSelected
-            ? '2px solid var(--semi-color-primary)'
-            : '1px solid var(--semi-color-border)',
-          borderRadius: '6px',
+          padding: '12px 16px',
           cursor: 'pointer',
-          backgroundColor: isSelected ? 'var(--semi-color-primary-light-default)' : 'white',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
-        onClick={() => onToggle(module.id)}
+        onClick={handleToggle}
       >
-        <div style={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}>
-          <Checkbox
-            checked={isSelected}
-            style={{ marginRight: '12px', marginTop: '2px' }}
-            onChange={(e) => {
-              e.stopPropagation(); // 阻止事件冒泡
-              onToggle(module.id);
-            }}
-          />
-          <div style={{ flex: 1 }}>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '8px',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      color: 'var(--semi-color-text-2)',
-                      minWidth: '30px',
-                    }}
-                  >
-                    名称:
-                  </span>
-                  <Input
-                    size="small"
-                    value={module.name}
-                    onChange={(value) => {
-                      onModuleChange(module.id, { ...module, name: value });
-                    }}
-                    style={{
-                      width: '120px',
-                      backgroundColor: 'var(--semi-color-fill-1)',
-                    }}
-                  />
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      color: 'var(--semi-color-text-2)',
-                      minWidth: '20px',
-                    }}
-                  >
-                    ID:
-                  </span>
-                  <Input
-                    size="small"
-                    value={module.id}
-                    onChange={(value) => {
-                      onModuleChange(module.id, { ...module, id: value });
-                    }}
-                    style={{
-                      width: '120px',
-                      backgroundColor: 'var(--semi-color-fill-1)',
-                    }}
-                  />
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                {hasChanges && (
-                  <>
-                    <Tooltip content="保存修改">
-                      <IconButton
-                        size="small"
-                        type="primary"
-                        icon={<IconSave />}
-                        onClick={handleSave}
-                      />
-                    </Tooltip>
-                    <Tooltip content="撤销修改">
-                      <IconButton
-                        size="small"
-                        type="tertiary"
-                        icon={<IconClose />}
-                        onClick={handleCancel}
-                      />
-                    </Tooltip>
-                  </>
-                )}
-                <Popconfirm
-                  title="确定删除此模块吗？"
-                  content="删除后无法恢复"
-                  onConfirm={(e) => onDelete(module.id, e!)}
-                >
-                  <IconButton
-                    size="small"
-                    type="danger"
-                    theme="borderless"
-                    icon={<IconDelete />}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </Popconfirm>
-              </div>
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+          <Checkbox checked={isSelected} onChange={handleToggle} />
 
-            {/* 属性部分 - 可折叠 */}
-            <div style={{ marginTop: '8px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  cursor: 'pointer',
-                  padding: '4px 0',
-                  borderTop: '1px solid var(--semi-color-border)',
-                  paddingTop: '8px',
-                }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setAttributesCollapsed(!attributesCollapsed);
-                }}
-              >
-                {attributesCollapsed ? (
-                  <IconChevronRight size="small" />
-                ) : (
-                  <IconChevronDown size="small" />
-                )}
-                <Text style={{ fontSize: '12px', color: 'var(--semi-color-text-1)' }}>
-                  属性 ({module.attributes.length})
+          {isEditing ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+              <Input
+                value={editingModule.name}
+                onChange={(value) => handleFieldChange('name', value)}
+                placeholder="模块名称"
+                size="small"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <Input
+                value={editingModule.description || ''}
+                onChange={(value) => handleFieldChange('description', value)}
+                placeholder="模块描述"
+                size="small"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          ) : (
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Text strong>{module.name}</Text>
+                {/* 移除模块标签，简化显示 */}
+                <Text
+                  type="tertiary"
+                  style={{
+                    fontSize: '12px',
+                    fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                  }}
+                >
+                  {module.id}
                 </Text>
               </div>
-
-              {/* 属性编辑器 - 可折叠 */}
-              {!attributesCollapsed && (
-                <div style={{ marginTop: '8px' }}>
-                  <EntityPropertiesEditor
-                    value={jsonSchemaValue}
-                    onChange={handleModuleChange}
-                    config={{
-                      placeholder: '输入模块属性名',
-                      addButtonText: '添加属性',
-                    }}
-                    hideModuleButton={true}
-                    hideModuleGrouping={true}
-                    disabled={false}
-                    compact={true}
-                  />
-                </div>
+              {module.description && (
+                <Text type="secondary" size="small">
+                  {module.description}
+                </Text>
               )}
             </div>
-          </div>
+          )}
+
+          <Space>
+            <Text type="tertiary" size="small">
+              {module.attributes.length} 个属性
+            </Text>
+            <IconButton
+              size="small"
+              type="tertiary"
+              theme="borderless"
+              icon={isExpanded ? <IconChevronDown /> : <IconChevronRight />}
+              onClick={handleExpandToggle}
+            />
+          </Space>
         </div>
-      </List.Item>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {isEditing ? (
+            <>
+              {hasChanges && (
+                <>
+                  <Tooltip content="保存修改">
+                    <IconButton
+                      size="small"
+                      type="primary"
+                      icon={<IconSave />}
+                      onClick={handleSave}
+                    />
+                  </Tooltip>
+                  <Tooltip content="撤销修改">
+                    <IconButton
+                      size="small"
+                      type="tertiary"
+                      icon={<IconClose />}
+                      onClick={handleCancel}
+                    />
+                  </Tooltip>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <Tooltip content="编辑模块">
+                <IconButton
+                  size="small"
+                  type="tertiary"
+                  theme="borderless"
+                  icon={<IconEdit />}
+                  onClick={handleEdit}
+                />
+              </Tooltip>
+              <Popconfirm
+                title="确定删除此模块吗？"
+                content="删除后无法恢复"
+                onConfirm={(e) => onDelete(module.id, e!)}
+              >
+                <IconButton
+                  size="small"
+                  type="danger"
+                  theme="borderless"
+                  icon={<IconDelete />}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </Popconfirm>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* 属性部分 - 可折叠 */}
+      {isExpanded && (
+        <div
+          style={{
+            borderTop: '1px solid var(--semi-color-border)',
+            padding: '12px 16px',
+            backgroundColor: 'var(--semi-color-bg-1)',
+          }}
+        >
+          <Text strong size="small" style={{ marginBottom: '8px', display: 'block' }}>
+            模块属性 ({module.attributes.length})
+          </Text>
+          {module.attributes.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {module.attributes.map((attr, index) => (
+                <div
+                  key={attr.id || index}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '4px 8px',
+                    backgroundColor: 'var(--semi-color-bg-0)',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                  }}
+                >
+                  <span>
+                    <Text strong>{attr.name || attr.id}</Text>
+                    <Text type="tertiary" style={{ marginLeft: '8px' }}>
+                      {attr.id}
+                    </Text>
+                  </span>
+                  <Tag size="small" color="cyan">
+                    {attr.type}
+                  </Tag>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <Text type="tertiary" size="small">
+              暂无属性
+            </Text>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -172,7 +172,16 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
     );
 
     const handleDelete = (id: string) => {
+      console.log('🗑️ 删除属性:', {
+        attributeIndexId: id,
+        当前属性列表: attributes.map((attr) => ({
+          id: attr.id,
+          name: attr.name,
+          _indexId: attr._indexId,
+        })),
+      });
       removeAttribute(id);
+      console.log('🗑️ 删除操作已调用');
     };
 
     const handleAdd = () => {

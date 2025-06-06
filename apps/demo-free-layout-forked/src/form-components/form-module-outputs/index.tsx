@@ -11,11 +11,7 @@ import {
   NodeDisplay as NodeModuleDisplay,
   SidebarTree as ModulePropertyTreeTable,
 } from '../../components/ext/module-property-tables';
-import type {
-  NodeModuleData,
-  ModuleTreeData,
-  ModulePropertyData,
-} from '../../components/ext/module-property-tables';
+import type { NodeModuleData } from '../../components/ext/module-property-tables';
 import { useEntityStore } from '../../components/ext/entity-store';
 
 interface FormModuleOutputsProps {
@@ -79,43 +75,6 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
     }));
   }, [currentEntity, getModulesByIds]);
 
-  // 准备边栏树形模块数据
-  const treeModuleData: ModuleTreeData[] = useMemo(() => {
-    if (!currentEntity?.bundles) return [];
-
-    const moduleIds = currentEntity.bundles.filter((id) => typeof id === 'string') as string[];
-    const modules = getModulesByIds(moduleIds);
-
-    console.log('🔍 FormModuleOutputs - 模块数据:', {
-      moduleIds,
-      modules: modules.map((m) => ({
-        id: m.id,
-        name: m.name,
-        attributeCount: m.attributes?.length,
-        attributes: m.attributes?.map((attr) => ({
-          id: attr.id,
-          name: attr.name,
-          type: attr.type,
-        })),
-      })),
-    });
-
-    return modules.map((module) => ({
-      key: `module-${module.id}`,
-      id: module.id,
-      name: module.name,
-      attributeCount: module.attributes?.length || 0,
-      children:
-        module.attributes?.map((attr) => ({
-          key: `${module.id}-${attr.id}`,
-          id: attr.id,
-          name: attr.name,
-          type: attr.type,
-          description: attr.description,
-        })) || [],
-    }));
-  }, [currentEntity, getModulesByIds]);
-
   if (!currentEntity) {
     return null;
   }
@@ -124,13 +83,7 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
   if (isSidebar) {
     return (
       <>
-        {treeModuleData.length > 0 ? (
-          <ModulePropertyTreeTable
-            modules={treeModuleData}
-            onNavigateToModule={handleNavigateToModule}
-            onConfigureModules={handleConfigureModules}
-          />
-        ) : null}
+        <ModulePropertyTreeTable showTitle={true} title="模块属性" />
 
         {isModalVisible && currentEntity && (
           <ModuleSelectorModal

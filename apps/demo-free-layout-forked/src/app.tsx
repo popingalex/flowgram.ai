@@ -46,7 +46,7 @@ import {
 import { toggleMockMode, getApiMode } from './services/api-service';
 import { Editor } from './editor';
 import { TestNewArchitecture } from './components/test-new-architecture';
-import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page';
+// import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
 import { EntityStoreTestPage } from './components/ext/entity-store/test-page';
 import {
   EntityStoreProvider,
@@ -181,7 +181,7 @@ type PageType =
   | 'settings'
   | 'test-properties'
   | 'test-store'
-  | 'test-module-entity'
+  // | 'test-module-entity' // 已删除
   | 'test-new-architecture';
 
 // 简单的页面组件
@@ -267,7 +267,7 @@ const AppContent: React.FC = () => {
       { itemKey: 'test-new-architecture', text: '新架构测试' },
       { itemKey: 'test-properties', text: '属性编辑器测试' },
       { itemKey: 'test-store', text: '实体存储测试' },
-      { itemKey: 'test-module-entity', text: '模块实体测试' },
+      // { itemKey: 'test-module-entity', text: '模块实体测试' }, // 已删除
     ],
     []
   );
