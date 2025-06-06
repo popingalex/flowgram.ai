@@ -186,3 +186,288 @@ App
 3. 优先解决功能问题，而不是拘泥于代码复用
 4. API配置统一管理，便于环境切换
 5. 数据操作通过Store进行，保持数据一致性
+
+## 最近修复 (2025-01-27)
+
+### 1. 模块配置弹窗重构和nanoid关联
+
+**问题**: 有两个重复的"模块配置"弹窗，界面有"模块"标签冗余，模块ID变更会丢失关联关系
+
+**修复方案**:
+- **保留ModuleConfigModal功能**: 恢复了`sidebar-tree.tsx`中的`ModuleConfigModal`，保持模块属性编辑功能
+- **去掉"模块"标签**: 在边栏和弹窗中移除"模块"标签，简化界面显示
+- **实现nanoid关联**: 实体通过模块的`_indexId`(nanoid)关联模块，而不是模块ID
+- **支持模块属性编辑**: 在配置弹窗中，选中模块的属性支持类型编辑（保持原有功能）
+
+**技术实现**:
+```typescript
+// 使用nanoid关联而不是模块ID
+const handleModuleConfigConfirm = (selectedModuleIds: string[]) => {
+  const selectedNanoids = modules
+    .filter(module => selectedModuleIds.includes(module.id))
+    .map(module => module._indexId || module.id); // 优先使用nanoid
+
+  updateEntity({ bundles: selectedNanoids });
+};
+
+// 支持旧ID和新nanoid的兼容匹配
+.filter(module => {
+  return entityBundles.includes(module.id) || entityBundles.includes(module._indexId || '');
+})
+```
+
+**核心优化**:
+- 模块关联关系通过nanoid维护，避免模块ID变更导致的关联丢失
+- 保持了完整的模块配置功能，包括属性类型编辑
+- 简化的视觉设计，去掉冗余标签
+- 两个弹窗各司其职：`ModuleConfigModal`(高级配置)，`ModuleSelectorModal`(简单选择)
+
+### 2. 之前的修复 (2025-01-14)
+
+#### 实体属性删除功能调试增强
+
+**问题**: 用户反映实体属性编辑表中删除属性功能无效
+
+**修复方案**:
+- 在 `sidebar-editor.tsx` 的 `handleDelete` 函数中添加详细的调试日志
+- 在 `current-entity.store.ts` 的 `removeAttribute` 函数中添加完整的调试信息
+
+#### 模块配置面板重新设计
+
+**问题**:
+- 页面布局有问题，输入框乱
+- 控件（操作）列按钮没有对齐
+- 缺少关联业务，需要可选择的表格
+
+**解决方案**:
+
+#### 重新设计的模块配置面板特性：
+
+1. **行选择功能**:
+   - 使用 Semi Design Table 的 `rowSelection` 属性
+   - 支持单行选择和全选操作
+   - 只有模块行可以被选择，属性行跟随模块状态
+
+2. **改进的布局**:
+   - 固定列宽，避免布局混乱
+   - 统一的按钮对齐和样式
+   - 清晰的模块/属性层次结构
+
+3. **模块关联业务**:
+   - 实时同步实体的 `bundles` 字段
+   - 模块选择/取消选择会立即更新实体状态
+   - 配置模块弹窗提供完整的模块列表和描述
+
+4. **用户体验优化**:
+   - 选中状态的视觉反馈（绿色高亮）
+   - 显示已选择模块数量
+   - 每个模块显示属性数量
+   - 只读模式下禁用选择操作
+
+#### 技术实现：
+
+```typescript
+// 模块树数据构建
+const moduleTreeData = useMemo(() => {
+  const entityBundles = editingEntity?.bundles || [];
+
+  return modules.map((module) => {
+    const isModuleSelected = entityBundles.includes(module.id);
+    // ...构建完整的树形数据
+  });
+}, [modules, editingEntity?.bundles]);
+
+// 行选择配置
+const rowSelection = useMemo(() => ({
+  selectedRowKeys,
+  onChange: (selectedKeys, selectedRows) => {
+    // 处理选择变化
+  },
+  onSelect: (record, selected) => {
+    // 处理单行选择，更新实体的 bundles
+    if (!record.isAttribute && typeof selected === 'boolean') {
+      const currentBundles = editingEntity?.bundles || [];
+      const newBundles = selected
+        ? [...currentBundles, moduleId]
+        : currentBundles.filter(id => id !== moduleId);
+      updateEntity({ bundles: newBundles });
+    }
+  },
+  // ...其他配置
+}), [selectedRowKeys, editingEntity?.bundles, modules, updateEntity, readonly]);
+```
+
+### 3. 类型安全性改进
+
+**修复的TypeScript错误**:
+- 修复了 `rowSelection` 的类型定义问题
+- 使用 `any` 类型处理 Semi Design 的复杂类型约束
+- 添加了运行时类型检查确保类型安全
+
+### 4. 文件结构
+
+**修改的核心文件**:
+- `apps/demo-free-layout-forked/src/components/ext/module-property-tables/sidebar-tree.tsx` - 重新设计的模块配置面板
+- `apps/demo-free-layout-forked/src/components/ext/entity-property-tables/sidebar-editor.tsx` - 添加删除调试
+- `apps/demo-free-layout-forked/src/stores/current-entity.store.ts` - 添加删除调试
+
+## 使用说明
+
+### 模块配置面板
+1. 通过复选框选择/取消选择模块
+2. 选中的模块会自动关联到当前实体
+3. 点击"配置模块"按钮打开详细配置弹窗
+4. 点击链接按钮可以跳转到模块详情页
+
+### 实体属性删除
+1. 点击属性行的红色删除按钮
+2. 确认删除弹窗
+3. 查看控制台调试信息验证删除过程
+4. 只有实体自有属性可以删除，模块属性不可删除
+
+## 调试建议
+
+1. **删除属性问题**:
+   - 检查控制台是否有删除相关的调试日志
+   - 确认属性有 `_indexId` 字段
+   - 验证 `removeAttribute` 函数被正确调用
+
+2. **模块选择问题**:
+   - 检查实体的 `bundles` 字段是否正确更新
+   - 确认模块数据已正确加载
+   - 验证 `updateEntity` 函数的调用
+
+## 下一步计划
+
+1. 根据用户反馈继续优化删除功能
+2. 考虑添加批量操作功能
+3. 优化模块配置的用户体验
+4. 添加更多的错误处理和用户提示
+
+---
+
+## 历史记录
+
+### 2025-01-13
+- 修复了模块导入路径错误
+- 清理了冗余组件和文件
+- 恢复了实体模块列表和属性表显示功能
+
+### 2025-01-12
+- 初始化项目结构
+- 建立基础的实体和模块管理功能
+
+# Flowgram 扩展开发记录
+
+## 🎯 项目概览
+基于 Flowgram 引擎的自定义扩展开发，主要包含实体属性编辑器、模块管理等功能。
+
+## 📋 开发任务
+
+### ✅ 已完成
+1. **实体属性编辑器重构** - 2025年1月
+   - 重构了实体属性编辑器，支持实体直接属性、模块属性和自定义属性的管理
+   - 实现了nanoid索引设计模式，确保React组件稳定性
+   - 解决了属性编辑时input失去焦点的问题
+   - 参考: [entity-properties-editor-design.md](entity-properties-editor-design.md)
+
+2. **Zustand状态管理迁移** - 2025年1月
+   - 从Redux迁移到Zustand，简化状态管理
+   - 创建了`current-entity.store.ts`用于当前实体编辑状态管理
+   - 参考: [cursor_works/zustand_fix_summary.md](cursor_works/zustand_fix_summary.md)
+
+3. **模块属性表重构** - 2025年1月
+   - **问题**: 边栏/实体属性编辑表中删除属性功能无效
+   - **问题**: 模块关联面板存在多个问题：页面布局有问题，输入框乱，控件列按钮没有对齐，缺少关联业务
+   - **解决方案**:
+     - 重新设计模块属性表组件，分离边栏显示和配置弹窗功能
+     - 边栏只显示已关联模块（不支持编辑），配置弹窗支持模块选择和属性编辑
+     - 使用完全自定义渲染，只有模块行显示复选框
+     - 修复了绿色配色问题，改为蓝色避免与成功状态混淆
+     - 删除重复标题，统一表格展开样式
+
+4. **删除属性功能修复** - 2025年1月
+   - **问题**: 实体属性删除按钮仍然无效
+   - **解决方案**: 加强了Store删除方法的错误处理和调试信息，使用Immer的splice方法确保正确删除
+
+5. **界面优化** - 2025年1月
+   - **问题**: 实体模块属性有绿色配色，标题重复，表格展开样式不一致
+   - **解决方案**:
+     - 修复模块属性表的绿色背景色问题，改为中性色
+     - 移除重复的"实体模块"标题，改为简洁的"属性"
+     - 统一表格缩进(indentSize=20)和展开样式
+     - 修复FormEntityProperties组件的类型错误，使用`getExtInfo()?.entity`访问实体数据
+
+## 🛠️ 核心设计
+
+### nanoid索引设计模式
+- **索引ID**: 使用nanoid作为React key，确保组件稳定性
+- **语义化ID**: 用户界面显示和编辑
+- **Meta属性保留**: 保留所有原始Attribute属性
+- 详细文档: [entity-properties-editor-design.md](entity-properties-editor-design.md)
+
+### 状态管理架构
+- **Zustand Store**: 轻量级状态管理，替代Redux
+- **细粒度订阅**: 避免不必要的重新渲染
+- **Immer集成**: 安全的状态更新
+
+### 模块关联架构
+- **边栏显示**: 只读显示已关联模块，不支持编辑
+- **配置弹窗**: 支持模块选择和属性类型编辑
+- **完全自定义渲染**: 精确控制复选框显示位置
+
+## 🐛 问题记录
+
+### 已解决
+1. **属性编辑失去焦点** ✅
+   - 原因: 使用可变属性作为React key
+   - 解决: 实现nanoid索引设计模式
+
+2. **删除属性无效** ✅
+   - 原因: Store删除逻辑有问题，缺少错误处理
+   - 解决: 加强错误处理，使用Immer正确删除
+
+3. **模块属性表问题** ✅
+   - 原因: 混合了显示和编辑功能，样式不一致
+   - 解决: 分离边栏显示和配置弹窗，统一样式
+
+4. **类型错误** ✅
+   - 原因: FlowNodeEntity访问entity属性方式错误
+   - 解决: 使用`getExtInfo()?.entity`正确访问
+
+## 📁 关键文件
+
+### 实体属性编辑
+- `src/components/ext/entity-properties-editor/index.tsx` - 主编辑器组件
+- `src/components/ext/entity-property-tables/sidebar-editor.tsx` - 边栏属性表
+- `src/stores/current-entity.store.ts` - 当前实体状态管理
+
+### 模块管理
+- `src/components/ext/module-property-tables/sidebar-tree.tsx` - 模块属性表
+- `src/stores/module.store.ts` - 模块状态管理
+
+### 表单组件
+- `src/form-components/form-entity-properties/index.tsx` - 实体属性表单组件
+
+## 🚀 开发指南
+
+### 调试删除功能
+1. 打开浏览器开发者工具控制台
+2. 尝试删除实体属性
+3. 查看🗑️开头的详细调试日志
+4. 验证删除流程是否正常执行
+
+### 模块配置
+1. **边栏模块属性表**: 只显示已关联模块，点击"配置模块"按钮进入编辑
+2. **模块配置弹窗**: 支持选择模块和编辑模块属性类型
+3. **行选择**: 只有模块行显示复选框，属性行不显示
+
+### 状态管理
+- 使用`useCurrentEntity`和`useCurrentEntityActions`访问实体状态
+- 所有属性修改都通过Store进行，确保响应式更新
+- 使用Immer确保状态更新的不可变性
+
+## 🔧 环境设置
+- 开发服务器: `rush dev:demo-free-layout-forked`
+- 端口: 通常为 3001 或自动分配
+- 热更新: 支持
