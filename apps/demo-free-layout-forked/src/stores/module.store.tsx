@@ -11,9 +11,17 @@ import { moduleApi } from '../services/api-service';
 // Re-export types for convenience
 export type { Module, ModuleAttribute };
 
+// 模块编辑状态
+interface ModuleEditState {
+  originalModule: Module;
+  editingModule: Module;
+  isDirty: boolean;
+}
+
 // Store State
 export interface ModuleStoreState {
-  modules: Module[];
+  modules: Module[]; // 原始模块列表
+  editingModules: Map<string, ModuleEditState>; // 正在编辑的模块副本
   loading: boolean;
   error: string | null;
 }
@@ -22,20 +30,39 @@ export interface ModuleStoreState {
 export interface ModuleActions {
   loadModules: () => Promise<void>;
   getModulesByIds: (ids: string[]) => Module[];
+
+  // 编辑相关
+  startEditModule: (moduleId: string) => void;
+  updateEditingModule: (moduleId: string, updates: Partial<Module>) => void;
+  saveModule: (moduleId: string) => Promise<void>;
+  cancelEditModule: (moduleId: string) => void;
+  isModuleDirty: (moduleId: string) => boolean;
+  getEditingModule: (moduleId: string) => Module | null;
+
+  // 模块操作
   createModule: (
     module: Omit<Module, '_indexId' | 'attributes'> & {
       attributes?: Omit<ModuleAttribute, '_indexId'>[];
     }
+  ) => Promise<void>;
+  deleteModule: (moduleId: string) => Promise<void>;
+
+  // 属性操作
+  addAttributeToEditingModule: (
+    moduleId: string,
+    attribute: Omit<ModuleAttribute, '_indexId'>
   ) => void;
-  addModule: (
-    module: Omit<Module, '_indexId' | 'attributes'> & {
-      attributes?: Omit<ModuleAttribute, '_indexId'>[];
-    }
+  updateAttributeInEditingModule: (
+    moduleId: string,
+    attributeId: string,
+    updates: Partial<ModuleAttribute>
   ) => void;
-  updateModule: (id: string, updates: Partial<Module>) => void;
-  deleteModule: (id: string) => void;
-  addAttributeToModule: (moduleId: string, attribute: Omit<ModuleAttribute, '_indexId'>) => void;
-  removeAttributeFromModule: (moduleId: string, attributeId: string) => void;
+  removeAttributeFromEditingModule: (moduleId: string, attributeId: string) => void;
+
+  // 批量操作
+  saveAllDirtyModules: () => Promise<void>;
+  discardAllChanges: () => void;
+  getDirtyModuleIds: () => string[];
 }
 
 export type ModuleStore = ModuleStoreState & ModuleActions;
@@ -45,6 +72,7 @@ export const useModuleStore = create<ModuleStore>()(
   devtools(
     immer((set, get) => ({
       modules: [],
+      editingModules: new Map(),
       loading: false,
       error: null,
 
@@ -58,10 +86,11 @@ export const useModuleStore = create<ModuleStore>()(
             attributes: (m.attributes || []).map((a) => ({
               ...a,
               _indexId: a._indexId || nanoid(),
-              displayId: a.displayId || a.id.split('/').pop() || a.id, // 去掉模块前缀，只保留属性名
+              displayId: a.displayId || a.id.split('/').pop() || a.id,
             })),
           }));
           set({ modules: modulesWithIndex, loading: false });
+          console.log('🔄 ModuleStore: 加载完成', { count: modulesWithIndex.length });
         } catch (error) {
           set({ error: (error as Error).message, loading: false });
         }
@@ -69,105 +98,227 @@ export const useModuleStore = create<ModuleStore>()(
 
       getModulesByIds: (ids) => {
         const { modules } = get();
-        return modules.filter((m) => ids.includes(m.id));
+        return modules.filter((m) => ids.includes(m.id) || ids.includes(m._indexId || ''));
       },
 
-      createModule: (module) => {
+      // 🎯 开始编辑模块 - 创建副本
+      startEditModule: (moduleId) => {
         set((state) => {
-          const newModule: Module = {
-            ...module,
-            _indexId: nanoid(),
-            attributes: (module.attributes || []).map((attr) => ({
-              ...attr,
-              _indexId: nanoid(),
-              displayId: attr.displayId || attr.id.split('/').pop() || attr.id, // 去掉模块前缀，只保留属性名
-            })),
-          };
-          state.modules.push(newModule);
-        });
-      },
-
-      addModule: (module) => {
-        set((state) => {
-          const newModule: Module = {
-            ...module,
-            _indexId: nanoid(),
-            attributes: (module.attributes || []).map((attr) => ({
-              ...attr,
-              _indexId: nanoid(),
-              displayId: attr.displayId || attr.id.split('/').pop() || attr.id, // 去掉模块前缀，只保留属性名
-            })),
-          };
-          state.modules.push(newModule);
-        });
-      },
-
-      updateModule: (id, updates) => {
-        set((state) => {
-          const module = state.modules.find((m) => m.id === id);
-          if (module) {
-            Object.assign(module, updates);
+          const originalModule = state.modules.find((m) => m.id === moduleId);
+          if (originalModule && !state.editingModules.has(moduleId)) {
+            const editingModule = JSON.parse(JSON.stringify(originalModule)); // 深拷贝
+            state.editingModules.set(moduleId, {
+              originalModule,
+              editingModule,
+              isDirty: false,
+            });
+            console.log('📝 开始编辑模块:', moduleId);
           }
         });
       },
 
-      deleteModule: (id) => {
+      // 🎯 更新编辑中的模块
+      updateEditingModule: (moduleId, updates) => {
         set((state) => {
-          state.modules = state.modules.filter((m) => m.id !== id);
+          const editState = state.editingModules.get(moduleId);
+          if (editState) {
+            Object.assign(editState.editingModule, updates);
+            editState.isDirty = true;
+            console.log('🔧 更新编辑模块:', { moduleId, updates });
+          }
         });
       },
 
-      addAttributeToModule: (moduleId, attribute) => {
+      // 🎯 保存模块
+      saveModule: async (moduleId) => {
+        const { editingModules } = get();
+        const editState = editingModules.get(moduleId);
+        if (!editState || !editState.isDirty) return;
+
+        try {
+          await moduleApi.update(moduleId, editState.editingModule);
+
+          set((state) => {
+            // 更新原始模块列表
+            const moduleIndex = state.modules.findIndex((m) => m.id === moduleId);
+            if (moduleIndex > -1) {
+              state.modules[moduleIndex] = { ...editState.editingModule };
+            }
+
+            // 更新编辑状态
+            editState.originalModule = { ...editState.editingModule };
+            editState.isDirty = false;
+          });
+
+          console.log('💾 保存模块成功:', moduleId);
+        } catch (error) {
+          console.error('💾 保存模块失败:', error);
+          throw error;
+        }
+      },
+
+      // 🎯 取消编辑
+      cancelEditModule: (moduleId) => {
         set((state) => {
-          const module = state.modules.find((m) => m.id === moduleId);
-          if (module) {
-            if (!module.attributes) module.attributes = [];
-            module.attributes.push({
+          state.editingModules.delete(moduleId);
+          console.log('❌ 取消编辑模块:', moduleId);
+        });
+      },
+
+      // 🎯 检查模块是否有未保存的更改
+      isModuleDirty: (moduleId) => {
+        const { editingModules } = get();
+        return editingModules.get(moduleId)?.isDirty || false;
+      },
+
+      // 🎯 获取编辑中的模块
+      getEditingModule: (moduleId) => {
+        const { editingModules, modules } = get();
+        const editState = editingModules.get(moduleId);
+        if (editState) {
+          return editState.editingModule;
+        }
+        // 如果没有编辑副本，返回原始模块
+        return modules.find((m) => m.id === moduleId) || null;
+      },
+
+      // 🎯 创建新模块
+      createModule: async (module) => {
+        const newModule: Module = {
+          ...module,
+          _indexId: nanoid(),
+          attributes: (module.attributes || []).map((attr) => ({
+            ...attr,
+            _indexId: nanoid(),
+            displayId: attr.displayId || attr.id.split('/').pop() || attr.id,
+          })),
+        };
+
+        try {
+          await moduleApi.create(newModule);
+          set((state) => {
+            state.modules.push(newModule);
+          });
+          console.log('➕ 创建模块成功:', newModule.id);
+        } catch (error) {
+          console.error('➕ 创建模块失败:', error);
+          throw error;
+        }
+      },
+
+      // 🎯 删除模块
+      deleteModule: async (moduleId) => {
+        try {
+          await moduleApi.delete(moduleId);
+          set((state) => {
+            state.modules = state.modules.filter((m) => m.id !== moduleId);
+            state.editingModules.delete(moduleId);
+          });
+          console.log('🗑️ 删除模块成功:', moduleId);
+        } catch (error) {
+          console.error('🗑️ 删除模块失败:', error);
+          throw error;
+        }
+      },
+
+      // 🎯 添加属性到编辑中的模块
+      addAttributeToEditingModule: (moduleId, attribute) => {
+        set((state) => {
+          // 确保模块正在编辑中
+          if (!state.editingModules.has(moduleId)) {
+            get().startEditModule(moduleId);
+          }
+
+          const editState = state.editingModules.get(moduleId);
+          if (editState) {
+            const newAttribute = {
               ...attribute,
               _indexId: nanoid(),
-              displayId: attribute.displayId || attribute.id.split('/').pop() || attribute.id, // 去掉模块前缀，只保留属性名
-            });
+              displayId: attribute.displayId || attribute.id.split('/').pop() || attribute.id,
+            };
+            editState.editingModule.attributes.push(newAttribute);
+            editState.isDirty = true;
+            console.log('➕ 添加属性到编辑模块:', { moduleId, attributeId: newAttribute.id });
           }
         });
       },
 
-      removeAttributeFromModule: (moduleId, attributeId) => {
+      // 🎯 更新编辑中模块的属性
+      updateAttributeInEditingModule: (moduleId, attributeId, updates) => {
         set((state) => {
-          console.log('🗑️ ModuleStore: 删除模块属性:', { moduleId, attributeId });
-          const module = state.modules.find((m) => m.id === moduleId);
-          if (module?.attributes) {
-            // 先尝试用ID查找，再尝试用_indexId查找
-            let attrIndex = module.attributes.findIndex((a) => a.id === attributeId);
-            if (attrIndex === -1) {
-              attrIndex = module.attributes.findIndex((a) => a._indexId === attributeId);
-            }
-
-            console.log('🗑️ ModuleStore: 查找结果:', {
-              attrIndex,
-              attributesCount: module.attributes.length,
-              searchingFor: attributeId,
-              availableIds: module.attributes.map((a) => ({ id: a.id, _indexId: a._indexId })),
-            });
-
+          const editState = state.editingModules.get(moduleId);
+          if (editState) {
+            const attrIndex = editState.editingModule.attributes.findIndex(
+              (a) => a.id === attributeId || a._indexId === attributeId
+            );
             if (attrIndex > -1) {
-              const deletedAttr = module.attributes[attrIndex];
-              module.attributes.splice(attrIndex, 1);
-              console.log('🗑️ ModuleStore: 删除成功:', {
-                deletedAttr: { id: deletedAttr.id, _indexId: deletedAttr._indexId },
-                remainingCount: module.attributes.length,
-              });
-            } else {
-              console.warn('🗑️ ModuleStore: 未找到要删除的属性');
+              Object.assign(editState.editingModule.attributes[attrIndex], updates);
+              editState.isDirty = true;
+              console.log('🔧 更新编辑模块属性:', { moduleId, attributeId, updates });
             }
           }
         });
+      },
+
+      // 🎯 从编辑中的模块删除属性
+      removeAttributeFromEditingModule: (moduleId, attributeId) => {
+        set((state) => {
+          const editState = state.editingModules.get(moduleId);
+          if (editState) {
+            const attrIndex = editState.editingModule.attributes.findIndex(
+              (a) => a.id === attributeId || a._indexId === attributeId
+            );
+            if (attrIndex > -1) {
+              const deletedAttr = editState.editingModule.attributes[attrIndex];
+              editState.editingModule.attributes.splice(attrIndex, 1);
+              editState.isDirty = true;
+              console.log('🗑️ 从编辑模块删除属性:', { moduleId, attributeId: deletedAttr.id });
+            }
+          }
+        });
+      },
+
+      // 🎯 保存所有有更改的模块
+      saveAllDirtyModules: async () => {
+        const { editingModules } = get();
+        const dirtyModuleIds = Array.from(editingModules.entries())
+          .filter(([_, editState]) => editState.isDirty)
+          .map(([moduleId, _]) => moduleId);
+
+        if (dirtyModuleIds.length === 0) return;
+
+        console.log('💾 批量保存模块:', dirtyModuleIds);
+
+        for (const moduleId of dirtyModuleIds) {
+          try {
+            await get().saveModule(moduleId);
+          } catch (error) {
+            console.error(`保存模块 ${moduleId} 失败:`, error);
+          }
+        }
+      },
+
+      // 🎯 丢弃所有更改
+      discardAllChanges: () => {
+        set((state) => {
+          state.editingModules.clear();
+          console.log('❌ 丢弃所有模块更改');
+        });
+      },
+
+      // 🎯 获取有更改的模块ID列表
+      getDirtyModuleIds: () => {
+        const { editingModules } = get();
+        return Array.from(editingModules.entries())
+          .filter(([_, editState]) => editState.isDirty)
+          .map(([moduleId, _]) => moduleId);
       },
     })),
     { name: 'module-store' }
   )
 );
 
-// Provider 组件 (Zustand 不需要 Provider，但为了兼容现有代码)
+// Provider 组件
 interface ModuleStoreProviderProps {
   children: React.ReactNode;
 }
@@ -175,10 +326,9 @@ interface ModuleStoreProviderProps {
 export const ModuleStoreProvider: React.FC<ModuleStoreProviderProps> = ({ children }) => {
   const { loadModules } = useModuleStore();
 
-  // 初始化时加载数据 - 只执行一次
   React.useEffect(() => {
     loadModules();
-  }, []); // 空依赖数组，只在组件挂载时执行一次
+  }, []);
 
   return <>{children}</>;
 };

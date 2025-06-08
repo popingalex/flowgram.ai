@@ -139,6 +139,13 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
         return;
       }
 
+      // 🎯 获取模块store的数据，用于转换bundles
+      const { modules } = useModuleStore.getState();
+      console.log('🔄 EntityStore: 开始转换bundles为nanoid:', {
+        modulesCount: modules.length,
+        entitiesCount: fetchedEntities.length,
+      });
+
       // 规范化数据：确保所有必填字段都有值，并生成稳定的索引
       const entitiesWithIndex = fetchedEntities.map((entity) => {
         // 为实体生成稳定的_indexId
@@ -146,8 +153,39 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
           entity._indexId = nanoid();
         }
 
+        // 🎯 转换bundles：从模块ID转换为nanoid
+        let convertedBundles = entity.bundles || [];
+        if (convertedBundles.length > 0) {
+          convertedBundles = convertedBundles.map((bundleId) => {
+            // 如果已经是nanoid（长度为21），直接返回
+            if (bundleId.length === 21) {
+              return bundleId;
+            }
+
+            // 否则查找对应的模块nanoid
+            const module = modules.find((m) => m.id === bundleId);
+            if (module && module._indexId) {
+              console.log('🔄 转换bundle:', {
+                entityId: entity.id,
+                oldBundleId: bundleId,
+                newBundleId: module._indexId,
+              });
+              return module._indexId;
+            }
+
+            // 如果找不到对应模块，保留原值（可能是旧数据）
+            console.warn('🔄 未找到模块，保留原bundle:', {
+              entityId: entity.id,
+              bundleId,
+              availableModules: modules.map((m) => ({ id: m.id, _indexId: m._indexId })),
+            });
+            return bundleId;
+          });
+        }
+
         return {
           ...entity,
+          bundles: convertedBundles, // 使用转换后的nanoid bundles
           attributes: (entity.attributes || []).map((attr) => {
             // 确保所有必填字段都有值
             const normalizedAttr = {
@@ -169,6 +207,7 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
           id: entity.id,
           name: entity.name,
           _indexId: entity._indexId, // 显示实体的稳定索引
+          bundles: entity.bundles, // 显示转换后的nanoid bundles
           attributes: entity.attributes.map((attr) => ({
             id: attr.id,
             name: attr.name,
@@ -205,8 +244,14 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
 
       modules.forEach((module) => {
         module.attributes.forEach((attr) => {
-          // ModuleStore已经为属性添加了_indexId，直接使用
-          moduleAttributes.push(attr);
+          // 确保模块属性有_indexId，如果没有则生成一个
+          const moduleAttribute: Attribute = {
+            ...attr,
+            _indexId: attr._indexId || nanoid(), // 确保_indexId存在
+            name: attr.name || attr.id, // 确保name存在
+            type: attr.type || 'string', // 确保type存在
+          };
+          moduleAttributes.push(moduleAttribute);
         });
       });
 
@@ -436,9 +481,31 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   }, []);
 
-  // 组件挂载时加载实体数据
+  // 组件挂载时加载实体数据 - 依赖模块store的加载状态
   React.useEffect(() => {
-    refreshEntities();
+    const { modules, loading: moduleLoading } = useModuleStore.getState();
+
+    // 只有当模块store加载完成且有模块数据时，才加载实体数据
+    if (!moduleLoading && modules.length > 0) {
+      console.log('🔄 EntityStore: 模块store已加载，开始加载实体数据');
+      refreshEntities();
+    } else {
+      console.log('🔄 EntityStore: 等待模块store加载完成...', {
+        moduleLoading,
+        modulesCount: modules.length,
+      });
+
+      // 监听模块store的变化
+      const unsubscribe = useModuleStore.subscribe((state) => {
+        if (!state.loading && state.modules.length > 0) {
+          console.log('🔄 EntityStore: 模块store加载完成，开始加载实体数据');
+          refreshEntities();
+          unsubscribe(); // 只执行一次
+        }
+      });
+
+      return unsubscribe;
+    }
   }, [refreshEntities]);
 
   const value: EntityStoreContextType = {

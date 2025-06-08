@@ -45,6 +45,7 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
 
   const handleModalConfirm = (selectedIds: string[]) => {
     if (currentEntity) {
+      console.log('💾 FormModuleOutputs: 保存模块配置:', { selectedIds });
       updateEntity(currentEntity.id, { ...currentEntity, bundles: selectedIds });
     }
     setIsModalVisible(false);
@@ -54,15 +55,31 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
     setIsModalVisible(false);
   };
 
-  // 准备节点模块数据
+  // 准备节点模块数据 - 使用nanoid匹配
   const nodeModuleData: NodeModuleData[] = useMemo(() => {
     if (!currentEntity?.bundles) return [];
 
-    const moduleIds = currentEntity.bundles.filter((id) => typeof id === 'string') as string[];
-    const modules = getModulesByIds(moduleIds);
+    const { modules } = useModuleStore.getState();
+    console.log('🔗 FormModuleOutputs: 准备节点模块数据:', {
+      bundles: currentEntity.bundles,
+      modulesCount: modules.length,
+    });
 
-    return modules.map((module) => ({
-      key: `module-${module.id}`,
+    // 通过nanoid或ID匹配模块
+    const matchedModules = modules.filter((module) => {
+      const isMatched =
+        currentEntity.bundles.includes(module._indexId || '') ||
+        currentEntity.bundles.includes(module.id);
+      console.log('🔗 模块匹配:', {
+        moduleId: module.id,
+        moduleNanoid: module._indexId,
+        isMatched,
+      });
+      return isMatched;
+    });
+
+    return matchedModules.map((module) => ({
+      key: `module-${module._indexId || module.id}`, // 使用nanoid作为key
       id: module.id,
       name: module.name,
       attributeCount: module.attributes?.length || 0,
@@ -73,7 +90,7 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
           type: attr.type,
         })) || [],
     }));
-  }, [currentEntity, getModulesByIds]);
+  }, [currentEntity]);
 
   if (!currentEntity) {
     return null;
@@ -90,9 +107,7 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
             visible={isModalVisible}
             onConfirm={handleModalConfirm}
             onCancel={handleModalCancel}
-            selectedModuleIds={
-              currentEntity.bundles.filter((id) => typeof id === 'string') as string[]
-            }
+            selectedModuleIds={currentEntity.bundles} // 直接传递bundles，包含nanoid
             focusModuleId={focusModuleId}
           />
         )}

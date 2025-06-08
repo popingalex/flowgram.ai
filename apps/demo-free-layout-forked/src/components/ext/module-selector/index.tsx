@@ -299,6 +299,7 @@ export const ModuleSelectorModal: React.FC<ModuleSelectorModalProps> = ({
 
   useEffect(() => {
     if (visible) {
+      console.log('🔍 ModuleSelectorModal: 初始化选中状态:', { selectedModuleIds });
       setTempSelectedIds(selectedModuleIds);
     }
   }, [visible, selectedModuleIds]);
@@ -327,16 +328,35 @@ export const ModuleSelectorModal: React.FC<ModuleSelectorModalProps> = ({
     }
   }, [visible, focusModuleId, filteredModules]);
 
+  // 🎯 使用nanoid进行模块选择切换
   const handleModuleToggle = (moduleId: string) => {
+    // 找到模块的nanoid
+    const module = modules.find((m) => m.id === moduleId);
+    const moduleNanoid = module?._indexId || moduleId;
+
+    console.log('🔄 ModuleSelectorModal: 切换模块选择:', {
+      moduleId,
+      moduleNanoid,
+      currentSelected: tempSelectedIds,
+    });
+
     setTempSelectedIds((prev) =>
-      prev.includes(moduleId) ? prev.filter((id) => id !== moduleId) : [...prev, moduleId]
+      prev.includes(moduleNanoid)
+        ? prev.filter((id) => id !== moduleNanoid)
+        : [...prev, moduleNanoid]
     );
   };
 
+  // 🎯 删除模块时也要从选中列表移除nanoid
   const handleDeleteModule = (moduleId: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    const module = modules.find((m) => m.id === moduleId);
+    const moduleNanoid = module?._indexId || moduleId;
+
+    console.log('🗑️ ModuleSelectorModal: 删除模块:', { moduleId, moduleNanoid });
+
     deleteModule(moduleId);
-    setTempSelectedIds((prev) => prev.filter((id) => id !== moduleId));
+    setTempSelectedIds((prev) => prev.filter((id) => id !== moduleNanoid));
   };
 
   const handleModuleChange = (moduleId: string, updatedModule: Module) => {
@@ -355,6 +375,7 @@ export const ModuleSelectorModal: React.FC<ModuleSelectorModalProps> = ({
   };
 
   const handleConfirm = () => {
+    console.log('✅ ModuleSelectorModal: 确认选择:', { tempSelectedIds });
     onConfirm(tempSelectedIds);
   };
 
@@ -374,7 +395,60 @@ export const ModuleSelectorModal: React.FC<ModuleSelectorModalProps> = ({
       height={600}
       bodyStyle={{ overflow: 'auto' }}
     >
-      <EditableModuleTreeTable />
+      <div style={{ marginBottom: '16px' }}>
+        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+          <Input
+            prefix={<IconSearch />}
+            placeholder="搜索模块..."
+            value={searchText}
+            onChange={setSearchText}
+            style={{ width: '300px' }}
+          />
+          <Button type="primary" icon={<IconPlus />} onClick={handleCreateNew}>
+            新建模块
+          </Button>
+        </Space>
+      </div>
+
+      <div style={{ marginBottom: '16px' }}>
+        <Text type="secondary">已选择 {tempSelectedIds.length} 个模块</Text>
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <Text>加载中...</Text>
+        </div>
+      ) : filteredModules.length === 0 ? (
+        <Empty
+          title="没有找到模块"
+          description="尝试调整搜索条件或创建新模块"
+          style={{ padding: '40px' }}
+        />
+      ) : (
+        <div style={{ maxHeight: '400px', overflow: 'auto' }}>
+          {filteredModules.map((module) => {
+            // 🎯 使用nanoid判断选中状态
+            const moduleNanoid = module._indexId || module.id;
+            const isSelected = tempSelectedIds.includes(moduleNanoid);
+
+            return (
+              <ModuleItem
+                key={module.id}
+                module={module}
+                isSelected={isSelected}
+                onToggle={handleModuleToggle}
+                onDelete={handleDeleteModule}
+                onChange={handleModuleChange}
+                forwardRef={
+                  focusModuleId === module.id
+                    ? { current: moduleItemRefs.current[module.id] }
+                    : undefined
+                }
+              />
+            );
+          })}
+        </div>
+      )}
     </Modal>
   );
 };
