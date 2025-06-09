@@ -27,7 +27,7 @@ import {
   IconChevronDown,
 } from '@douyinfe/semi-icons';
 
-import { EntityPropertiesEditor } from '../entity-properties-editor';
+// import { EntityPropertiesEditor } from '../entity-properties-editor';
 import { useModuleStore, Module, ModuleAttribute } from '../../../stores/module.store';
 import { EditableModuleTreeTable } from './EditableModuleTreeTable';
 

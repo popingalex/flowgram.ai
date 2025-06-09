@@ -15,10 +15,10 @@ import '@flowgram.ai/free-layout-editor/index.css';
 import '../../styles/index.css';
 import { DemoTools } from '../tools';
 import { SidebarRenderer, SidebarProvider } from '../sidebar';
-import { useEntityStore, EntityCompleteProperties, Entity } from '../ext/entity-store';
 import { EnumStoreProvider } from '../ext/entity-property-type-selector/enum-store';
 import { entityToWorkflowData } from '../../utils/entity-to-workflow';
 import { useModuleStore } from '../../stores/module.store';
+import { useEntityList, useEntityListActions } from '../../stores';
 import { useCurrentEntity } from '../../stores';
 
 import { nanoid } from 'nanoid';
@@ -35,8 +35,7 @@ export interface WorkflowEditorProps {
 // 实体属性同步器 - 将编辑中的实体属性同步到工作流文档
 const EntityPropertySyncer: React.FC = () => {
   const { editingEntity, originalEntity } = useCurrentEntity();
-  const { getEntityCompleteProperties, onEntityPropertiesChange, loading, entities } =
-    useEntityStore();
+  const { entities, loading } = useEntityList();
   const document = useService(WorkflowDocument);
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
@@ -63,8 +62,11 @@ const EntityPropertySyncer: React.FC = () => {
           // 但使用editingEntity而不是原始entity
           properties = getEntityCompletePropertiesFromEditingEntity(editingEntityData);
         } else {
-          // 回退到原始逻辑
-          properties = getEntityCompleteProperties(entityId);
+          // 回退到使用当前实体数据
+          const currentEntity = entities.find((e) => e.id === entityId || e._indexId === entityId);
+          properties = currentEntity
+            ? getEntityCompletePropertiesFromEditingEntity(currentEntity)
+            : null;
         }
 
         if (!properties) {
@@ -155,7 +157,7 @@ const EntityPropertySyncer: React.FC = () => {
         return false;
       }
     },
-    [getEntityCompleteProperties]
+    [entities]
   );
 
   // 🎯 新增：从编辑中的实体数据生成完整属性结构
@@ -296,7 +298,7 @@ const EntityPropertySyncer: React.FC = () => {
 
 export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className }) => {
   const { editingEntity, selectedEntityId } = useCurrentEntity();
-  const { getEntity, getEntityByStableId } = useEntityStore();
+  const { getEntityByStableId } = useEntityListActions();
   const { getModulesByIds } = useModuleStore();
 
   // 根据选中的实体动态生成工作流数据（只在选中实体时生成一次）
@@ -321,7 +323,7 @@ export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className
       console.error('Error generating workflow data:', error);
       return initialData;
     }
-  }, [selectedEntityId, getEntity]); // 只依赖selectedEntityId，不依赖editingEntity
+  }, [selectedEntityId, getEntityByStableId]); // 只依赖selectedEntityId，不依赖editingEntity
 
   const editorProps = useEditorProps(workflowData, nodeRegistries);
 

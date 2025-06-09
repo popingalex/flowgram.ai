@@ -39,7 +39,7 @@ export interface ModuleActions {
   startEditModule: (moduleId: string) => void;
   updateEditingModule: (moduleId: string, updates: Partial<Module>) => void;
   saveModule: (moduleId: string) => Promise<void>;
-  cancelEditModule: (moduleId: string) => void;
+  resetModuleChanges: (moduleId: string) => void;
   isModuleDirty: (moduleId: string) => boolean;
   getEditingModule: (moduleId: string) => Module | null;
 
@@ -49,7 +49,15 @@ export interface ModuleActions {
       attributes?: Omit<ModuleAttribute, '_indexId'>[];
     }
   ) => Promise<void>;
+  updateModule: (moduleId: string, updates: Partial<Module>) => Promise<void>;
   deleteModule: (moduleId: string) => Promise<void>;
+
+  // 直接属性操作（非编辑模式）
+  addAttributeToModule: (
+    moduleId: string,
+    attribute: Omit<ModuleAttribute, '_indexId'>
+  ) => Promise<void>;
+  removeAttributeFromModule: (moduleId: string, attributeId: string) => Promise<void>;
 
   // 属性操作
   addAttributeToEditingModule: (
@@ -170,18 +178,20 @@ export const useModuleStore = create<ModuleStore>()(
         }
       },
 
-      // 🎯 取消编辑
-      cancelEditModule: (moduleId) => {
+      // 🎯 重置模块更改（保持编辑状态，但重置内容）
+      resetModuleChanges: (moduleId) => {
         set((state) => {
           const editState = state.editingModules.get(moduleId);
           if (editState) {
-            console.log('❌ 取消编辑模块:', {
+            // 重置为原始内容，保持编辑状态
+            editState.editingModule = JSON.parse(JSON.stringify(editState.originalModule));
+            editState.isDirty = false;
+            console.log('🔄 重置模块更改:', {
               moduleId,
               originalAttrs: editState.originalModule.attributes.length,
-              editingAttrs: editState.editingModule.attributes.length,
+              resetAttrs: editState.editingModule.attributes.length,
             });
           }
-          state.editingModules.delete(moduleId);
         });
       },
 
@@ -226,6 +236,28 @@ export const useModuleStore = create<ModuleStore>()(
         }
       },
 
+      // 🎯 更新模块（直接更新，非编辑模式）
+      updateModule: async (moduleId, updates) => {
+        try {
+          const moduleIndex = get().modules.findIndex((m) => m.id === moduleId);
+          if (moduleIndex === -1) {
+            throw new Error(`模块 ${moduleId} 不存在`);
+          }
+
+          const updatedModule = { ...get().modules[moduleIndex], ...updates };
+          await moduleApi.update(moduleId, updatedModule);
+
+          set((state) => {
+            state.modules[moduleIndex] = updatedModule;
+          });
+
+          console.log('🔧 直接更新模块成功:', moduleId);
+        } catch (error) {
+          console.error('🔧 直接更新模块失败:', error);
+          throw error;
+        }
+      },
+
       // 🎯 删除模块
       deleteModule: async (moduleId) => {
         try {
@@ -237,6 +269,73 @@ export const useModuleStore = create<ModuleStore>()(
           console.log('🗑️ 删除模块成功:', moduleId);
         } catch (error) {
           console.error('🗑️ 删除模块失败:', error);
+          throw error;
+        }
+      },
+
+      // 🎯 添加属性到模块（直接操作，非编辑模式）
+      addAttributeToModule: async (moduleId, attribute) => {
+        try {
+          const moduleIndex = get().modules.findIndex((m) => m.id === moduleId);
+          if (moduleIndex === -1) {
+            throw new Error(`模块 ${moduleId} 不存在`);
+          }
+
+          const newAttribute = {
+            ...attribute,
+            _indexId: nanoid(),
+            displayId: attribute.displayId || attribute.id.split('/').pop() || attribute.id,
+          };
+
+          const updatedModule = {
+            ...get().modules[moduleIndex],
+            attributes: [...get().modules[moduleIndex].attributes, newAttribute],
+          };
+
+          await moduleApi.update(moduleId, updatedModule);
+
+          set((state) => {
+            state.modules[moduleIndex] = updatedModule;
+          });
+
+          console.log('➕ 直接添加属性成功:', { moduleId, attributeId: newAttribute.id });
+        } catch (error) {
+          console.error('➕ 直接添加属性失败:', error);
+          throw error;
+        }
+      },
+
+      // 🎯 从模块删除属性（直接操作，非编辑模式）
+      removeAttributeFromModule: async (moduleId, attributeId) => {
+        try {
+          const moduleIndex = get().modules.findIndex((m) => m.id === moduleId);
+          if (moduleIndex === -1) {
+            throw new Error(`模块 ${moduleId} 不存在`);
+          }
+
+          const module = get().modules[moduleIndex];
+          const updatedAttributes = module.attributes.filter(
+            (a) => a.id !== attributeId && a._indexId !== attributeId
+          );
+
+          if (updatedAttributes.length === module.attributes.length) {
+            throw new Error(`属性 ${attributeId} 不存在于模块 ${moduleId} 中`);
+          }
+
+          const updatedModule = {
+            ...module,
+            attributes: updatedAttributes,
+          };
+
+          await moduleApi.update(moduleId, updatedModule);
+
+          set((state) => {
+            state.modules[moduleIndex] = updatedModule;
+          });
+
+          console.log('🗑️ 直接删除属性成功:', { moduleId, attributeId });
+        } catch (error) {
+          console.error('🗑️ 直接删除属性失败:', error);
           throw error;
         }
       },

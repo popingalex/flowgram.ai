@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 
 import { useModuleStore } from '../../stores/module.store';
 import { useEntityListActions } from '../../stores';
+import { useEntityList } from '../../stores';
 import { useIsSidebar } from '../../hooks';
 import { SidebarContext } from '../../context';
 import { ModuleSelectorModal } from '../../components/ext/module-selector';
@@ -12,7 +13,6 @@ import {
   SidebarTree as ModulePropertyTreeTable,
 } from '../../components/ext/module-property-tables';
 import type { NodeModuleData } from '../../components/ext/module-property-tables';
-import { useEntityStore } from '../../components/ext/entity-store';
 
 interface FormModuleOutputsProps {
   isSidebar?: boolean;
@@ -22,8 +22,7 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
   const hookIsSidebar = useIsSidebar();
   const isSidebar = propIsSidebar !== undefined ? propIsSidebar : hookIsSidebar;
   const { selectedEntityId } = useContext(SidebarContext);
-  const { getEntityCompleteProperties, updateEntity } = useEntityStore();
-  const { getEntityByStableId } = useEntityListActions();
+  const { getEntityByStableId, updateEntity } = useEntityListActions();
   const { getModulesByIds } = useModuleStore();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -31,7 +30,6 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
 
   // 获取实体数据
   const currentEntity = selectedEntityId ? getEntityByStableId(selectedEntityId) : null;
-  const entityProperties = currentEntity ? getEntityCompleteProperties(currentEntity.id) : null;
 
   const handleConfigureModules = () => {
     setFocusModuleId(undefined); // 一般打开，不聚焦

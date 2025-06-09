@@ -26,10 +26,10 @@ import {
 } from '@douyinfe/semi-icons';
 
 import { ModuleSelectorModal } from '../module-selector';
-import { useEntityStore } from '../entity-store';
 import { EntityPropertyTypeSelector } from '../entity-property-type-selector';
 import { TypedParser, Primitive } from '../../../typings/mas/typed';
 import { useModuleStore } from '../../../stores/module.store';
+import { useEntityList } from '../../../stores';
 import { useCurrentEntity, useCurrentEntityActions } from '../../../stores';
 
 export interface ModulePropertyData {
@@ -429,9 +429,10 @@ const ModuleConfigModal: React.FC<{
   onClose: () => void;
   focusModuleId?: string; // 需要聚焦的模块ID
 }> = ({ visible, onClose, focusModuleId }) => {
-  // Store hooks
+  // Store hooks - 确保正确订阅editingModules状态变化
   const {
     modules,
+    editingModules,
     getEditingModule,
     isModuleDirty,
     startEditModule,
@@ -441,7 +442,7 @@ const ModuleConfigModal: React.FC<{
     updateAttributeInEditingModule,
     saveAllDirtyModules,
     saveModule,
-    cancelEditModule,
+    resetModuleChanges,
     createModule,
     deleteModule,
   } = useModuleStore();
@@ -681,6 +682,7 @@ const ModuleConfigModal: React.FC<{
     console.log('🔄 重新计算modalTableData:', {
       modulesCount: modules.length,
       selectedCount: selectedModules.length,
+      editingModulesCount: editingModules.size,
     });
 
     return modules.map((module) => {
@@ -721,7 +723,7 @@ const ModuleConfigModal: React.FC<{
         isSelected,
       };
     });
-  }, [modules, selectedModules, getEditingModule, isModuleDirty, refreshKey]);
+  }, [modules, selectedModules, getEditingModule, isModuleDirty, editingModules, refreshKey]);
 
   // 🎯 完全自定义渲染的列配置
   const modalColumns = useMemo(
@@ -928,10 +930,8 @@ const ModuleConfigModal: React.FC<{
                       icon={<IconUndo />}
                       onClick={() => {
                         if (module) {
-                          cancelEditModule(module.id);
-                          // 强制刷新表格数据
-                          setRefreshKey((prev) => prev + 1);
-                          console.log('↩️ 撤销模块更改:', module.id);
+                          resetModuleChanges(module.id);
+                          console.log('↩️ 重置模块更改:', module.id);
                         }
                       }}
                     />
@@ -994,7 +994,7 @@ const ModuleConfigModal: React.FC<{
     if (selectedModules.some((id) => !currentSelected.includes(id))) return true;
 
     return false;
-  }, [selectedModules, editingEntity?.bundles, modules, isModuleDirty]);
+  }, [selectedModules, editingEntity?.bundles, modules, isModuleDirty, editingModules]);
 
   // 🎯 保存配置 - 保存所有dirty模块，然后更新实体关联
   const handleSave = async () => {

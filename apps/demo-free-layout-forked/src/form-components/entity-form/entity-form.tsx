@@ -4,8 +4,8 @@ import { Field } from '@flowgram.ai/free-layout-editor';
 import { Input, Space, Tag, Typography } from '@douyinfe/semi-ui';
 
 import { useEntityListActions } from '../../stores';
+import { useEntityList } from '../../stores';
 import { SidebarContext } from '../../context';
-import { useEntityStore } from '../../components/ext/entity-store';
 
 const { Text } = Typography;
 
@@ -21,7 +21,6 @@ interface EntityData {
 
 export function EntityForm({ name }: EntityFormProps) {
   const { selectedEntityId } = useContext(SidebarContext);
-  const { getEntity } = useEntityStore();
 
   // 获取实体数据
   const { getEntityByStableId } = useEntityListActions();

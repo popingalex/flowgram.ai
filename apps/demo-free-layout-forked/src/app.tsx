@@ -47,40 +47,26 @@ import { toggleMockMode, getApiMode } from './services/api-service';
 import { Editor } from './editor';
 import { TestNewArchitecture } from './components/test-new-architecture';
 // import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
-import { EntityStoreTestPage } from './components/ext/entity-store/test-page';
-import {
-  EntityStoreProvider,
-  useEntityStore as useOldEntityStore,
-} from './components/ext/entity-store';
 import { EnumStoreProvider } from './components/ext/entity-property-type-selector/enum-store';
-import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
+// import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
-// 数据初始化组件 - 从旧的EntityStore获取数据并设置到新的EntityStore
+// 实体数据初始化组件 - 直接使用EntityListStore加载数据
 const EntityStoreInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { entities: oldEntities, loading: oldLoading } = useOldEntityStore();
   const { entities } = useEntityList();
-  const { setEntities, setLoading } = useEntityListActions();
+  const { loadEntities } = useEntityListActions();
   const initializedRef = React.useRef(false);
 
-  // 将旧EntityStore的数据同步到新EntityStore - 只执行一次
-  React.useEffect(() => {
-    if (!oldLoading && oldEntities.length > 0 && !initializedRef.current) {
-      console.log('Initializing new EntityStore with data:', oldEntities);
-      setEntities(oldEntities);
-      setLoading(false);
-      initializedRef.current = true;
-    }
-  }, [oldEntities.length, oldLoading]); // 移除函数依赖，只依赖数据状态
-
-  // 只在初始加载时同步加载状态
+  // 只在第一次加载时获取实体数据
   React.useEffect(() => {
     if (!initializedRef.current) {
-      setLoading(oldLoading);
+      console.log('Loading entities from API...');
+      loadEntities();
+      initializedRef.current = true;
     }
-  }, [oldLoading]); // 移除setLoading依赖
+  }, [loadEntities]);
 
   return <>{children}</>;
 };
@@ -180,7 +166,6 @@ type PageType =
   | 'modules'
   | 'settings'
   | 'test-properties'
-  | 'test-store'
   // | 'test-module-entity' // 已删除
   | 'test-new-architecture';
 
@@ -266,7 +251,6 @@ const AppContent: React.FC = () => {
     () => [
       { itemKey: 'test-new-architecture', text: '新架构测试' },
       { itemKey: 'test-properties', text: '属性编辑器测试' },
-      { itemKey: 'test-store', text: '实体存储测试' },
       // { itemKey: 'test-module-entity', text: '模块实体测试' }, // 已删除
     ],
     []
@@ -374,11 +358,9 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => (
   <EnumStoreProvider>
     <ModuleStoreProvider>
-      <EntityStoreProvider>
-        <EntityStoreInitializer>
-          <AppContent />
-        </EntityStoreInitializer>
-      </EntityStoreProvider>
+      <EntityStoreInitializer>
+        <AppContent />
+      </EntityStoreInitializer>
     </ModuleStoreProvider>
   </EnumStoreProvider>
 );

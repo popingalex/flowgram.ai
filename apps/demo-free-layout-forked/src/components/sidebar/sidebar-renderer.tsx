@@ -9,7 +9,6 @@ import {
 import { SideSheet, Button } from '@douyinfe/semi-ui';
 import { IconClose } from '@douyinfe/semi-icons';
 
-import { EntityPropertiesEditor } from '../entity-properties-editor';
 import { FlowNodeMeta } from '../../typings';
 import { SidebarContext, IsSidebarContext, NodeRenderContext } from '../../context';
 

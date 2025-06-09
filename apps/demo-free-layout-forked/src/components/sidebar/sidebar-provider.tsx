@@ -2,7 +2,7 @@ import React, { ReactNode, useEffect, useState, useRef } from 'react';
 
 import { NodeRenderReturnType } from '@flowgram.ai/free-layout-editor';
 
-import { useEntityStore } from '../ext/entity-store';
+import { useEntityList } from '../../stores';
 import { useCurrentEntity, useCurrentEntityActions } from '../../stores';
 import { SidebarContext } from '../../context';
 
@@ -15,8 +15,6 @@ export const SidebarProvider: React.FC<SidebarProviderProps> = ({
   children,
   selectedEntityId: propSelectedEntityId,
 }) => {
-  const { getEntity } = useEntityStore();
-
   // 使用新的EntityEditContext hooks
   const { editingEntity, isDirty } = useCurrentEntity();
   const { updateProperty, resetChanges } = useCurrentEntityActions();
