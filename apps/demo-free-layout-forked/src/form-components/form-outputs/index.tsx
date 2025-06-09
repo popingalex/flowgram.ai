@@ -71,7 +71,7 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
             })),
           });
 
-          return Object.entries(properties)
+          const processedProperties = Object.entries(properties)
             .filter(([key, property]) => {
               const prop = property as any;
 
@@ -85,7 +85,7 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
             })
             .map(([key, property]) => {
               const prop = property as any;
-              const result = {
+              return {
                 key: prop._indexId || key,
                 id: prop.id || key,
                 name: prop.name || prop.title || prop.id || key,
@@ -93,16 +93,22 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
                 description: prop.description,
                 required: prop.isPropertyRequired,
               };
-
-              console.log('🔍 FormOutputs - 转换后的属性:', {
-                原始key: key,
-                原始propId: prop.id,
-                原始propName: prop.name,
-                转换后: result,
-              });
-
-              return result;
             });
+
+          // 统一打印属性转换结果
+          console.log('🔍 FormOutputs - 属性转换结果:', {
+            总属性数: Object.keys(properties).length,
+            过滤后属性数: processedProperties.length,
+            isStartNode,
+            properties: processedProperties.map((p) => ({
+              key: p.key,
+              id: p.id,
+              name: p.name,
+              type: p.type,
+            })),
+          });
+
+          return processedProperties;
         }, [value, isStartNode, renderKey]); // 保持renderKey作为依赖，但不作为Field的key
 
         console.log('🔍 FormOutputs - 最终节点属性数组:', nodeProperties);

@@ -4,6 +4,10 @@ import { immer } from 'zustand/middleware/immer';
 import { devtools } from 'zustand/middleware';
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
+import { enableMapSet } from 'immer';
+
+// 启用 Immer 的 MapSet 插件
+enableMapSet();
 
 import type { Module, ModuleAttribute } from '../services/types';
 import { moduleApi } from '../services/api-service';
@@ -63,6 +67,9 @@ export interface ModuleActions {
   saveAllDirtyModules: () => Promise<void>;
   discardAllChanges: () => void;
   getDirtyModuleIds: () => string[];
+
+  // 智能dirty检测
+  checkModuleReallyDirty: (editState: ModuleEditState) => boolean;
 }
 
 export type ModuleStore = ModuleStoreState & ModuleActions;
@@ -123,8 +130,14 @@ export const useModuleStore = create<ModuleStore>()(
           const editState = state.editingModules.get(moduleId);
           if (editState) {
             Object.assign(editState.editingModule, updates);
-            editState.isDirty = true;
-            console.log('🔧 更新编辑模块:', { moduleId, updates });
+
+            // 🎯 智能dirty检测：检查是否真的有变化
+            editState.isDirty = get().checkModuleReallyDirty(editState);
+            console.log('🔧 更新编辑模块:', {
+              moduleId,
+              updates,
+              isDirty: editState.isDirty,
+            });
           }
         });
       },
@@ -160,8 +173,15 @@ export const useModuleStore = create<ModuleStore>()(
       // 🎯 取消编辑
       cancelEditModule: (moduleId) => {
         set((state) => {
+          const editState = state.editingModules.get(moduleId);
+          if (editState) {
+            console.log('❌ 取消编辑模块:', {
+              moduleId,
+              originalAttrs: editState.originalModule.attributes.length,
+              editingAttrs: editState.editingModule.attributes.length,
+            });
+          }
           state.editingModules.delete(moduleId);
-          console.log('❌ 取消编辑模块:', moduleId);
         });
       },
 
@@ -237,8 +257,14 @@ export const useModuleStore = create<ModuleStore>()(
               displayId: attribute.displayId || attribute.id.split('/').pop() || attribute.id,
             };
             editState.editingModule.attributes.push(newAttribute);
-            editState.isDirty = true;
-            console.log('➕ 添加属性到编辑模块:', { moduleId, attributeId: newAttribute.id });
+
+            // 🎯 智能dirty检测：检查是否真的有变化
+            editState.isDirty = get().checkModuleReallyDirty(editState);
+            console.log('➕ 添加属性到编辑模块:', {
+              moduleId,
+              attributeId: newAttribute.id,
+              isDirty: editState.isDirty,
+            });
           }
         });
       },
@@ -253,8 +279,15 @@ export const useModuleStore = create<ModuleStore>()(
             );
             if (attrIndex > -1) {
               Object.assign(editState.editingModule.attributes[attrIndex], updates);
-              editState.isDirty = true;
-              console.log('🔧 更新编辑模块属性:', { moduleId, attributeId, updates });
+
+              // 🎯 智能dirty检测：检查是否真的有变化
+              editState.isDirty = get().checkModuleReallyDirty(editState);
+              console.log('🔧 更新编辑模块属性:', {
+                moduleId,
+                attributeId,
+                updates,
+                isDirty: editState.isDirty,
+              });
             }
           }
         });
@@ -271,8 +304,14 @@ export const useModuleStore = create<ModuleStore>()(
             if (attrIndex > -1) {
               const deletedAttr = editState.editingModule.attributes[attrIndex];
               editState.editingModule.attributes.splice(attrIndex, 1);
-              editState.isDirty = true;
-              console.log('🗑️ 从编辑模块删除属性:', { moduleId, attributeId: deletedAttr.id });
+
+              // 🎯 智能dirty检测：检查是否真的有变化
+              editState.isDirty = get().checkModuleReallyDirty(editState);
+              console.log('🗑️ 从编辑模块删除属性:', {
+                moduleId,
+                attributeId: deletedAttr.id,
+                isDirty: editState.isDirty,
+              });
             }
           }
         });
@@ -312,6 +351,48 @@ export const useModuleStore = create<ModuleStore>()(
         return Array.from(editingModules.entries())
           .filter(([_, editState]) => editState.isDirty)
           .map(([moduleId, _]) => moduleId);
+      },
+
+      // 🎯 智能dirty检测：深度比较模块是否真的有变化
+      checkModuleReallyDirty: (editState) => {
+        const { originalModule, editingModule } = editState;
+
+        // 比较基本属性
+        if (
+          originalModule.id !== editingModule.id ||
+          originalModule.name !== editingModule.name ||
+          originalModule.description !== editingModule.description
+        ) {
+          return true;
+        }
+
+        // 比较属性数量
+        if (originalModule.attributes.length !== editingModule.attributes.length) {
+          return true;
+        }
+
+        // 比较每个属性（按id排序后比较，忽略_indexId）
+        const originalAttrs = [...originalModule.attributes].sort((a, b) =>
+          a.id.localeCompare(b.id)
+        );
+        const editingAttrs = [...editingModule.attributes].sort((a, b) => a.id.localeCompare(b.id));
+
+        for (let i = 0; i < originalAttrs.length; i++) {
+          const orig = originalAttrs[i];
+          const edit = editingAttrs[i];
+
+          if (
+            orig.id !== edit.id ||
+            orig.name !== edit.name ||
+            orig.type !== edit.type ||
+            orig.description !== edit.description
+          ) {
+            return true;
+          }
+        }
+
+        // 如果所有比较都通过，说明没有实质性变化
+        return false;
       },
     })),
     { name: 'module-store' }

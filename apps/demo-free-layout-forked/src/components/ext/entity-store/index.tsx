@@ -156,30 +156,52 @@ export const EntityStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
         // 🎯 转换bundles：从模块ID转换为nanoid
         let convertedBundles = entity.bundles || [];
         if (convertedBundles.length > 0) {
+          const bundleConversions: Array<{
+            original: string;
+            converted: string;
+            found: boolean;
+          }> = [];
+
           convertedBundles = convertedBundles.map((bundleId) => {
             // 如果已经是nanoid（长度为21），直接返回
             if (bundleId.length === 21) {
+              bundleConversions.push({
+                original: bundleId,
+                converted: bundleId,
+                found: true,
+              });
               return bundleId;
             }
 
             // 否则查找对应的模块nanoid
             const module = modules.find((m) => m.id === bundleId);
             if (module && module._indexId) {
-              console.log('🔄 转换bundle:', {
-                entityId: entity.id,
-                oldBundleId: bundleId,
-                newBundleId: module._indexId,
+              bundleConversions.push({
+                original: bundleId,
+                converted: module._indexId,
+                found: true,
               });
               return module._indexId;
             }
 
             // 如果找不到对应模块，保留原值（可能是旧数据）
+            bundleConversions.push({
+              original: bundleId,
+              converted: bundleId,
+              found: false,
+            });
             console.warn('🔄 未找到模块，保留原bundle:', {
               entityId: entity.id,
               bundleId,
               availableModules: modules.map((m) => ({ id: m.id, _indexId: m._indexId })),
             });
             return bundleId;
+          });
+
+          // 统一打印转换结果
+          console.log('🔄 EntityStore: 实体bundle转换结果:', {
+            entityId: entity.id,
+            conversions: bundleConversions,
           });
         }
 

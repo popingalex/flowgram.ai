@@ -21,13 +21,15 @@ import {
   IconArticle,
   IconSetting,
   IconLink,
+  IconSave,
+  IconUndo,
 } from '@douyinfe/semi-icons';
 
 import { ModuleSelectorModal } from '../module-selector';
 import { useEntityStore } from '../entity-store';
 import { EntityPropertyTypeSelector } from '../entity-property-type-selector';
 import { TypedParser, Primitive } from '../../../typings/mas/typed';
-import { useModuleStore, Module } from '../../../stores/module.store';
+import { useModuleStore } from '../../../stores/module.store';
 import { useCurrentEntity, useCurrentEntityActions } from '../../../stores';
 
 export interface ModulePropertyData {
@@ -70,8 +72,9 @@ const ModuleIdInput = React.memo(
     moduleNanoid: string;
     onModuleChange: (moduleNanoid: string, field: string, value: any) => void;
   }) => {
-    const { getEditingModule } = useModuleStore();
-    const module = getEditingModule(moduleNanoid);
+    const { modules, getEditingModule } = useModuleStore();
+    const baseModule = modules.find((m) => m._indexId === moduleNanoid);
+    const module = baseModule ? getEditingModule(baseModule.id) || baseModule : undefined;
 
     return (
       <Input
@@ -82,7 +85,7 @@ const ModuleIdInput = React.memo(
         style={{
           fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
           fontSize: '12px',
-          width: '100px',
+          width: '130px',
         }}
       />
     );
@@ -99,8 +102,9 @@ const ModuleNameInput = React.memo(
     moduleNanoid: string;
     onModuleChange: (moduleNanoid: string, field: string, value: any) => void;
   }) => {
-    const { getEditingModule } = useModuleStore();
-    const module = getEditingModule(moduleNanoid);
+    const { modules, getEditingModule } = useModuleStore();
+    const baseModule = modules.find((m) => m._indexId === moduleNanoid);
+    const module = baseModule ? getEditingModule(baseModule.id) || baseModule : undefined;
 
     return (
       <Input
@@ -110,7 +114,7 @@ const ModuleNameInput = React.memo(
         placeholder="模块名称"
         style={{
           fontSize: '13px',
-          width: '120px',
+          width: '160px',
         }}
       />
     );
@@ -134,8 +138,9 @@ const ModuleAttributeIdInput = React.memo(
       value: any
     ) => void;
   }) => {
-    const { getEditingModule } = useModuleStore();
-    const module = getEditingModule(moduleNanoid);
+    const { modules, getEditingModule } = useModuleStore();
+    const baseModule = modules.find((m) => m._indexId === moduleNanoid);
+    const module = baseModule ? getEditingModule(baseModule.id) || baseModule : undefined;
     const attribute = module?.attributes?.find((a) => a._indexId === attributeNanoid);
 
     return (
@@ -153,7 +158,7 @@ const ModuleAttributeIdInput = React.memo(
         style={{
           fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
           fontSize: '12px',
-          width: '100px',
+          width: '130px',
         }}
       />
     );
@@ -177,8 +182,9 @@ const ModuleAttributeNameInput = React.memo(
       value: any
     ) => void;
   }) => {
-    const { getEditingModule } = useModuleStore();
-    const module = getEditingModule(moduleNanoid);
+    const { modules, getEditingModule } = useModuleStore();
+    const baseModule = modules.find((m) => m._indexId === moduleNanoid);
+    const module = baseModule ? getEditingModule(baseModule.id) || baseModule : undefined;
     const attribute = module?.attributes?.find((a) => a._indexId === attributeNanoid);
 
     return (
@@ -189,7 +195,7 @@ const ModuleAttributeNameInput = React.memo(
         placeholder="属性名称"
         style={{
           fontSize: '13px',
-          width: '120px',
+          width: '160px',
         }}
       />
     );
@@ -208,25 +214,18 @@ const SidebarModulePropertyTable: React.FC<ModulePropertyTreeTableProps> = ({
   // Store hooks
   const { modules } = useModuleStore();
   const { editingEntity } = useCurrentEntity();
+  const { updateEntity } = useCurrentEntityActions();
 
   // 🎯 只显示已关联的模块数据 - 通过nanoid匹配
   const linkedModuleTreeData = useMemo(() => {
     const entityBundles = editingEntity?.bundles || [];
-    console.log('🔗 边栏模块匹配:', { entityBundles, modulesCount: modules.length });
 
     return modules
-      .filter((module) => {
-        // 优先使用nanoid匹配，其次使用ID匹配（兼容旧数据）
-        const isLinked =
-          entityBundles.includes(module._indexId || '') || entityBundles.includes(module.id);
-        console.log('🔗 模块匹配检查:', {
-          moduleId: module.id,
-          moduleNanoid: module._indexId,
-          isLinked,
-          entityBundles,
-        });
-        return isLinked;
-      })
+      .filter(
+        (module) =>
+          // 支持旧的ID匹配和新的nanoid匹配
+          entityBundles.includes(module.id) || entityBundles.includes(module._indexId || '')
+      )
       .map((module) => {
         const moduleKey = `module_${module._indexId || module.id}`;
 
@@ -291,6 +290,7 @@ const SidebarModulePropertyTable: React.FC<ModulePropertyTreeTableProps> = ({
         render: (_: any, record: ModuleTreeData | ModulePropertyData) => (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: '13px' }}>{record.name}</span>
+            {/* 移除模块标签，简化显示 */}
           </div>
         ),
       },
@@ -301,7 +301,7 @@ const SidebarModulePropertyTable: React.FC<ModulePropertyTreeTableProps> = ({
             icon={<IconSetting />}
             type="primary"
             onClick={() => {
-              setFocusModuleId(undefined);
+              setFocusModuleId(undefined); // 一般配置，不聚焦特定模块
               setConfigModalVisible(true);
             }}
           >
@@ -351,7 +351,7 @@ const SidebarModulePropertyTable: React.FC<ModulePropertyTreeTableProps> = ({
             return (
               <Space>
                 <Tag size="small" color="cyan">
-                  {moduleData.attributeCount}个属性
+                  {moduleData.attributeCount}
                 </Tag>
                 <Tooltip content="查看模块详情">
                   <Button
@@ -361,7 +361,7 @@ const SidebarModulePropertyTable: React.FC<ModulePropertyTreeTableProps> = ({
                     icon={<IconLink />}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setFocusModuleId(moduleData.id);
+                      setFocusModuleId(moduleData.id); // 聚焦到当前模块
                       setConfigModalVisible(true);
                     }}
                   />
@@ -372,63 +372,50 @@ const SidebarModulePropertyTable: React.FC<ModulePropertyTreeTableProps> = ({
         },
       },
     ],
-    []
+    [setConfigModalVisible, setFocusModuleId]
   );
-
-  // 🎯 边栏表格数据源
-  const sidebarDataSource = useMemo(
-    () =>
-      linkedModuleTreeData.map((module) => ({
-        ...module,
-        children: module.children?.map((attr) => ({
-          ...attr,
-          isAttribute: true,
-          parentKey: module.key,
-        })),
-      })),
-    [linkedModuleTreeData]
-  );
-
-  // 如果没有关联的模块，不显示任何内容
-  if (linkedModuleTreeData.length === 0) {
-    return null;
-  }
 
   return (
-    <div style={{ width: '100%' }}>
+    <div>
+      {showTitle && (
+        <div style={{ marginBottom: 16 }}>
+          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>{title}</h3>
+        </div>
+      )}
+
       <Table
         columns={sidebarColumns}
-        dataSource={sidebarDataSource}
+        dataSource={linkedModuleTreeData}
         rowKey="key"
         pagination={false}
         size="small"
         hideExpandedColumn={false}
+        defaultExpandAllRows={false}
         onRow={(record) => {
           if (record && !record.isAttribute) {
             return {
               style: {
-                backgroundColor: 'var(--semi-color-fill-0)', // 改为中性色，不使用绿色
+                backgroundColor: 'var(--semi-color-fill-0)',
                 fontWeight: 600,
               },
             };
           }
           return {};
         }}
+        indentSize={20}
         style={{
           borderRadius: '6px',
           border: '1px solid var(--semi-color-border)',
           overflow: 'hidden',
-          width: '100%',
-          tableLayout: 'fixed',
         }}
       />
 
-      {/* 模块配置弹窗 - 保持原有功能 */}
+      {/* 模块配置弹窗 */}
       <ModuleConfigModal
         visible={configModalVisible}
         onClose={() => {
           setConfigModalVisible(false);
-          setFocusModuleId(undefined); // 清除聚焦状态，但展开状态会保持
+          setFocusModuleId(undefined);
         }}
         focusModuleId={focusModuleId}
       />
@@ -436,59 +423,53 @@ const SidebarModulePropertyTable: React.FC<ModulePropertyTreeTableProps> = ({
   );
 };
 
-// 🎯 模块配置弹窗 - 支持模块选择和属性编辑，使用nanoid关联
+// 🎯 模块配置弹窗组件
 const ModuleConfigModal: React.FC<{
   visible: boolean;
   onClose: () => void;
   focusModuleId?: string; // 需要聚焦的模块ID
 }> = ({ visible, onClose, focusModuleId }) => {
-  const [selectedModules, setSelectedModules] = useState<string[]>([]);
-  const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Store hooks - 使用新的编辑方法
+  // Store hooks
   const {
     modules,
+    getEditingModule,
+    isModuleDirty,
     startEditModule,
     updateEditingModule,
+    addAttributeToEditingModule,
+    removeAttributeFromEditingModule,
+    updateAttributeInEditingModule,
+    saveAllDirtyModules,
     saveModule,
     cancelEditModule,
-    isModuleDirty,
-    getEditingModule,
-    addAttributeToEditingModule,
-    updateAttributeInEditingModule,
-    removeAttributeFromEditingModule,
     createModule,
     deleteModule,
-    saveAllDirtyModules,
-    getDirtyModuleIds,
   } = useModuleStore();
   const { editingEntity } = useCurrentEntity();
   const { updateEntity } = useCurrentEntityActions();
 
-  // 🎯 同步选中状态 - 使用nanoid确保状态稳定
-  React.useEffect(() => {
-    if (visible) {
-      const entityBundles = editingEntity?.bundles || [];
-      console.log('🔍 同步选中状态:', { entityBundles, modulesCount: modules.length });
+  // 🎯 本地状态
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // 强制刷新用
 
-      // 使用nanoid作为选中状态的key，确保修改模块ID时选中状态不丢失
+  // 🎯 同步选中状态 - 根据实体的bundles字段
+  React.useEffect(() => {
+    if (visible && editingEntity?.bundles) {
+      const entityBundles = editingEntity.bundles;
+      console.log('🔄 同步选中状态:', { entityBundles, modules: modules.length });
+
       const selectedNanoids = modules
         .filter((module) => {
-          // 优先使用nanoid匹配，其次使用ID匹配（兼容旧数据）
+          // 优先使用nanoid匹配，其次使用ID匹配
           const isSelected =
             entityBundles.includes(module._indexId || '') || entityBundles.includes(module.id);
-          console.log('🔍 模块匹配检查:', {
-            moduleId: module.id,
-            moduleNanoid: module._indexId,
-            isSelected,
-            entityBundles,
-          });
           return isSelected;
         })
-        .map((module) => module._indexId || module.id); // 优先使用nanoid
+        .map((module) => module._indexId || module.id);
 
-      console.log('🔍 计算出的选中模块nanoids:', selectedNanoids);
+      console.log('🔍 计算出的选中模块:', selectedNanoids);
       setSelectedModules(selectedNanoids);
 
       // 🎯 为所有模块开始编辑会话
@@ -558,134 +539,219 @@ const ModuleConfigModal: React.FC<{
   // 🎯 添加模块属性 - 使用编辑模式
   const handleAddAttribute = useCallback(
     (moduleNanoid: string) => {
-      console.log('➕ 添加模块属性:', moduleNanoid);
+      console.log('🔥 handleAddAttribute 被调用了！', moduleNanoid);
       const module = modules.find((m) => m._indexId === moduleNanoid);
       if (module) {
+        // 确保模块在编辑状态
+        if (!getEditingModule(module.id)) {
+          startEditModule(module.id);
+        }
+
         const newAttribute = {
           id: `attr_${Date.now()}`,
           name: '新属性',
           type: 's',
           description: '',
+          _indexId: nanoid(), // 确保新属性有nanoid
         };
         console.log('➕ 执行添加属性:', { moduleId: module.id, newAttribute });
         addAttributeToEditingModule(module.id, newAttribute);
+
+        // 强制展开该模块以显示新添加的属性
+        setExpandedRowKeys((prev) => {
+          if (!prev.includes(moduleNanoid)) {
+            return [...prev, moduleNanoid];
+          }
+          return prev;
+        });
+
+        // 强制刷新表格数据
+        setRefreshKey((prev) => prev + 1);
+        console.log('✅ 属性添加成功');
       } else {
-        console.error('➕ 未找到模块:', { moduleNanoid });
+        console.error('❌ 未找到模块:', { moduleNanoid });
       }
     },
-    [modules, addAttributeToEditingModule]
+    [modules, addAttributeToEditingModule, getEditingModule, startEditModule, setExpandedRowKeys]
   );
 
   // 🎯 删除模块属性 - 使用编辑模式
   const handleRemoveAttribute = useCallback(
     (moduleNanoid: string, attributeNanoid: string) => {
-      console.log('🗑️ 删除模块属性开始:', { moduleNanoid, attributeNanoid });
+      console.log('🔥 handleRemoveAttribute 被调用了！', { moduleNanoid, attributeNanoid });
       const module = modules.find((m) => m._indexId === moduleNanoid);
 
       if (module) {
         console.log('🗑️ 找到模块，删除属性:', { moduleId: module.id, attributeNanoid });
+
+        // 确保模块在编辑状态
+        if (!getEditingModule(module.id)) {
+          startEditModule(module.id);
+        }
+
+        // 获取删除前的属性列表
+        const editingModule = getEditingModule(module.id);
+        const beforeCount = editingModule?.attributes.length || 0;
+        const beforeAttrs =
+          editingModule?.attributes.map((a) => ({ id: a.id, _indexId: a._indexId })) || [];
+        console.log('🔍 删除前属性列表:', { beforeCount, beforeAttrs });
+
         removeAttributeFromEditingModule(module.id, attributeNanoid);
-        console.log('🗑️ 删除命令已发送');
+
+        // 检查删除后的属性列表
+        const afterEditingModule = getEditingModule(module.id);
+        const afterCount = afterEditingModule?.attributes.length || 0;
+        const afterAttrs =
+          afterEditingModule?.attributes.map((a) => ({ id: a.id, _indexId: a._indexId })) || [];
+        console.log('🔍 删除后属性列表:', { afterCount, afterAttrs });
+
+        // 强制刷新表格数据
+        setRefreshKey((prev) => prev + 1);
+        console.log('✅ 属性删除成功');
       } else {
-        console.log('🗑️ 未找到模块:', {
+        console.error('❌ 未找到模块:', {
           moduleNanoid,
           modules: modules.length,
           moduleIds: modules.map((m) => ({ id: m.id, _indexId: m._indexId })),
         });
       }
     },
-    [modules, removeAttributeFromEditingModule]
+    [modules, removeAttributeFromEditingModule, getEditingModule, startEditModule]
   );
 
-  // 🎯 添加模块处理
+  // 🎯 添加新模块
   const handleAddModule = useCallback(async () => {
-    const newModule = {
-      id: `module-${Date.now()}`,
-      name: '新模块',
-      description: '请编辑描述',
-      attributes: [],
-    };
-    console.log('➕ 添加新模块:', newModule);
+    console.log('🔥 handleAddModule 被调用了！');
     try {
+      const newModule = {
+        id: `module_${Date.now()}`,
+        name: '新模块',
+        description: '',
+        attributes: [],
+        _indexId: nanoid(), // 确保新模块有nanoid
+      };
+      console.log('➕ 创建新模块:', newModule);
       await createModule(newModule);
+      console.log('✅ 模块创建成功');
     } catch (error) {
       console.error('➕ 创建模块失败:', error);
     }
   }, [createModule]);
 
-  // 🎯 删除模块处理 - 使用nanoid查找模块
+  // 🎯 删除模块
   const handleDeleteModule = useCallback(
     async (moduleNanoid: string) => {
-      console.log('🗑️ 删除模块开始:', { moduleNanoid });
-      const module = modules.find((m) => m._indexId === moduleNanoid);
-      if (module) {
-        console.log('🗑️ 找到模块，执行删除:', { moduleId: module.id });
-        try {
+      console.log('🔥 handleDeleteModule 被调用了！', moduleNanoid);
+      try {
+        const module = modules.find((m) => m._indexId === moduleNanoid);
+        if (module) {
+          console.log('🗑️ 删除模块:', { moduleId: module.id, moduleNanoid });
+
+          // 1. 删除模块
           await deleteModule(module.id);
-          // 从选中列表中移除（使用nanoid）
-          setSelectedModules((prev) => prev.filter((id) => id !== moduleNanoid));
-          console.log('🗑️ 模块删除完成');
-        } catch (error) {
-          console.error('🗑️ 删除模块失败:', error);
+
+          // 2. 从选中列表中移除
+          setSelectedModules((prev) => {
+            const newSelected = prev.filter((id) => id !== moduleNanoid);
+            console.log('🔄 更新选中列表:', { prev, newSelected });
+            return newSelected;
+          });
+
+          // 3. 立即更新实体的模块关联
+          const newBundles = selectedModules.filter((id) => id !== moduleNanoid);
+          updateEntity({ bundles: newBundles });
+          console.log('🔗 更新实体模块关联:', { newBundles });
+
+          console.log('✅ 模块删除成功');
+        } else {
+          console.error('❌ 未找到要删除的模块:', {
+            moduleNanoid,
+            availableModules: modules.map((m) => ({ id: m.id, _indexId: m._indexId })),
+          });
         }
-      } else {
-        console.error('🗑️ 未找到要删除的模块:', {
-          moduleNanoid,
-          availableModules: modules.map((m) => ({ id: m.id, _indexId: m._indexId })),
-        });
+      } catch (error) {
+        console.error('🗑️ 删除模块失败:', error);
       }
     },
-    [modules, deleteModule]
+    [modules, deleteModule, setSelectedModules, selectedModules, updateEntity]
   );
 
   // 🎯 构建模块表格数据，包含选择状态，使用nanoid作为key
-  const modalTableData = useMemo(
-    () =>
-      modules.map((module) => {
-        const moduleNanoid = module._indexId || `module_${module.id}`;
-        const isSelected = selectedModules.includes(moduleNanoid);
-        const moduleKey = moduleNanoid;
-        const isDirty = isModuleDirty(module.id);
+  const modalTableData = useMemo(() => {
+    console.log('🔄 重新计算modalTableData:', {
+      modulesCount: modules.length,
+      selectedCount: selectedModules.length,
+    });
 
-        const children: ModulePropertyData[] = module.attributes.map((attr) => {
-          // 确保每个属性都有nanoid，避免重新生成
-          const attrNanoid = attr._indexId || nanoid();
-          return {
-            key: attrNanoid, // 直接使用nanoid作为key
-            id: `${module.id}/${attr.id}`, // 保持完整的属性ID格式
-            name: attr.name || attr.id,
-            type: attr.type,
-            description: attr.description,
-            isAttribute: true,
-            parentKey: moduleKey,
-            _indexId: attrNanoid,
-            isSelected,
-            moduleId: module.id,
-            displayId: attr.displayId || attr.id, // 使用displayId或原始id
-          };
-        });
+    return modules.map((module) => {
+      const moduleNanoid = module._indexId || `module_${module.id}`;
+      const isSelected = selectedModules.includes(moduleNanoid);
+      const moduleKey = moduleNanoid;
+      const isDirty = isModuleDirty(module.id);
 
+      // 使用编辑中的模块数据
+      const editingModule = getEditingModule(module.id) || module;
+
+      const children: ModulePropertyData[] = editingModule.attributes.map((attr) => {
+        // 确保每个属性都有nanoid，避免重新生成
+        const attrNanoid = attr._indexId || nanoid();
         return {
-          key: moduleKey, // 使用nanoid避免组件刷新
-          id: module.id,
-          name: module.name,
-          attributeCount: module.attributes.length,
-          children,
-          isAttribute: false,
-          _indexId: moduleKey, // 保持一致
+          key: attrNanoid, // 直接使用nanoid作为key
+          id: `${module.id}/${attr.id}`, // 保持完整的属性ID格式
+          name: attr.name || attr.id,
+          type: attr.type,
+          description: attr.description,
+          isAttribute: true,
+          parentKey: moduleKey,
+          _indexId: attrNanoid,
           isSelected,
+          moduleId: module.id,
+          displayId: attr.displayId || attr.id, // 使用displayId或原始id
         };
-      }),
-    [modules, selectedModules]
-  );
+      });
+
+      return {
+        key: moduleKey, // 使用nanoid避免组件刷新
+        id: editingModule.id,
+        name: editingModule.name,
+        attributeCount: editingModule.attributes.length,
+        children,
+        isAttribute: false,
+        _indexId: moduleKey, // 保持一致
+        isSelected,
+      };
+    });
+  }, [modules, selectedModules, getEditingModule, isModuleDirty, refreshKey]);
 
   // 🎯 完全自定义渲染的列配置
   const modalColumns = useMemo(
     () => [
       {
+        title: '选择',
+        key: 'selection',
+        width: 80,
+        render: (_: any, record: any) => {
+          // 只有模块行显示复选框，属性行不显示
+          if (!record.isAttribute) {
+            return (
+              <Checkbox
+                checked={selectedModules.includes(record._indexId)}
+                onChange={(e) => {
+                  const newSelectedModules = e.target.checked
+                    ? [...selectedModules, record._indexId]
+                    : selectedModules.filter((nanoid) => nanoid !== record._indexId);
+                  setSelectedModules(newSelectedModules);
+                }}
+              />
+            );
+          }
+          return null; // 属性行不显示复选框
+        },
+      },
+      {
         title: 'ID',
         key: 'id',
-        width: 120,
+        width: 150,
         render: (_: any, record: ModuleTreeData | ModulePropertyData) => {
           if (record.isAttribute) {
             // 属性行：可编辑的属性ID输入框
@@ -710,7 +776,7 @@ const ModuleConfigModal: React.FC<{
       {
         title: '名称',
         key: 'name',
-        width: 200,
+        width: 180,
         render: (_: any, record: ModuleTreeData | ModulePropertyData) => {
           if (record.isAttribute) {
             // 属性行：可编辑的属性名称输入框
@@ -734,15 +800,14 @@ const ModuleConfigModal: React.FC<{
       },
       {
         title: () => (
-          <Button type="primary" icon={<IconPlus />} onClick={handleAddModule}>
-            添加模块
+          <Button size="small" icon={<IconPlus />} type="primary" onClick={handleAddModule}>
+            新建模块
           </Button>
         ),
-        key: 'controls',
-        width: 200,
+        key: 'type',
         render: (_: any, record: ModuleTreeData | ModulePropertyData) => {
           if (record.isAttribute) {
-            // 属性行：类型选择器 + 删除按钮
+            // 属性行：类型选择器和删除按钮
             const propertyData = record as ModulePropertyData;
             const typedInfo = TypedParser.fromString(propertyData.type);
             const module = modules.find((m) => m.id === propertyData.moduleId);
@@ -779,6 +844,7 @@ const ModuleConfigModal: React.FC<{
               <Space>
                 <EntityPropertyTypeSelector
                   value={value}
+                  disabled={false} // 模块配置页面允许编辑所有属性
                   onChange={(typeInfo) => {
                     console.log('修改模块属性类型:', { record, typeInfo });
                     if (module) {
@@ -791,29 +857,42 @@ const ModuleConfigModal: React.FC<{
                     }
                   }}
                 />
-                <Popconfirm
-                  title="确定删除此属性吗？"
-                  content="删除后无法恢复"
-                  onConfirm={() => {
-                    if (module) {
-                      handleRemoveAttribute(module._indexId!, propertyData._indexId);
-                    }
-                  }}
-                >
-                  <Tooltip content="删除属性">
-                    <Button type="danger" icon={<IconDelete />} size="small" />
-                  </Tooltip>
-                </Popconfirm>
+                {/* 删除属性按钮 */}
+                <Tooltip content="删除属性">
+                  <Button
+                    type="danger"
+                    icon={<IconDelete />}
+                    size="small"
+                    onClick={() => {
+                      console.log('🔥 删除属性按钮被点击！', propertyData._indexId);
+                      if (module) {
+                        Modal.confirm({
+                          title: '确认删除属性',
+                          content: `确定要删除属性"${propertyData.name}"吗？\n\n删除后无法恢复`,
+                          okText: '确认删除',
+                          cancelText: '取消',
+                          onOk: () => {
+                            handleRemoveAttribute(module._indexId!, propertyData._indexId);
+                          },
+                        });
+                      }
+                    }}
+                  />
+                </Tooltip>
               </Space>
             );
           } else {
-            // 模块行：属性数量标签 + 添加属性按钮 + 删除模块按钮
+            // 模块行：显示属性数量、添加属性按钮、保存/撤销按钮和删除模块按钮
             const moduleData = record as ModuleTreeData;
+            const module = modules.find((m) => m._indexId === moduleData._indexId);
+            const isDirty = module ? isModuleDirty(module.id) : false;
+
             return (
               <Space>
                 <Tag size="small" color="blue">
-                  {moduleData.attributeCount}个属性
+                  {moduleData.attributeCount}
                 </Tag>
+                {/* 添加属性按钮 */}
                 <Tooltip content="添加属性">
                   <Button
                     size="small"
@@ -822,15 +901,62 @@ const ModuleConfigModal: React.FC<{
                     onClick={() => handleAddAttribute(moduleData._indexId)}
                   />
                 </Tooltip>
-                <Popconfirm
-                  title="确定删除此模块吗？"
-                  content="删除后无法恢复"
-                  onConfirm={() => handleDeleteModule(moduleData._indexId)}
-                >
-                  <Tooltip content="删除模块">
-                    <Button type="danger" icon={<IconDelete />} size="small" />
+                {/* 保存按钮 - 只在有更改时启用 */}
+                <Tooltip content={isDirty ? '保存模块更改' : '无更改需要保存'}>
+                  <Button
+                    size="small"
+                    icon={<IconSave />}
+                    type="primary"
+                    disabled={!isDirty}
+                    onClick={async () => {
+                      if (module) {
+                        try {
+                          await saveModule(module.id);
+                          console.log('✅ 模块保存成功:', module.id);
+                        } catch (error) {
+                          console.error('❌ 模块保存失败:', error);
+                        }
+                      }
+                    }}
+                  />
+                </Tooltip>
+                {/* 撤销/删除按钮 - dirty时显示撤销，非dirty时显示删除 */}
+                {isDirty ? (
+                  <Tooltip content="撤销模块更改">
+                    <Button
+                      size="small"
+                      icon={<IconUndo />}
+                      onClick={() => {
+                        if (module) {
+                          cancelEditModule(module.id);
+                          // 强制刷新表格数据
+                          setRefreshKey((prev) => prev + 1);
+                          console.log('↩️ 撤销模块更改:', module.id);
+                        }
+                      }}
+                    />
                   </Tooltip>
-                </Popconfirm>
+                ) : (
+                  <Tooltip content="删除模块">
+                    <Button
+                      type="danger"
+                      icon={<IconDelete />}
+                      size="small"
+                      onClick={() => {
+                        console.log('🔥 删除模块按钮被点击！', moduleData._indexId);
+                        Modal.confirm({
+                          title: '确认删除模块',
+                          content: `确定要删除模块"${moduleData.name}"吗？\n\n此操作将：\n• 永久删除该模块及其所有属性\n• 从当前实体中移除该模块关联\n• 无法撤销`,
+                          okText: '确认删除',
+                          cancelText: '取消',
+                          onOk: () => {
+                            handleDeleteModule(moduleData._indexId);
+                          },
+                        });
+                      }}
+                    />
+                  </Tooltip>
+                )}
               </Space>
             );
           }
@@ -838,6 +964,7 @@ const ModuleConfigModal: React.FC<{
       },
     ],
     [
+      selectedModules,
       modules,
       handleModuleChange,
       handleAttributeChange,
@@ -848,20 +975,26 @@ const ModuleConfigModal: React.FC<{
     ]
   );
 
-  // 🎯 行选择配置
-  const rowSelection = useMemo(
-    () => ({
-      selectedRowKeys: selectedModules,
-      onChange: (selectedRowKeys: (string | number)[] | undefined) => {
-        const keys = selectedRowKeys ? selectedRowKeys.map((key) => String(key)) : [];
-        setSelectedModules(keys);
-      },
-      getCheckboxProps: (record: ModuleTreeData | ModulePropertyData) => ({
-        disabled: record.isAttribute, // 只有模块行可以选择，属性行不可选择
-      }),
-    }),
-    [selectedModules]
-  );
+  // 🎯 检查是否有更改
+  const hasChanges = useMemo(() => {
+    // 检查是否有dirty模块
+    const dirtyModuleIds = modules.filter((m) => isModuleDirty(m.id)).map((m) => m.id);
+    if (dirtyModuleIds.length > 0) return true;
+
+    // 检查选中状态是否有变化
+    const entityBundles = editingEntity?.bundles || [];
+    const currentSelected = modules
+      .filter(
+        (module) =>
+          entityBundles.includes(module._indexId || '') || entityBundles.includes(module.id)
+      )
+      .map((module) => module._indexId || module.id);
+
+    if (selectedModules.length !== currentSelected.length) return true;
+    if (selectedModules.some((id) => !currentSelected.includes(id))) return true;
+
+    return false;
+  }, [selectedModules, editingEntity?.bundles, modules, isModuleDirty]);
 
   // 🎯 保存配置 - 保存所有dirty模块，然后更新实体关联
   const handleSave = async () => {
@@ -879,30 +1012,6 @@ const ModuleConfigModal: React.FC<{
     }
   };
 
-  // 🎯 取消配置 - 丢弃所有更改
-  const handleCancel = () => {
-    const dirtyModuleIds = getDirtyModuleIds();
-    if (dirtyModuleIds.length > 0) {
-      // 有未保存的更改，需要确认
-      Modal.confirm({
-        title: '确定取消吗？',
-        content: `有 ${dirtyModuleIds.length} 个模块有未保存的更改，取消将丢失这些更改。`,
-        onOk: () => {
-          // 丢弃所有更改
-          dirtyModuleIds.forEach((moduleId) => {
-            cancelEditModule(moduleId);
-          });
-          onClose();
-        },
-      });
-    } else {
-      onClose();
-    }
-  };
-
-  // 🎯 检查是否有未保存的更改
-  const hasDirtyChanges = getDirtyModuleIds().length > 0;
-
   // 🎯 表格数据源
   const modalDataSource = useMemo(
     () =>
@@ -919,33 +1028,55 @@ const ModuleConfigModal: React.FC<{
 
   return (
     <Modal
-      title="配置模块"
+      title="模块配置"
       visible={visible}
-      onCancel={handleCancel}
-      width={800}
-      height={600}
-      bodyStyle={{ height: 'calc(600px - 108px)', padding: '16px' }}
-      footer={
-        <Space>
-          <Button onClick={handleCancel}>取消</Button>
-          <Button
-            type="primary"
-            onClick={handleSave}
-            disabled={!hasDirtyChanges && selectedModules.length === 0}
-          >
-            保存{hasDirtyChanges ? ` (${getDirtyModuleIds().length}个更改)` : ''}
-          </Button>
-        </Space>
-      }
+      onCancel={onClose}
+      onOk={hasChanges ? handleSave : undefined}
+      okButtonProps={{ disabled: !hasChanges }}
+      okText="保存配置"
+      cancelText="取消"
+      width="750px"
+      height="70vh"
+      style={{ top: '5vh' }}
+      bodyStyle={{
+        height: 'calc(70vh - 108px)',
+        overflow: 'auto',
+        padding: '16px',
+      }}
     >
       <Table
-        dataSource={modalDataSource}
         columns={modalColumns}
-        rowSelection={rowSelection}
-        scroll={{ y: 400 }}
+        dataSource={modalDataSource}
+        rowKey="key"
         pagination={false}
         size="small"
-        rowKey="key"
+        hideExpandedColumn={false}
+        expandedRowKeys={expandedRowKeys}
+        onExpandedRowsChange={(rows) => {
+          // 根据Semi Design文档，onExpandedRowsChange接收展开的行数据数组
+          // 需要从行数据中提取rowKey对应的值
+          const keys = Array.isArray(rows) ? rows.map((item: any) => item.key) : [];
+          setExpandedRowKeys(keys);
+        }}
+        onRow={(record) => {
+          if (record && !record.isAttribute) {
+            return {
+              style: {
+                backgroundColor: record.isSelected
+                  ? 'var(--semi-color-primary-light-default)'
+                  : 'var(--semi-color-fill-0)',
+                fontWeight: 600,
+              },
+            };
+          }
+          return {};
+        }}
+        indentSize={20}
+        scroll={{ y: 'calc(70vh - 150px)' }}
+        style={{
+          borderRadius: '6px',
+          border: '1px solid var(--semi-color-border)',
+        }}
       />
     </Modal>
   );

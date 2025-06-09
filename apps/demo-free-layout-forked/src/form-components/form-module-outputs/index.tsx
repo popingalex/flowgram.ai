@@ -70,12 +70,17 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
       const isMatched =
         currentEntity.bundles.includes(module._indexId || '') ||
         currentEntity.bundles.includes(module.id);
-      console.log('🔗 模块匹配:', {
-        moduleId: module.id,
-        moduleNanoid: module._indexId,
-        isMatched,
-      });
       return isMatched;
+    });
+
+    // 统一打印模块匹配结果
+    console.log('🔗 FormModuleOutputs: 模块匹配结果:', {
+      bundles: currentEntity.bundles,
+      matched: matchedModules.map((m) => ({
+        id: m.id,
+        name: m.name,
+        nanoid: m._indexId,
+      })),
     });
 
     return matchedModules.map((module) => ({
