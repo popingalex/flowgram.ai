@@ -1,6 +1,6 @@
 export const DagreLayoutOptions = {
   rankdir: 'LR',
-  nodesep: 100,
-  ranksep: 100,
-  ranker: 'network-simplex',
+  nodesep: 30,
+  ranksep: 150,
+  ranker: 'tight-tree',
 };
