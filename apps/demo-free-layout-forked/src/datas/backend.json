@@ -1,0 +1,2190 @@
+{
+  "id": "vehicle",
+  "name": "Vehicle Graph",
+  "type": "graph",
+  "nodes": [
+    {
+      "id": "$start",
+      "name": "Vehicle",
+      "type": "nest",
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ]
+    },
+    {
+      "id": "Vehicle.before",
+      "name": "before",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.before"
+      },
+      "states": [
+        {
+          "id": "Vehicle.before_state",
+          "order": 0,
+          "phase": "BEHAVE",
+          "match": "ALL",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.before_state",
+        "order": 0,
+        "phase": "BEHAVE",
+        "match": "ALL",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.executeTask",
+      "name": "executeTask",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.executeTask"
+      },
+      "states": [
+        {
+          "id": "Vehicle.executeTask_state",
+          "order": 1,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.executeTask_state",
+        "order": 1,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "$condition_order_1/Vehicle",
+      "name": "Vehicle Order 1 Condition",
+      "type": "condition",
+      "inputs": [
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "Vehicle.executeTask_state",
+          "name": "executeTask trigger"
+        }
+      ],
+      "states": [
+        {
+          "id": "Vehicle.executeTask_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "task_id"
+              ],
+              "value": "",
+              "reference": [],
+              "compareOperator": "EMPTY",
+              "negation": true,
+              "partial": false
+            }
+          ]
+        }
+      ],
+      "state": {
+        "id": "Vehicle.executeTask_state",
+        "order": 0,
+        "match": "ALL",
+        "conditions": [
+          {
+            "segments": [
+              "task_id"
+            ],
+            "value": "",
+            "reference": [],
+            "compareOperator": "EMPTY",
+            "negation": true,
+            "partial": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "Vehicle.simulateDumper",
+      "name": "simulateDumper",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.simulateDumper"
+      },
+      "states": [
+        {
+          "id": "Vehicle.simulateDumper_state",
+          "order": 2,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simulateDumper_state",
+        "order": 2,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "$condition_order_2/Vehicle",
+      "name": "Vehicle Order 2 Condition",
+      "type": "condition",
+      "inputs": [
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "Vehicle.simulateDumper_state",
+          "name": "simulateDumper trigger"
+        },
+        {
+          "id": "Vehicle.simulateDozer_state",
+          "name": "simulateDozer trigger"
+        },
+        {
+          "id": "Vehicle.simulateDigger_state",
+          "name": "simulateDigger trigger"
+        },
+        {
+          "id": "Vehicle.simulateBarge_state",
+          "name": "simulateBarge trigger"
+        },
+        {
+          "id": "Vehicle.simulate_state",
+          "name": "simulate trigger"
+        },
+        {
+          "id": "Vehicle.simulateHelicopter_state",
+          "name": "simulateHelicopter trigger"
+        },
+        {
+          "id": "Vehicle.simulateDrainDevice_state",
+          "name": "simulateDrainDevice trigger"
+        },
+        {
+          "id": "Vehicle.simulateTransport_state",
+          "name": "simulateTransport trigger"
+        },
+        {
+          "id": "Vehicle.simulateBoatBridge_state",
+          "name": "simulateBoatBridge trigger"
+        },
+        {
+          "id": "Vehicle.simulateRescuePersonnel_state",
+          "name": "simulateRescuePersonnel trigger"
+        },
+        {
+          "id": "Vehicle.simulateStringingEquipment_state",
+          "name": "simulateStringingEquipment trigger"
+        }
+      ],
+      "states": [
+        {
+          "id": "Vehicle.simulateDumper_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "dumper",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.simulateDozer_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "dozer",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.simulateDigger_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "digger",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.simulateBarge_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "['barge','self_unloading_barge']",
+              "reference": [],
+              "compareOperator": "AMONG",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.simulate_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "drone",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.simulateHelicopter_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "helicopter",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.simulateDrainDevice_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "['vertical_absorbs_water','mother_absorbs_water','drainage']",
+              "reference": [],
+              "compareOperator": "AMONG",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.simulateTransport_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "transport",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.simulateBoatBridge_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "boat_bridge",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.simulateRescuePersonnel_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "rescue_personnel",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.simulateStringingEquipment_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "stringing_equipment",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simulateDumper_state",
+        "order": 0,
+        "match": "ALL",
+        "conditions": [
+          {
+            "segments": [
+              "vehicle/type"
+            ],
+            "value": "dumper",
+            "reference": [],
+            "compareOperator": "EQUALS",
+            "negation": false,
+            "partial": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "Vehicle.simulateDozer",
+      "name": "simulateDozer",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.simulateDozer"
+      },
+      "states": [
+        {
+          "id": "Vehicle.simulateDozer_state",
+          "order": 2,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simulateDozer_state",
+        "order": 2,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.simulateDigger",
+      "name": "simulateDigger",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.simulateDigger"
+      },
+      "states": [
+        {
+          "id": "Vehicle.simulateDigger_state",
+          "order": 2,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simulateDigger_state",
+        "order": 2,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.simulateBarge",
+      "name": "simulateBarge",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.simulateBarge"
+      },
+      "states": [
+        {
+          "id": "Vehicle.simulateBarge_state",
+          "order": 2,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simulateBarge_state",
+        "order": 2,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.simulate",
+      "name": "simulate",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.simulate"
+      },
+      "states": [
+        {
+          "id": "Vehicle.simulate_state",
+          "order": 2,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simulate_state",
+        "order": 2,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.simulateHelicopter",
+      "name": "simulateHelicopter",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.simulateHelicopter"
+      },
+      "states": [
+        {
+          "id": "Vehicle.simulateHelicopter_state",
+          "order": 2,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simulateHelicopter_state",
+        "order": 2,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.simulateDrainDevice",
+      "name": "simulateDrainDevice",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.simulateDrainDevice"
+      },
+      "states": [
+        {
+          "id": "Vehicle.simulateDrainDevice_state",
+          "order": 2,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simulateDrainDevice_state",
+        "order": 2,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.simulateTransport",
+      "name": "simulateTransport",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.simulateTransport"
+      },
+      "states": [
+        {
+          "id": "Vehicle.simulateTransport_state",
+          "order": 2,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simulateTransport_state",
+        "order": 2,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.simulateBoatBridge",
+      "name": "simulateBoatBridge",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.simulateBoatBridge"
+      },
+      "states": [
+        {
+          "id": "Vehicle.simulateBoatBridge_state",
+          "order": 2,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simulateBoatBridge_state",
+        "order": 2,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.simulateRescuePersonnel",
+      "name": "simulateRescuePersonnel",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.simulateRescuePersonnel"
+      },
+      "states": [
+        {
+          "id": "Vehicle.simulateRescuePersonnel_state",
+          "order": 2,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simulateRescuePersonnel_state",
+        "order": 2,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.simulateStringingEquipment",
+      "name": "simulateStringingEquipment",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.simulateStringingEquipment"
+      },
+      "states": [
+        {
+          "id": "Vehicle.simulateStringingEquipment_state",
+          "order": 2,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simulateStringingEquipment_state",
+        "order": 2,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.dumperAction",
+      "name": "dumperAction",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.dumperAction"
+      },
+      "states": [
+        {
+          "id": "Vehicle.dumperAction_state",
+          "order": 3,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.dumperAction_state",
+        "order": 3,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "$condition_order_3/Vehicle",
+      "name": "Vehicle Order 3 Condition",
+      "type": "condition",
+      "inputs": [
+        {
+          "id": "$in"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "Vehicle.dumperAction_state",
+          "name": "dumperAction trigger"
+        },
+        {
+          "id": "Vehicle.dozerAction_state",
+          "name": "dozerAction trigger"
+        },
+        {
+          "id": "Vehicle.bargeAction_state",
+          "name": "bargeAction trigger"
+        },
+        {
+          "id": "Vehicle.simpleMove_state",
+          "name": "simpleMove trigger"
+        },
+        {
+          "id": "Vehicle.moveOnRoad_state",
+          "name": "moveOnRoad trigger"
+        },
+        {
+          "id": "Vehicle.moveInSky_state",
+          "name": "moveInSky trigger"
+        },
+        {
+          "id": "Vehicle.helicopterAction_state",
+          "name": "helicopterAction trigger"
+        },
+        {
+          "id": "Vehicle.drainDeviceAction_state",
+          "name": "drainDeviceAction trigger"
+        },
+        {
+          "id": "Vehicle.transportAction_state",
+          "name": "transportAction trigger"
+        },
+        {
+          "id": "Vehicle.boatBridgeAction_state",
+          "name": "boatBridgeAction trigger"
+        }
+      ],
+      "states": [
+        {
+          "id": "Vehicle.dumperAction_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "controlled/commands"
+              ],
+              "value": "{'command': 'delivery'}",
+              "reference": [],
+              "compareOperator": "CONTAINS",
+              "negation": false,
+              "partial": true
+            },
+            {
+              "segments": [
+                "controlled/action"
+              ],
+              "value": "move",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": true,
+              "partial": false
+            },
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "dumper",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.dozerAction_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "controlled/commands"
+              ],
+              "value": "{'command': 'delivery'}",
+              "reference": [],
+              "compareOperator": "CONTAINS",
+              "negation": false,
+              "partial": true
+            },
+            {
+              "segments": [
+                "controlled/action"
+              ],
+              "value": "move",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": true,
+              "partial": false
+            },
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "dozer",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.bargeAction_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "controlled/commands"
+              ],
+              "value": "{'command': 'delivery'}",
+              "reference": [],
+              "compareOperator": "CONTAINS",
+              "negation": false,
+              "partial": true
+            },
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "['barge','self_unloading_barge']",
+              "reference": [],
+              "compareOperator": "AMONG",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.simpleMove_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "controlled/commands"
+              ],
+              "value": "{'command': 'move'}",
+              "reference": [],
+              "compareOperator": "CONTAINS",
+              "negation": false,
+              "partial": true
+            },
+            {
+              "segments": [
+                "controlled/action"
+              ],
+              "value": "move",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.moveOnRoad_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "controlled/commands"
+              ],
+              "value": "{'command': 'delivery'}",
+              "reference": [],
+              "compareOperator": "CONTAINS",
+              "negation": false,
+              "partial": true
+            },
+            {
+              "segments": [
+                "controlled/action"
+              ],
+              "value": "move",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            },
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "['dozer','dumper']",
+              "reference": [],
+              "compareOperator": "AMONG",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.moveInSky_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "controlled/commands"
+              ],
+              "value": "{'command': 'delivery'}",
+              "reference": [],
+              "compareOperator": "CONTAINS",
+              "negation": false,
+              "partial": true
+            },
+            {
+              "segments": [
+                "controlled/action"
+              ],
+              "value": "move",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            },
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "helicopter",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.helicopterAction_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "controlled/commands"
+              ],
+              "value": "{'command': 'delivery'}",
+              "reference": [],
+              "compareOperator": "CONTAINS",
+              "negation": false,
+              "partial": true
+            },
+            {
+              "segments": [
+                "controlled/action"
+              ],
+              "value": "move",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": true,
+              "partial": false
+            },
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "helicopter",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.drainDeviceAction_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "controlled/commands"
+              ],
+              "value": "{'command': 'drainage'}",
+              "reference": [],
+              "compareOperator": "CONTAINS",
+              "negation": false,
+              "partial": true
+            },
+            {
+              "segments": [
+                "controlled/action"
+              ],
+              "value": "move",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": true,
+              "partial": false
+            },
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "['vertical_absorbs_water','mother_absorbs_water','drainage']",
+              "reference": [],
+              "compareOperator": "AMONG",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.transportAction_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "controlled/commands"
+              ],
+              "value": "{'command': 'transfer'}",
+              "reference": [],
+              "compareOperator": "CONTAINS",
+              "negation": false,
+              "partial": true
+            },
+            {
+              "segments": [
+                "controlled/action"
+              ],
+              "value": "move",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": true,
+              "partial": false
+            },
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "transport",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        },
+        {
+          "id": "Vehicle.boatBridgeAction_state",
+          "order": 0,
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "controlled/commands"
+              ],
+              "value": "{'command': 'transfer'}",
+              "reference": [],
+              "compareOperator": "CONTAINS",
+              "negation": false,
+              "partial": true
+            },
+            {
+              "segments": [
+                "controlled/action"
+              ],
+              "value": "move",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": true,
+              "partial": false
+            },
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "boat_bridge",
+              "reference": [],
+              "compareOperator": "EQUALS",
+              "negation": false,
+              "partial": false
+            }
+          ]
+        }
+      ],
+      "state": {
+        "id": "Vehicle.dumperAction_state",
+        "order": 0,
+        "match": "ALL",
+        "conditions": [
+          {
+            "segments": [
+              "controlled/commands"
+            ],
+            "value": "{'command': 'delivery'}",
+            "reference": [],
+            "compareOperator": "CONTAINS",
+            "negation": false,
+            "partial": true
+          },
+          {
+            "segments": [
+              "controlled/action"
+            ],
+            "value": "move",
+            "reference": [],
+            "compareOperator": "EQUALS",
+            "negation": true,
+            "partial": false
+          },
+          {
+            "segments": [
+              "vehicle/type"
+            ],
+            "value": "dumper",
+            "reference": [],
+            "compareOperator": "EQUALS",
+            "negation": false,
+            "partial": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "Vehicle.dozerAction",
+      "name": "dozerAction",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.dozerAction"
+      },
+      "states": [
+        {
+          "id": "Vehicle.dozerAction_state",
+          "order": 3,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.dozerAction_state",
+        "order": 3,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.bargeAction",
+      "name": "bargeAction",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.bargeAction"
+      },
+      "states": [
+        {
+          "id": "Vehicle.bargeAction_state",
+          "order": 3,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.bargeAction_state",
+        "order": 3,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.simpleMove",
+      "name": "simpleMove",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.simpleMove"
+      },
+      "states": [
+        {
+          "id": "Vehicle.simpleMove_state",
+          "order": 3,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.simpleMove_state",
+        "order": 3,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.moveOnRoad",
+      "name": "moveOnRoad",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.moveOnRoad"
+      },
+      "states": [
+        {
+          "id": "Vehicle.moveOnRoad_state",
+          "order": 3,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.moveOnRoad_state",
+        "order": 3,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.moveInSky",
+      "name": "moveInSky",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.moveInSky"
+      },
+      "states": [
+        {
+          "id": "Vehicle.moveInSky_state",
+          "order": 3,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.moveInSky_state",
+        "order": 3,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.helicopterAction",
+      "name": "helicopterAction",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.helicopterAction"
+      },
+      "states": [
+        {
+          "id": "Vehicle.helicopterAction_state",
+          "order": 3,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.helicopterAction_state",
+        "order": 3,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.drainDeviceAction",
+      "name": "drainDeviceAction",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.drainDeviceAction"
+      },
+      "states": [
+        {
+          "id": "Vehicle.drainDeviceAction_state",
+          "order": 3,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.drainDeviceAction_state",
+        "order": 3,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.transportAction",
+      "name": "transportAction",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.transportAction"
+      },
+      "states": [
+        {
+          "id": "Vehicle.transportAction_state",
+          "order": 3,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.transportAction_state",
+        "order": 3,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    },
+    {
+      "id": "Vehicle.boatBridgeAction",
+      "name": "boatBridgeAction",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "context",
+          "type": "u",
+          "name": "context",
+          "desc": "Parameter: context (Context)"
+        },
+        {
+          "id": "instance",
+          "type": "u",
+          "name": "instance",
+          "desc": "Parameter: instance (InstanceIO)"
+        },
+        {
+          "id": "$in"
+        }
+      ],
+      "exp": {
+        "id": "com.gsafety.simulation.behavior.entity.Vehicle.boatBridgeAction"
+      },
+      "states": [
+        {
+          "id": "Vehicle.boatBridgeAction_state",
+          "order": 3,
+          "phase": "BEHAVE",
+          "contract": {
+            "value": ""
+          }
+        }
+      ],
+      "state": {
+        "id": "Vehicle.boatBridgeAction_state",
+        "order": 3,
+        "phase": "BEHAVE",
+        "contract": {
+          "value": ""
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "input": {
+        "node": "$condition_order_1/Vehicle",
+        "socket": "Vehicle.executeTask_state"
+      },
+      "output": {
+        "node": "Vehicle.executeTask",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_2/Vehicle",
+        "socket": "Vehicle.simulateDumper_state"
+      },
+      "output": {
+        "node": "Vehicle.simulateDumper",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_2/Vehicle",
+        "socket": "Vehicle.simulateDozer_state"
+      },
+      "output": {
+        "node": "Vehicle.simulateDozer",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_2/Vehicle",
+        "socket": "Vehicle.simulateDigger_state"
+      },
+      "output": {
+        "node": "Vehicle.simulateDigger",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_2/Vehicle",
+        "socket": "Vehicle.simulateBarge_state"
+      },
+      "output": {
+        "node": "Vehicle.simulateBarge",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_2/Vehicle",
+        "socket": "Vehicle.simulate_state"
+      },
+      "output": {
+        "node": "Vehicle.simulate",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_2/Vehicle",
+        "socket": "Vehicle.simulateHelicopter_state"
+      },
+      "output": {
+        "node": "Vehicle.simulateHelicopter",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_2/Vehicle",
+        "socket": "Vehicle.simulateDrainDevice_state"
+      },
+      "output": {
+        "node": "Vehicle.simulateDrainDevice",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_2/Vehicle",
+        "socket": "Vehicle.simulateTransport_state"
+      },
+      "output": {
+        "node": "Vehicle.simulateTransport",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_2/Vehicle",
+        "socket": "Vehicle.simulateBoatBridge_state"
+      },
+      "output": {
+        "node": "Vehicle.simulateBoatBridge",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_2/Vehicle",
+        "socket": "Vehicle.simulateRescuePersonnel_state"
+      },
+      "output": {
+        "node": "Vehicle.simulateRescuePersonnel",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_2/Vehicle",
+        "socket": "Vehicle.simulateStringingEquipment_state"
+      },
+      "output": {
+        "node": "Vehicle.simulateStringingEquipment",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "Vehicle.dumperAction_state"
+      },
+      "output": {
+        "node": "Vehicle.dumperAction",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "Vehicle.dozerAction_state"
+      },
+      "output": {
+        "node": "Vehicle.dozerAction",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "Vehicle.bargeAction_state"
+      },
+      "output": {
+        "node": "Vehicle.bargeAction",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "Vehicle.simpleMove_state"
+      },
+      "output": {
+        "node": "Vehicle.simpleMove",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "Vehicle.moveOnRoad_state"
+      },
+      "output": {
+        "node": "Vehicle.moveOnRoad",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "Vehicle.moveInSky_state"
+      },
+      "output": {
+        "node": "Vehicle.moveInSky",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "Vehicle.helicopterAction_state"
+      },
+      "output": {
+        "node": "Vehicle.helicopterAction",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "Vehicle.drainDeviceAction_state"
+      },
+      "output": {
+        "node": "Vehicle.drainDeviceAction",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "Vehicle.transportAction_state"
+      },
+      "output": {
+        "node": "Vehicle.transportAction",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "Vehicle.boatBridgeAction_state"
+      },
+      "output": {
+        "node": "Vehicle.boatBridgeAction",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "$start",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "Vehicle.before",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.before",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_1/Vehicle",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.executeTask",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_2/Vehicle",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.simulateDumper",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.simulateDozer",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.simulateDigger",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.simulateBarge",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.simulate",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.simulateHelicopter",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.simulateDrainDevice",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.simulateTransport",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.simulateBoatBridge",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.simulateRescuePersonnel",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "Vehicle.simulateStringingEquipment",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "$condition_order_3/Vehicle",
+        "socket": "$in"
+      }
+    }
+  ]
+}

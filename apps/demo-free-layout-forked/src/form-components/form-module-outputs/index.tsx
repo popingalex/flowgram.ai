@@ -1,12 +1,10 @@
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { nanoid } from 'nanoid';
 
 import { useModuleStore } from '../../stores/module.store';
-import { useEntityListActions } from '../../stores';
-import { useEntityList } from '../../stores';
+import { useCurrentEntity, useCurrentEntityActions } from '../../stores';
 import { useIsSidebar } from '../../hooks';
-import { SidebarContext } from '../../context';
 import { ModuleSelectorModal } from '../../components/ext/module-selector';
 import {
   NodeDisplay as NodeModuleDisplay,
@@ -21,15 +19,16 @@ interface FormModuleOutputsProps {
 export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutputsProps = {}) {
   const hookIsSidebar = useIsSidebar();
   const isSidebar = propIsSidebar !== undefined ? propIsSidebar : hookIsSidebar;
-  const { selectedEntityId } = useContext(SidebarContext);
-  const { getEntityByStableId, updateEntity } = useEntityListActions();
+  const { editingEntity } = useCurrentEntity();
+  const { updateEntity } = useCurrentEntityActions();
   const { getModulesByIds } = useModuleStore();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [focusModuleId, setFocusModuleId] = useState<string | undefined>();
 
   // 获取实体数据
-  const currentEntity = selectedEntityId ? getEntityByStableId(selectedEntityId) : null;
+  console.log('module component editingEntity: ', editingEntity);
+  const currentEntity = editingEntity;
 
   const handleConfigureModules = () => {
     setFocusModuleId(undefined); // 一般打开，不聚焦
@@ -43,7 +42,7 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
 
   const handleModalConfirm = (selectedIds: string[]) => {
     if (currentEntity) {
-      updateEntity(currentEntity.id, { ...currentEntity, bundles: selectedIds });
+      updateEntity({ bundles: selectedIds });
     }
     setIsModalVisible(false);
   };
@@ -54,6 +53,7 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
 
   // 准备节点模块数据 - 使用nanoid匹配
   const nodeModuleData: NodeModuleData[] = useMemo(() => {
+    console.log('currentEntity: ', currentEntity);
     if (!currentEntity?.bundles) return [];
 
     const { modules } = useModuleStore.getState();
@@ -65,6 +65,8 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
         currentEntity.bundles.includes(module.id);
       return isMatched;
     });
+
+    console.log('match modules: ', matchedModules);
 
     return matchedModules.map((module) => ({
       key: `module-${module._indexId || module.id}`, // 使用nanoid作为key

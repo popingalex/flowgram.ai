@@ -35,6 +35,7 @@ export interface WorkflowGraphNode {
     }>;
   };
   state?: {
+    id?: string; // state的唯一标识符
     order?: number;
     phase?: string;
     match?: string;
@@ -46,6 +47,20 @@ export interface WorkflowGraphNode {
       partial: boolean;
     }>;
   };
+  // 🔧 新增：适配后台数据结构变化，states数组替代单个state
+  states?: Array<{
+    id?: string; // state的唯一标识符，用作condition的key
+    order?: number;
+    phase?: string;
+    match?: string;
+    conditions?: Array<{
+      segments: string[];
+      value: string;
+      compareOperator: string;
+      negation: boolean;
+      partial: boolean;
+    }>;
+  }>;
   exp?: {
     body?: string;
   };
@@ -117,13 +132,23 @@ const useGraphStoreBase = create<GraphStore>()(
 
         try {
           console.log('[GraphStore] 开始加载工作流图列表...');
-          const response = await fetch('http://localhost:9999/hub/graphs/');
 
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          // 尝试真实API，失败时使用mock数据
+          let graphs: WorkflowGraph[];
+          try {
+            const response = await fetch('http://localhost:9999/hub/graphs/');
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            graphs = await response.json();
+            console.log('[GraphStore] 使用真实API数据');
+          } catch (apiError) {
+            console.warn('[GraphStore] 真实API失败，使用mock数据:', apiError);
+            // 动态导入mock数据
+            const { REAL_GRAPHS } = await import('../mock-data');
+            graphs = REAL_GRAPHS;
+            console.log('[GraphStore] 使用mock数据');
           }
-
-          const graphs: WorkflowGraph[] = await response.json();
 
           console.log(`[GraphStore] 加载完成，共 ${graphs.length} 个工作流图`);
 

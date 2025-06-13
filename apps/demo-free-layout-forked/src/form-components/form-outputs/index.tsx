@@ -66,8 +66,8 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
               // 在Start节点中，只显示实体的扩展属性
               // 基础属性（实体ID、名称、描述）已经在节点顶部显示了
               if (isStartNode) {
-                // 只显示实体属性，不显示模块具体属性
-                return prop.isEntityProperty || (prop.isModuleProperty && !prop.id?.includes('/'));
+                // 显示实体属性和模块属性
+                return prop.isEntityProperty || prop.isModuleProperty;
               }
 
               // 🎯 非Start节点：不显示实体属性，只显示节点自身的输出属性

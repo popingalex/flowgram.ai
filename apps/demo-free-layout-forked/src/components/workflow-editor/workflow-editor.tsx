@@ -139,6 +139,7 @@ const EntityPropertySyncer: React.FC = () => {
 
   // 🎯 新增：从编辑中的实体数据生成完整属性结构
   const getEntityCompletePropertiesFromEditingEntity = useCallback((editingEntity: any) => {
+    const { modules } = useModuleStore.getState(); // 获取模块数据
     if (!editingEntity || !editingEntity.attributes) {
       return null;
     }
@@ -215,6 +216,103 @@ const EntityPropertySyncer: React.FC = () => {
           isEntityProperty: true,
         };
       });
+
+      // 🎯 添加模块属性处理 - 保持分组结构，同时支持路径兼容性
+      if (editingEntity.bundles && editingEntity.bundles.length > 0) {
+        // 遍历实体关联的模块，创建模块分组
+        editingEntity.bundles.forEach((bundleId: string) => {
+          // 通过ID或nanoid查找模块
+          const module = modules.find((m) => m.id === bundleId || m._indexId === bundleId);
+
+          if (module) {
+            // 🎯 创建模块属性的嵌套结构
+            const moduleProperties: any = {};
+
+            module.attributes.forEach((attr: any) => {
+              // 🎯 检查属性ID是否已经包含模块前缀
+              const moduleAttrKey = attr.id.startsWith(`${module.id}/`)
+                ? attr.id // 如果已经包含模块前缀，直接使用
+                : `${module.id}/${attr.id}`; // 否则添加模块前缀
+
+              // 🎯 在模块内部使用原始属性名作为key，但保留完整路径信息
+              const innerKey = attr.id.startsWith(`${module.id}/`)
+                ? attr.id.replace(`${module.id}/`, '') // 去掉模块前缀，只保留属性名
+                : attr.id; // 原始属性名
+
+              moduleProperties[innerKey] = {
+                ...attr, // 保留所有原始属性
+                id: moduleAttrKey, // 使用"模块/属性"格式的ID（用于路径兼容性）
+                name: attr.name, // 保持原始名称
+                description: `${attr.description || attr.name} (来自模块: ${module.name})`,
+                // 转换type格式
+                type:
+                  attr.type === 'n'
+                    ? 'number'
+                    : attr.type === 's'
+                    ? 'string'
+                    : attr.type?.includes('[')
+                    ? 'array'
+                    : 'string',
+                ...(attr.type?.includes('[') && {
+                  items: {
+                    type:
+                      attr.type?.replace(/\[|\]/g, '') === 'n'
+                        ? 'number'
+                        : attr.type?.replace(/\[|\]/g, '') === 's'
+                        ? 'string'
+                        : 'string',
+                  },
+                }),
+                _indexId: attr._indexId || nanoid(),
+                isModuleProperty: true,
+                moduleId: module.id,
+                // 🎯 添加完整路径信息，用于变量引擎查找
+                fullPath: moduleAttrKey,
+              };
+            });
+
+            // 🎯 直接将模块属性添加到properties中，不创建嵌套结构
+            Object.entries(moduleProperties).forEach(([innerKey, moduleProperty]) => {
+              const moduleAttrKey = (moduleProperty as any).id;
+              properties[moduleAttrKey] = moduleProperty;
+            });
+          }
+        });
+      }
+
+      // 🎯 添加Context作为object属性
+      properties['$context'] = {
+        id: '$context',
+        name: '上下文',
+        description: '工作流执行上下文',
+        type: 'object',
+        properties: {
+          currentTime: {
+            id: 'currentTime',
+            name: '当前时刻',
+            type: 'string',
+            description: '当前执行时刻',
+            _indexId: nanoid(),
+          },
+          currentBranch: {
+            id: 'currentBranch',
+            name: '当前分支',
+            type: 'string',
+            description: '当前执行分支',
+            _indexId: nanoid(),
+          },
+          currentScene: {
+            id: 'currentScene',
+            name: '当前场景',
+            type: 'string',
+            description: '当前场景信息',
+            _indexId: nanoid(),
+          },
+        },
+        _indexId: nanoid(),
+        isContextProperty: true,
+        isObjectContainer: true, // 标记为对象容器，不可直接选中
+      };
 
       const jsonSchemaData = {
         type: 'object',

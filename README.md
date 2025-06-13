@@ -116,6 +116,30 @@ rush dev:demo-free-layout
 rush dev:demo-free-layout-forked
 ```
 
+## 🗄️ Mock数据支持
+
+项目支持离线开发模式，通过真实API数据快照提供完整的开发体验：
+
+### 更新Mock数据
+
+```bash
+# 从后台API获取最新数据
+./update-mock-data.sh
+```
+
+### 自动降级模式
+
+系统会自动尝试真实API，失败时降级到mock数据，无需手动切换。
+
+### 数据统计
+
+- **模块**: 6个
+- **实体**: 42个
+- **函数行为**: 73个
+- **工作流图**: 19个
+
+详细说明请查看 [Mock数据文档](./apps/demo-free-layout-forked/src/mock-data/README.md)
+
 After that, you can start to develop projects inside this repository.
 
 Enjoy it!

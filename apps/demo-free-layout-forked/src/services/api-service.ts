@@ -3,6 +3,7 @@
 
 import type { Module, Entity, EnumClass, BehaviorDef, BehaviorParameter } from './types';
 import { MOCK_MODULES, MOCK_ENTITIES, MOCK_ENUM_CLASSES, MOCK_BEHAVIORS } from './mock-data';
+import { REAL_MODULES, REAL_ENTITIES, REAL_ENUMS, REAL_BEHAVIORS, REAL_GRAPHS } from '../mock-data';
 
 // 后台返回的Java行为数据格式
 interface BackendBehaviorDef {
@@ -127,34 +128,43 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
 
   const method = options?.method || 'GET';
 
-  // 模块API
+  // 模块API - 使用真实数据
   if (url.includes('/cm/module/')) {
     if (method === 'GET') {
-      return url.endsWith('/cm/module/') ? MOCK_MODULES : MOCK_MODULES[0];
+      return url.endsWith('/cm/module/') ? REAL_MODULES : REAL_MODULES[0];
     }
     return { success: true };
   }
 
-  // 实体API
+  // 实体API - 使用真实数据
   if (url.includes('/cm/entity/')) {
     if (method === 'GET') {
-      return url.endsWith('/cm/entity/') ? MOCK_ENTITIES : MOCK_ENTITIES[0];
+      return url.endsWith('/cm/entity/') ? REAL_ENTITIES : REAL_ENTITIES[0];
     }
     return { success: true };
   }
 
-  // 枚举API
+  // 枚举API - 使用真实数据（可能是错误对象）
   if (url.includes('/cm/enum/')) {
     if (method === 'GET') {
-      return Object.values(MOCK_ENUM_CLASSES);
+      // 如果是错误对象，返回空数组
+      return Array.isArray(REAL_ENUMS) ? REAL_ENUMS : [];
     }
     return { success: true };
   }
 
-  // 函数行为API
+  // 函数行为API - 使用真实数据
   if (url.includes('/hub/behaviors/')) {
     if (method === 'GET') {
-      return url.endsWith('/hub/behaviors/') ? MOCK_BEHAVIORS : MOCK_BEHAVIORS[0];
+      return url.endsWith('/hub/behaviors/') ? REAL_BEHAVIORS : REAL_BEHAVIORS[0];
+    }
+    return { success: true };
+  }
+
+  // 工作流图API - 使用真实数据
+  if (url.includes('/hub/graphs/')) {
+    if (method === 'GET') {
+      return url.endsWith('/hub/graphs/') ? REAL_GRAPHS : REAL_GRAPHS[0];
     }
     return { success: true };
   }

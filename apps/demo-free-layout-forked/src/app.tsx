@@ -32,6 +32,7 @@ import {
 } from '@douyinfe/semi-icons';
 
 // 现有的组件
+
 import { ModuleStoreProvider } from './stores/module.store';
 import {
   useEntityStore,
@@ -44,6 +45,7 @@ import {
   useCurrentEntityActions,
   useBehaviorActions,
   useGraphActions,
+  useGraphList,
 } from './stores';
 import { toggleMockMode, getApiMode } from './services/api-service';
 import { Editor } from './editor';
@@ -52,6 +54,7 @@ import { TestNewArchitecture } from './components/test-new-architecture';
 import { EnumStoreProvider } from './components/ext/entity-property-type-selector/enum-store';
 import { BehaviorTestPage } from './components/ext/behavior-test';
 import { EntityWorkflowSyncer } from './components/entity-workflow-syncer';
+import { EntitySelector } from './components/entity-selector';
 // import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
 
 const { Header, Content } = Layout;
@@ -92,47 +95,6 @@ const BehaviorStoreInitializer: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [loadBehaviors, loadGraphs]);
 
   return <>{children}</>;
-};
-
-// 使用新Zustand store的实体管理组件
-const EntityManagementSection: React.FC = () => {
-  const { entities, loading } = useEntityList();
-  const { selectedEntityId } = useCurrentEntity();
-  const { selectEntity } = useCurrentEntityActions();
-
-  const handleEntityChange = (value: string | number | any[] | Record<string, any> | undefined) => {
-    const entityId = typeof value === 'string' ? value : null;
-    if (entityId) {
-      const entity = entities.find((e) => e._indexId === entityId);
-      if (entity) {
-        selectEntity(entity);
-      }
-    } else {
-      selectEntity(null);
-    }
-  };
-
-  return (
-    <Space align="center">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <Form.Label>当前实体:</Form.Label>
-        <Select
-          placeholder="选择实体"
-          style={{ width: 200 }}
-          value={selectedEntityId || undefined}
-          onChange={handleEntityChange}
-          loading={loading}
-          showClear
-        >
-          {entities.map((entity) => (
-            <Select.Option key={entity._indexId} value={entity._indexId}>
-              {entity.name} ({entity.id})
-            </Select.Option>
-          ))}
-        </Select>
-      </div>
-    </Space>
-  );
 };
 
 // 编辑操作组件（需要在EntityEditProvider内部使用）
@@ -191,7 +153,8 @@ type PageType =
   | 'test-properties'
   // | 'test-module-entity' // 已删除
   | 'test-new-architecture'
-  | 'test-behavior';
+  | 'test-behavior'
+  | 'test-variable-selector';
 
 // 简单的页面组件
 const EntityManagementPage: React.FC = () => (
@@ -303,6 +266,7 @@ const AppContent: React.FC = () => {
       { itemKey: 'test-new-architecture', text: '新架构测试' },
       { itemKey: 'test-properties', text: '属性编辑器测试' },
       { itemKey: 'test-behavior', text: '函数行为测试' },
+      { itemKey: 'test-variable-selector', text: 'VariableSelector测试' },
       // { itemKey: 'test-module-entity', text: '模块实体测试' }, // 已删除
     ],
     []
@@ -368,6 +332,8 @@ const AppContent: React.FC = () => {
         return <TestNewArchitecture />;
       case 'test-behavior':
         return <BehaviorTestPage />;
+      case 'test-variable-selector':
+        return <div>VariableSelector测试页面</div>;
       default:
         return <div>未知页面: {currentPage}</div>;
     }
@@ -386,7 +352,7 @@ const AppContent: React.FC = () => {
           }}
           footer={
             <Space>
-              <EntityManagementSection />
+              <EntitySelector />
               <Button
                 size="small"
                 type="tertiary"

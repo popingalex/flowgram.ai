@@ -82,6 +82,7 @@ export function useEditorProps(
         hovered: '#37d0ff',
         selected: '#37d0ff',
         error: 'red',
+        flowing: '#37d0ff',
       },
       /*
        * Check whether the line can be added

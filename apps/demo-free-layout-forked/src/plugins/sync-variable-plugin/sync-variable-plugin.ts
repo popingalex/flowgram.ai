@@ -26,33 +26,32 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
         const variableData = node.getData(FlowNodeVariableData);
 
         /**
+         * 检查数据是否为有效的JSON Schema
+         */
+        const isValidJsonSchema = (value: any): boolean => {
+          if (!value || typeof value !== 'object') return false;
+          if (!value.type) return false;
+          if (value.type === 'object' && !value.properties) return false;
+          return true;
+        };
+
+        /**
          * Synchronizes output data to the variable engine.
          * @param value - The output data to synchronize.
          */
         const syncOutputs = (value: any) => {
-          // 减少日志输出，避免控制台刷屏
-          // console.log(`[SyncVariablePlugin] Syncing outputs for node ${node.id}:`, value);
-
-          if (!value) {
-            // If the output data is empty, clear the variable
-            // console.log(`[SyncVariablePlugin] Clearing variable for node ${node.id}`);
+          // 静默处理无效数据
+          if (!isValidJsonSchema(value)) {
             variableData.clearVar();
             return;
           }
 
           // Create an Type AST from the output data's JSON schema
-          // NOTICE: You can create a new function to generate an AST based on YOUR CUSTOM DSL
           const typeAST = JsonSchemaUtils.schemaToAST(value);
 
           if (typeAST) {
             // Use the node's title or its ID as the title for the variable
             const title = form?.getValueIn('title') || node.id;
-
-            // console.log(`[SyncVariablePlugin] Setting variable for node ${node.id}:`, {
-            //   title,
-            //   key: node.id,
-            //   typeAST,
-            // });
 
             // Set the variable in the variable engine
             variableData.setVar(
@@ -60,28 +59,32 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
                 meta: {
                   title: `${title}`,
                   icon: node.getNodeRegistry()?.info?.icon,
-                  // NOTICE: You can add more metadata here as needed
                 },
                 key: `${node.id}`,
                 type: typeAST,
               })
             );
           } else {
-            // If the AST cannot be created, clear the variable
-            // 减少警告日志输出
-            // console.warn(`[SyncVariablePlugin] Failed to create AST for node ${node.id}, clearing variable`);
             variableData.clearVar();
           }
         };
 
         if (form) {
+          // 安全地同步outputs数据
+          const safeSync = (fieldPath: string) => {
+            const value = form.getValueIn(fieldPath);
+            if (isValidJsonSchema(value)) {
+              syncOutputs(value);
+            }
+          };
+
           // Initially synchronize the output data
-          syncOutputs(form.getValueIn('outputs'));
+          safeSync('outputs');
 
           // Listen for changes in the form values and re-synchronize when outputs change
           form.onFormValuesChange((props) => {
             if (props.name.match(/^outputs/) || props.name.match(/^title/)) {
-              syncOutputs(form.getValueIn('outputs'));
+              safeSync('outputs');
             }
           });
 
@@ -90,10 +93,12 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
           if (nodeRegistry?.type === 'start') {
             form.onFormValuesChange((props) => {
               if (props.name.match(/^data\.outputs/)) {
-                // console.log(`[SyncVariablePlugin] Start node data.outputs changed:`, props);
-                syncOutputs(form.getValueIn('data.outputs'));
+                safeSync('data.outputs');
               }
             });
+
+            // 立即同步一次当前的data.outputs
+            safeSync('data.outputs');
           }
         }
       });

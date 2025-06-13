@@ -103,14 +103,34 @@ function convertGraphNodeToWorkflowNode(
       };
 
     case 'condition':
-      // 🔧 修复：直接使用已有的conditions数据，不需要重新转换
+      // 🔧 修复：适配新的后台数据结构，states替代state
       // 检查是否已经有转换好的conditions数据
       let existingConditions = null;
 
-      // 否则尝试从state.conditions转换
-      const conditions =
-        existingConditions ||
-        convertGraphConditionsToConditionData(graphNode.state?.conditions || []);
+      // 🔧 新增：适配后台数据结构变化，从states数组中提取conditions
+      let allConditions: any[] = [];
+      if (graphNode.states && Array.isArray(graphNode.states)) {
+        // 新格式：states数组，每个state包含conditions，需要保持state.id作为key
+        graphNode.states.forEach((state: any) => {
+          if (state.conditions && Array.isArray(state.conditions)) {
+            // 为每个condition添加对应的state.id作为key
+            state.conditions.forEach((condition: any) => {
+              allConditions.push({
+                ...condition,
+                _stateId: state.id, // 保存state.id用作condition的key
+              });
+            });
+          }
+        });
+      } else if (graphNode.state?.conditions) {
+        // 兼容旧格式：单个state.conditions
+        allConditions = graphNode.state.conditions.map((condition: any) => ({
+          ...condition,
+          _stateId: graphNode.state?.id || '$out', // 使用state.id或默认$out
+        }));
+      }
+
+      const conditions = existingConditions || convertGraphConditionsToConditionData(allConditions);
 
       // 🔧 修复：condition节点标题处理，去掉$condition/前缀显示实际名称
       let conditionTitle = graphNode.name || '条件分支';
@@ -385,14 +405,14 @@ function convertGraphConditionsToConditionData(conditions: any[]): any[] {
         };
 
         return {
-          key: '$out', // 直接使用原始socket ID
+          key: condition._stateId || '$out', // 🔧 使用state.id作为key，而不是硬编码$out
           value: conditionValue,
         };
       } catch (error) {
         console.warn('[GraphConverter] 转换条件失败:', condition, error);
         // 返回默认条件
         return {
-          key: '$out', // 直接使用原始socket ID
+          key: condition._stateId || '$out', // 🔧 使用state.id作为key
           value: {
             left: { type: 'ref', content: ['$start'] },
             operator: 'eq',

@@ -1,44 +1,14 @@
 import React, { useMemo } from 'react';
 
-import styled from 'styled-components';
 import { IJsonSchema } from '@flowgram.ai/form-materials';
 import { TriggerRenderProps } from '@douyinfe/semi-ui/lib/es/treeSelect';
 import { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree';
 import { TreeSelect, Tag } from '@douyinfe/semi-ui';
 import { IconChevronDownStroked, IconIssueStroked } from '@douyinfe/semi-icons';
 
-import { useEnhancedVariableTree } from '../enhanced-variable-selector/use-enhanced-variable-tree';
+import { useEnhancedVariableTree } from './use-enhanced-variable-tree';
 
-const UIRootTitle = styled.span`
-  color: var(--semi-color-text-2);
-  margin-right: 4px;
-`;
-
-const UITag = styled(Tag)`
-  .semi-tag-content {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }
-`;
-
-const UITreeSelect = styled(TreeSelect)<{ $error?: boolean }>`
-  ${(props) =>
-    props.$error &&
-    `
-    .semi-select {
-      border-color: var(--semi-color-danger);
-    }
-  `}
-
-  /* 🎯 加宽下拉面板 */
-  .semi-tree-select-dropdown {
-    min-width: 350px !important;
-    max-width: 500px !important;
-  }
-`;
-
-export interface EnhancedVariableSelectorProps {
+interface PropTypes {
   value?: string[];
   config?: {
     placeholder?: string;
@@ -53,7 +23,9 @@ export interface EnhancedVariableSelectorProps {
   triggerRender?: (props: TriggerRenderProps) => React.ReactNode;
 }
 
-export const EnhancedVariableSelector: React.FC<EnhancedVariableSelectorProps> = ({
+export type EnhancedVariableSelectorProps = PropTypes;
+
+export const EnhancedVariableSelector = ({
   value,
   config = {},
   onChange,
@@ -63,8 +35,7 @@ export const EnhancedVariableSelector: React.FC<EnhancedVariableSelectorProps> =
   excludeSchema,
   hasError,
   triggerRender,
-}) => {
-  // 使用增强的变量树，支持模块分组
+}: PropTypes) => {
   const treeData = useEnhancedVariableTree({ includeSchema, excludeSchema });
 
   const treeValue = useMemo(() => {
@@ -88,14 +59,13 @@ export const EnhancedVariableSelector: React.FC<EnhancedVariableSelectorProps> =
 
   return (
     <>
-      <UITreeSelect
+      <TreeSelect
         dropdownMatchSelectWidth={false}
         disabled={readonly}
         treeData={treeData}
         size="small"
         value={treeValue}
         clearIcon={null}
-        $error={hasError}
         style={style}
         validateStatus={hasError ? 'error' : undefined}
         dropdownStyle={{
@@ -109,28 +79,28 @@ export const EnhancedVariableSelector: React.FC<EnhancedVariableSelectorProps> =
         renderSelectedItem={(_option: TreeNodeData) => {
           if (!_option?.keyPath) {
             return (
-              <UITag
+              <Tag
                 prefixIcon={<IconIssueStroked />}
                 color="amber"
                 closable={!readonly}
                 onClose={() => onChange(undefined)}
               >
                 {config?.notFoundContent ?? 'Undefined'}
-              </UITag>
+              </Tag>
             );
           }
 
           return (
-            <UITag
+            <Tag
               prefixIcon={renderIcon(_option.rootMeta?.icon || _option?.icon)}
               closable={!readonly}
               onClose={() => onChange(undefined)}
             >
-              <UIRootTitle>
+              <span style={{ fontWeight: 500 }}>
                 {_option.rootMeta?.title ? `${_option.rootMeta?.title} -` : null}
-              </UIRootTitle>
+              </span>
               {_option.label}
-            </UITag>
+            </Tag>
           );
         }}
         showClear={false}

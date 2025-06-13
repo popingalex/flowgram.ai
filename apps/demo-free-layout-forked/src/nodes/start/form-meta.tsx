@@ -19,9 +19,7 @@ export const renderForm = () => (
       <FormEntityMetas />
       <Typography.Title heading={6}>实体属性</Typography.Title>
       <FormOutputs />
-      <Typography.Title heading={6} style={{ marginTop: '20px' }}>
-        实体模块
-      </Typography.Title>
+      <Typography.Title heading={6}>实体模块</Typography.Title>
       <FormModuleOutputs />
     </FormContent>
   </>
