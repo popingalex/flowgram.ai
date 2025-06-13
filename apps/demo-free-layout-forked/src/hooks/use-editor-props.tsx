@@ -178,8 +178,11 @@ export function useEditorProps(
        * Playground render
        */
       onAllLayersRendered(ctx) {
-        //  Fitview
-        ctx.document.fitView(false);
+        // 只有在不需要自动布局时才直接fitView，避免与autoLayout冲突
+        const data = ctx.document.toJSON() as any;
+        if (!data._needsAutoLayout) {
+          ctx.document.fitView(false);
+        }
         console.log('--- Playground rendered ---');
       },
       /**
@@ -254,6 +257,6 @@ export function useEditorProps(
         }),
       ],
     }),
-    [nodeRegistries] // 移除initialData依赖，避免频繁重新创建编辑器
+    [initialData, nodeRegistries] // 🎯 修复：必须包含initialData依赖，确保数据变化时重新创建编辑器
   );
 }

@@ -38,13 +38,13 @@ export type {
   WorkflowGraphEdge,
 } from './graph.store';
 
-// 当前工作流管理
+// 当前图管理
 export {
-  useCurrentWorkflowStore,
-  useCurrentWorkflow,
-  useCurrentWorkflowActions,
-} from './current-workflow.store';
-export type { CurrentWorkflowState, CurrentWorkflowActions } from './current-workflow.store';
+  useCurrentGraphStore,
+  useCurrentGraph,
+  useCurrentGraphActions,
+} from './current-graph.store';
+export type { CurrentGraphState, CurrentGraphActions } from './current-graph.store';
 
 // 兼容性导出 - 为了让现有代码能够正常工作
 // 将新的 hooks 映射到旧的命名

@@ -67,8 +67,8 @@
     <div class="test-container">
       <h2>测试说明</h2>
       <p>
-        这个页面用于测试我们新实现的 CurrentWorkflowStore 和
-        EntityWorkflowSyncer 是否正确解决了实体切换问题。
+        这个页面用于测试我们新实现的 CurrentGraphStore 和 EntityWorkflowSyncer
+        是否正确解决了实体切换问题。
       </p>
 
       <div class="test-result info">
@@ -77,8 +77,8 @@
           <li>切换实体时，EntityWorkflowSyncer 应该检测到变化</li>
           <li>根据实体ID查找对应的工作流图</li>
           <li>将工作流图转换为flowgram格式</li>
-          <li>存储到CurrentWorkflowStore中</li>
-          <li>WorkflowEditor从CurrentWorkflowStore获取数据显示</li>
+          <li>存储到CurrentGraphStore中</li>
+          <li>WorkflowEditor从CurrentGraphStore获取数据显示</li>
         </ul>
       </div>
     </div>
@@ -166,9 +166,9 @@
 
           // 测试3: 验证架构设计
           log("🏗️ 测试3: 验证新架构设计...", "info");
-          log("✅ CurrentWorkflowStore: 专门存储当前工作流数据", "success");
+          log("✅ CurrentGraphStore: 专门存储当前工作流数据", "success");
           log("✅ EntityWorkflowSyncer: 监听实体切换并更新工作流", "success");
-          log("✅ WorkflowEditor: 从CurrentWorkflowStore获取数据", "success");
+          log("✅ WorkflowEditor: 从CurrentGraphStore获取数据", "success");
 
           // 测试4: 模拟实体切换流程
           log("🔄 测试4: 模拟实体切换流程...", "info");
@@ -178,16 +178,13 @@
           );
           log("2️⃣ EntityWorkflowSyncer查找对应的工作流图", "info");
           log("3️⃣ 找到图后转换为flowgram格式", "info");
-          log("4️⃣ 调用setWorkflow存储到CurrentWorkflowStore", "info");
-          log(
-            "5️⃣ WorkflowEditor从CurrentWorkflowStore获取新数据重新渲染",
-            "info"
-          );
+          log("4️⃣ 调用setGraph存储到CurrentGraphStore", "info");
+          log("5️⃣ WorkflowEditor从CurrentGraphStore获取新数据重新渲染", "info");
 
           // 测试5: 检查关键文件
           log("📁 测试5: 检查关键实现文件...", "info");
           const keyFiles = [
-            "src/stores/current-workflow.store.ts",
+            "src/stores/current-graph.store.ts",
             "src/components/entity-workflow-syncer.tsx",
             "src/components/workflow-editor/workflow-editor.tsx",
           ];
@@ -199,7 +196,7 @@
           log("🎉 测试完成！新架构已正确实现", "success");
           log("", "info");
           log("📋 测试总结:", "info");
-          log("• CurrentWorkflowStore 负责存储当前工作流数据", "info");
+          log("• CurrentGraphStore 负责存储当前工作流数据", "info");
           log("• EntityWorkflowSyncer 监听实体切换并自动更新工作流", "info");
           log("• WorkflowEditor 简化为只从store获取数据", "info");
           log("• 实体切换时不再有React key问题，工作流会正确更新", "info");

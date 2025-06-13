@@ -7,7 +7,7 @@ import {
   useEntityListActions,
   useGraphList,
   useGraphActions,
-  useCurrentWorkflowActions,
+  useCurrentGraphActions,
 } from '../stores';
 import { initialData } from '../initial-data';
 
@@ -19,14 +19,15 @@ export const EntityWorkflowSyncer: React.FC = () => {
   const { selectedEntityId } = useCurrentEntity();
   const { getEntityByStableId } = useEntityListActions();
   const { graphs } = useGraphList();
-  const { setWorkflow, clearWorkflow, setLoading, setError } = useCurrentWorkflowActions();
+  const { setGraph, clearGraph, setLoading, setError } = useCurrentGraphActions();
 
   React.useEffect(() => {
     console.log(`[EntityWorkflowSyncer] 实体切换检测，selectedEntityId: ${selectedEntityId}`);
+    console.log(`[EntityWorkflowSyncer] 当前可用图数量: ${graphs.length}`);
 
     if (!selectedEntityId) {
-      // 没有选中实体时清除工作流
-      clearWorkflow();
+      // 没有选中实体时清除图
+      clearGraph();
       return;
     }
 
@@ -34,7 +35,7 @@ export const EntityWorkflowSyncer: React.FC = () => {
     const originalEntity = getEntityByStableId(selectedEntityId);
     if (!originalEntity) {
       console.log(`[EntityWorkflowSyncer] 未找到实体: ${selectedEntityId}`);
-      clearWorkflow();
+      clearGraph();
       return;
     }
 
@@ -66,13 +67,69 @@ export const EntityWorkflowSyncer: React.FC = () => {
         console.log(
           `[EntityWorkflowSyncer] 找到实体${entityId}的工作流图，节点数:${workflowGraph.nodes.length}`
         );
+
+        // 🔧 添加详细的节点信息调试
+        console.log(
+          `[EntityWorkflowSyncer] 原始图节点详情:`,
+          workflowGraph.nodes.map((n) => ({
+            id: n.id,
+            type: n.type,
+            name: n.name,
+          }))
+        );
+
         const convertedData = convertGraphToWorkflowData(workflowGraph);
 
-        // 存储到CurrentWorkflowStore
-        setWorkflow(convertedData, entityId, workflowGraph.id);
+        // 🔧 添加转换后数据的调试
+        console.log(`[EntityWorkflowSyncer] 转换后工作流数据:`, {
+          nodeCount: convertedData.nodes?.length || 0,
+          edgeCount: convertedData.edges?.length || 0,
+          nodes:
+            convertedData.nodes?.map((n: any) => ({
+              id: n.id,
+              type: n.type,
+              title: n.data?.title,
+            })) || [],
+          edges:
+            convertedData.edges?.map((e: any) => ({
+              source: e.sourceNodeID,
+              target: e.targetNodeID,
+            })) || [],
+        });
+
+        // 🔧 特别检查Vehicle.simulateDozer相关节点
+        const simulateDozerNodes =
+          convertedData.nodes?.filter((n: any) => n.id?.includes('simulateDozer')) || [];
+        console.log(`[EntityWorkflowSyncer] simulateDozer相关节点:`, simulateDozerNodes);
+
+        // 🔧 检查条件节点
+        const conditionNodes =
+          convertedData.nodes?.filter((n: any) => n.type === 'condition') || [];
         console.log(
-          `[EntityWorkflowSyncer] 已设置工作流: 实体=${entityId}, 图=${workflowGraph.id}`
+          `[EntityWorkflowSyncer] 条件节点 (${conditionNodes.length}个):`,
+          conditionNodes.map((n: any) => ({
+            id: n.id,
+            type: n.type,
+            title: n.data?.title,
+            conditions: n.data?.conditions,
+          }))
         );
+
+        // 🔧 检查invoke节点
+        const invokeNodes = convertedData.nodes?.filter((n: any) => n.type === 'invoke') || [];
+        console.log(
+          `[EntityWorkflowSyncer] invoke节点 (${invokeNodes.length}个):`,
+          invokeNodes.map((n: any) => ({
+            id: n.id,
+            type: n.type,
+            title: n.data?.title,
+            functionMeta: n.data?.functionMeta?.id,
+          }))
+        );
+
+        // 存储到CurrentGraphStore
+        setGraph(convertedData, entityId, workflowGraph.id);
+        console.log(`[EntityWorkflowSyncer] 已设置图: 实体=${entityId}, 图=${workflowGraph.id}`);
       } else {
         console.log(
           `[EntityWorkflowSyncer] 未找到实体${entityId}的工作流图，可用图${graphs.length}个`
@@ -89,23 +146,15 @@ export const EntityWorkflowSyncer: React.FC = () => {
           defaultWorkflowData
         );
 
-        // 存储默认工作流到CurrentWorkflowStore
-        setWorkflow(defaultWorkflowData, entityId, 'default');
-        console.log(`[EntityWorkflowSyncer] 已设置默认工作流: 实体=${entityId}`);
+        // 存储默认工作流到CurrentGraphStore
+        setGraph(defaultWorkflowData, entityId, 'default');
+        console.log(`[EntityWorkflowSyncer] 已设置默认图: 实体=${entityId}`);
       }
     } catch (error) {
       console.error('[EntityWorkflowSyncer] Error generating workflow data:', error);
       setError(error instanceof Error ? error.message : '生成工作流数据失败');
     }
-  }, [
-    selectedEntityId,
-    getEntityByStableId,
-    graphs,
-    setWorkflow,
-    clearWorkflow,
-    setLoading,
-    setError,
-  ]);
+  }, [selectedEntityId, getEntityByStableId, graphs, setGraph, clearGraph, setLoading, setError]);
 
   // 这是一个纯逻辑组件，不渲染任何UI
   return null;

@@ -180,6 +180,22 @@ function mapParameterType(backendType: string): string {
   return typeMap[backendType] || 'string';
 }
 
+// 为没有输出的节点添加默认$out输出
+function ensureDefaultOutput(outputs: Record<string, any>): Record<string, any> {
+  // 如果没有任何输出，添加默认$out端口
+  if (Object.keys(outputs).length === 0) {
+    return {
+      ...outputs,
+      $out: {
+        name: 'output',
+        type: 'object',
+        description: 'Default output port',
+      },
+    };
+  }
+  return outputs;
+}
+
 // 转换输出参数格式
 function convertGraphOutputsToInvokeOutputs(
   outputs: any[],
@@ -199,16 +215,8 @@ function convertGraphOutputsToInvokeOutputs(
     }
   });
 
-  // 如果没有任何输出且需要添加默认输出，添加$out端口
-  if (addDefaultOutput && Object.keys(result).length === 0) {
-    result['$out'] = {
-      name: 'output',
-      type: 'object',
-      description: 'Default output port',
-    };
-  }
-
-  return result;
+  // 使用新的通用函数添加默认输出
+  return addDefaultOutput ? ensureDefaultOutput(result) : result;
 }
 
 // 操作符映射：后台操作符 -> 编辑器操作符 (Op枚举值)
@@ -516,13 +524,23 @@ export function convertGraphToWorkflowData(graph: WorkflowGraph): any {
       })
       .filter(Boolean); // 过滤掉转换失败的节点
 
-    // 转换所有连线 - 直接使用原始socket ID
-    const mainEdges = (graph.edges || []).map((edge) => ({
-      sourceNodeID: edge.input.node,
-      targetNodeID: edge.output.node,
-      sourcePortID: edge.input.socket,
-      targetPortID: edge.output.socket,
-    }));
+    // 转换所有连线 - 正确处理端口ID
+    const mainEdges = (graph.edges || []).map((edge) => {
+      const edgeData: any = {
+        sourceNodeID: edge.input.node,
+        targetNodeID: edge.output.node,
+      };
+
+      // 🔧 修复：条件节点的$out端口需要保留，只有$in端口才省略
+      if (edge.input.socket && edge.input.socket !== '$in') {
+        edgeData.sourcePortID = edge.input.socket;
+      }
+      if (edge.output.socket && edge.output.socket !== '$in') {
+        edgeData.targetPortID = edge.output.socket;
+      }
+
+      return edgeData;
+    });
 
     const workflowData = {
       nodes: mainNodes,

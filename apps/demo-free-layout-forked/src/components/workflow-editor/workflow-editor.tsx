@@ -24,7 +24,7 @@ import { entityToWorkflowData } from '../../utils/entity-to-workflow';
 import { useModuleStore } from '../../stores/module.store';
 import { useGraphActions, useGraphList } from '../../stores/graph.store';
 import { useEntityList, useEntityListActions } from '../../stores';
-import { useCurrentEntity, useCurrentWorkflow, useCurrentWorkflowActions } from '../../stores';
+import { useCurrentEntity, useCurrentGraph, useCurrentGraphActions } from '../../stores';
 
 import { nanoid } from 'nanoid';
 
@@ -305,54 +305,62 @@ export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className
   const { graphs } = useGraphList();
   const { getGraphById } = useGraphActions();
 
-  // 新增：当前工作流store
-  const { workflowData: currentWorkflowData, entityId: currentEntityId } = useCurrentWorkflow();
+  // 新增：当前图store
+  const { workflowData: currentWorkflowData, entityId: currentEntityId } = useCurrentGraph();
 
   // 记录已经自动布局过的实体，避免重复布局
   const autoLayoutedEntitiesRef = React.useRef<Set<string>>(new Set());
 
-  // 自动布局配置
-  const AUTO_LAYOUT_CONFIG = {
-    // 是否启用自动布局
-    enabled: true,
-    // 是否每次切换实体都重新布局（false = 每个实体只布局一次）
-    layoutOnEntitySwitch: false,
-  };
-
-  // 当切换实体时的处理
+  // 🎯 实体切换时清除布局记录
   React.useEffect(() => {
-    if (AUTO_LAYOUT_CONFIG.layoutOnEntitySwitch) {
-      // 清理所有标记，让每个实体都能重新进行初始布局
+    if (currentEntityId) {
+      // 当实体切换时，清除之前的布局记录，确保新实体可以触发自动布局
       autoLayoutedEntitiesRef.current.clear();
+      console.log('🎯 实体切换，清除布局记录:', currentEntityId);
     }
-  }, [selectedEntityId]);
+  }, [currentEntityId]);
 
   // 🎯 自动布局逻辑：监听工作流数据变化，触发自动布局
   React.useEffect(() => {
     if (!currentWorkflowData || !currentEntityId) return;
 
-    // 如果需要自动布局且该实体未布局过，延迟触发
-    if (
-      AUTO_LAYOUT_CONFIG.enabled &&
-      currentWorkflowData._needsAutoLayout &&
-      !autoLayoutedEntitiesRef.current.has(currentEntityId)
-    ) {
+    // 只有标记需要自动布局时才触发
+    if (currentWorkflowData._needsAutoLayout) {
+      // 记录当前实体已经布局过
+      const layoutKey = `${currentEntityId}-${currentWorkflowData.nodes?.length || 0}`;
+
+      // 避免在短时间内重复布局同一个状态（防抖）
+      if (autoLayoutedEntitiesRef.current.has(layoutKey)) {
+        console.log('🎯 跳过重复布局:', layoutKey);
+        return;
+      }
+
+      autoLayoutedEntitiesRef.current.add(layoutKey);
+
       setTimeout(() => {
-        // 直接使用flowgram的自动布局服务，确保使用LR配置
+        // 直接使用flowgram的自动布局服务
         const autoLayoutButton = document.querySelector(
           '[data-auto-layout-button]'
         ) as HTMLButtonElement;
         if (autoLayoutButton) {
+          console.log('🎯 触发自动布局:', layoutKey);
           autoLayoutButton.click();
-          // 标记该实体已经自动布局过
-          autoLayoutedEntitiesRef.current.add(currentEntityId);
+
+          // autoLayout完成后调用fitView
+          setTimeout(() => {
+            // 通过全局事件或直接调用fitView
+            const event = new CustomEvent('triggerFitView');
+            window.dispatchEvent(event);
+            console.log('🎯 自动布局完成，触发fitView事件');
+          }, 500); // 等待autoLayout完成
         }
-      }, 100);
+      }, 300); // 增加延迟确保DOM完全渲染
     }
   }, [currentWorkflowData, currentEntityId]);
 
-  // 🎯 从CurrentWorkflowStore获取工作流数据
+  // 🎯 从CurrentGraphStore获取工作流数据，只有有数据时才渲染
   const workflowData = currentWorkflowData || initialData;
+  const hasValidData = workflowData && workflowData.nodes && workflowData.nodes.length > 0;
 
   const editorProps = useEditorProps(workflowData, nodeRegistries);
 
@@ -369,16 +377,31 @@ export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className
       }}
     >
       <EnumStoreProvider>
-        <FreeLayoutEditorProvider key={selectedEntityId || 'no-entity'} {...editorProps}>
-          <SidebarProvider selectedEntityId={selectedEntityId || undefined}>
-            <div className="demo-container">
-              <EditorRenderer className="demo-editor" />
-            </div>
-            <DemoTools />
-            <SidebarRenderer />
-            <EntityPropertySyncer />
-          </SidebarProvider>
-        </FreeLayoutEditorProvider>
+        {hasValidData ? (
+          <FreeLayoutEditorProvider key={`workflow-${currentEntityId}`} {...editorProps}>
+            <SidebarProvider selectedEntityId={selectedEntityId || undefined}>
+              <div className="demo-container">
+                <EditorRenderer className="demo-editor" />
+              </div>
+              <DemoTools />
+              <SidebarRenderer />
+              <EntityPropertySyncer />
+            </SidebarProvider>
+          </FreeLayoutEditorProvider>
+        ) : (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              color: '#666',
+              fontSize: '16px',
+            }}
+          >
+            正在加载工作流数据...
+          </div>
+        )}
       </EnumStoreProvider>
     </div>
   );
