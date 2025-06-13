@@ -46,10 +46,10 @@ export const UnknownIcon = (
 
 // 扩展getSchemaIcon函数，添加unknown类型支持
 export const getSchemaIcon = (value?: Partial<IJsonSchema>) => {
-  if (value?.type === 'unknown') {
+  if (value?.type === 'unknown' || value?.type === 'u') {
     return UnknownIcon;
   }
-  if (value?.type === 'array' && value?.items?.type === 'unknown') {
+  if (value?.type === 'array' && (value?.items?.type === 'unknown' || value?.items?.type === 'u')) {
     return ArrayIcons.unknown;
   }
   return originalGetSchemaIcon(value);

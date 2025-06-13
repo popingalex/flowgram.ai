@@ -16,10 +16,15 @@ import '../../styles/index.css';
 import { DemoTools } from '../tools';
 import { SidebarRenderer, SidebarProvider } from '../sidebar';
 import { EnumStoreProvider } from '../ext/entity-property-type-selector/enum-store';
+import {
+  convertGraphToWorkflowData,
+  hasWorkflowGraphForEntity,
+} from '../../utils/graph-to-workflow';
 import { entityToWorkflowData } from '../../utils/entity-to-workflow';
 import { useModuleStore } from '../../stores/module.store';
+import { useGraphActions, useGraphList } from '../../stores/graph.store';
 import { useEntityList, useEntityListActions } from '../../stores';
-import { useCurrentEntity } from '../../stores';
+import { useCurrentEntity, useCurrentWorkflow, useCurrentWorkflowActions } from '../../stores';
 
 import { nanoid } from 'nanoid';
 
@@ -74,22 +79,6 @@ const EntityPropertySyncer: React.FC = () => {
           return false;
         }
 
-        console.log('🔄 EntityPropertySyncer - 开始同步实体属性:', {
-          entityId,
-          totalNodes: allNodes.length,
-          propertiesCount: Object.keys((properties.allProperties as any)?.properties || {}).length,
-          使用编辑数据: !!editingEntityData,
-          detailedProperties: Object.entries((properties.allProperties as any)?.properties || {})
-            .slice(0, 5)
-            .map(([key, prop]) => ({
-              key,
-              id: (prop as any).id,
-              name: (prop as any).name,
-              isEntityProperty: (prop as any).isEntityProperty,
-              isModuleProperty: (prop as any).isModuleProperty,
-            })),
-        });
-
         // 遍历所有节点，同步实体属性到outputs
         allNodes.forEach((node: WorkflowNodeEntity) => {
           // 获取节点的注册信息来判断类型
@@ -116,14 +105,6 @@ const EntityPropertySyncer: React.FC = () => {
 
                 // 检查是否需要更新
                 if (forceUpdate || JSON.stringify(currentOutputs) !== JSON.stringify(newOutputs)) {
-                  console.log('🔄 EntityPropertySyncer - 更新节点属性:', {
-                    nodeId: node.id,
-                    oldPropertiesCount: Object.keys((currentOutputs as any)?.properties || {})
-                      .length,
-                    newPropertiesCount: Object.keys((newOutputs as any)?.properties || {}).length,
-                    forceUpdate,
-                  });
-
                   // 更新节点数据
                   (formModel as FormModelV2).setValueIn('data.outputs', newOutputs);
 
@@ -143,11 +124,6 @@ const EntityPropertySyncer: React.FC = () => {
               }
             }
           }
-        });
-
-        console.log('🔄 EntityPropertySyncer - 同步完成:', {
-          entityId,
-          updatedNodes: updatedCount,
         });
 
         retryCountRef.current = 0; // 重置重试计数
@@ -173,15 +149,47 @@ const EntityPropertySyncer: React.FC = () => {
       // 🚫 移除重复的基础属性，这些已经在节点的基础信息区域显示了
       // 不再添加 __entity_id、__entity_name、__entity_description
 
-      // 只添加实体自身的扩展属性
+      // 🎯 首先添加基础属性（系统属性）
+      properties['$id'] = {
+        id: '$id',
+        name: '实体ID',
+        description: '实体的唯一标识符',
+        type: 'string',
+        _indexId: '$id',
+        isEntityProperty: true,
+        isSystemProperty: true,
+      };
+
+      properties['$name'] = {
+        id: '$name',
+        name: '实体名称',
+        description: '实体的显示名称',
+        type: 'string',
+        _indexId: '$name',
+        isEntityProperty: true,
+        isSystemProperty: true,
+      };
+
+      properties['$desc'] = {
+        id: '$desc',
+        name: '实体描述',
+        description: '实体的详细描述',
+        type: 'string',
+        _indexId: '$desc',
+        isEntityProperty: true,
+        isSystemProperty: true,
+      };
+
+      // 然后添加实体自身的扩展属性
       editingEntity.attributes.forEach((attr: any) => {
-        if (!attr._indexId) {
-          console.warn('编辑实体属性缺少_indexId:', attr);
+        if (!attr._indexId || !attr.id) {
+          console.warn('编辑实体属性缺少必要字段:', attr);
           return;
         }
 
-        const indexId = attr._indexId;
-        properties[indexId] = {
+        // 🎯 使用语义化的ID作为key，而不是nanoid
+        const propertyKey = attr.id;
+        properties[propertyKey] = {
           ...attr, // 保留所有原始属性
           // 转换type格式
           type:
@@ -202,7 +210,7 @@ const EntityPropertySyncer: React.FC = () => {
                   : 'string',
             },
           }),
-          _indexId: indexId,
+          _indexId: attr._indexId, // 保留原始的nanoid用于内部引用
           isEntityProperty: true,
         };
       });
@@ -266,12 +274,6 @@ const EntityPropertySyncer: React.FC = () => {
       return;
     }
 
-    console.log('🔄 EntityPropertySyncer - 实体同步触发:', {
-      entityId: editingEntity.id,
-      attributesCount: editingEntity.attributes?.length || 0,
-      isDirty: JSON.stringify(editingEntity) !== JSON.stringify(originalEntity),
-    });
-
     // 使用编辑中的实体数据进行同步，添加防抖避免频繁更新
     const debounceTimer = setTimeout(() => {
       // 对于编辑中的实体，使用编辑数据；对于初始加载，使用原始数据
@@ -300,30 +302,57 @@ export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className
   const { editingEntity, selectedEntityId } = useCurrentEntity();
   const { getEntityByStableId } = useEntityListActions();
   const { getModulesByIds } = useModuleStore();
+  const { graphs } = useGraphList();
+  const { getGraphById } = useGraphActions();
 
-  // 根据选中的实体动态生成工作流数据（只在选中实体时生成一次）
-  const workflowData = React.useMemo(() => {
-    if (!selectedEntityId) {
-      // 没有选中实体时显示空的工作流
-      return initialData;
-    }
+  // 新增：当前工作流store
+  const { workflowData: currentWorkflowData, entityId: currentEntityId } = useCurrentWorkflow();
 
-    // 使用原始实体数据生成工作流（不使用editingEntity，避免编辑时重新生成）
-    const originalEntity = getEntityByStableId(selectedEntityId);
-    if (!originalEntity) {
-      return initialData;
-    }
+  // 记录已经自动布局过的实体，避免重复布局
+  const autoLayoutedEntitiesRef = React.useRef<Set<string>>(new Set());
 
-    try {
-      // 从原始实体生成工作流数据
-      const workflowData = entityToWorkflowData(originalEntity);
-      console.log('Generated workflow data for entity:', selectedEntityId, workflowData);
-      return workflowData;
-    } catch (error) {
-      console.error('Error generating workflow data:', error);
-      return initialData;
+  // 自动布局配置
+  const AUTO_LAYOUT_CONFIG = {
+    // 是否启用自动布局
+    enabled: true,
+    // 是否每次切换实体都重新布局（false = 每个实体只布局一次）
+    layoutOnEntitySwitch: false,
+  };
+
+  // 当切换实体时的处理
+  React.useEffect(() => {
+    if (AUTO_LAYOUT_CONFIG.layoutOnEntitySwitch) {
+      // 清理所有标记，让每个实体都能重新进行初始布局
+      autoLayoutedEntitiesRef.current.clear();
     }
-  }, [selectedEntityId, getEntityByStableId]); // 只依赖selectedEntityId，不依赖editingEntity
+  }, [selectedEntityId]);
+
+  // 🎯 自动布局逻辑：监听工作流数据变化，触发自动布局
+  React.useEffect(() => {
+    if (!currentWorkflowData || !currentEntityId) return;
+
+    // 如果需要自动布局且该实体未布局过，延迟触发
+    if (
+      AUTO_LAYOUT_CONFIG.enabled &&
+      currentWorkflowData._needsAutoLayout &&
+      !autoLayoutedEntitiesRef.current.has(currentEntityId)
+    ) {
+      setTimeout(() => {
+        // 直接使用flowgram的自动布局服务，确保使用LR配置
+        const autoLayoutButton = document.querySelector(
+          '[data-auto-layout-button]'
+        ) as HTMLButtonElement;
+        if (autoLayoutButton) {
+          autoLayoutButton.click();
+          // 标记该实体已经自动布局过
+          autoLayoutedEntitiesRef.current.add(currentEntityId);
+        }
+      }, 100);
+    }
+  }, [currentWorkflowData, currentEntityId]);
+
+  // 🎯 从CurrentWorkflowStore获取工作流数据
+  const workflowData = currentWorkflowData || initialData;
 
   const editorProps = useEditorProps(workflowData, nodeRegistries);
 

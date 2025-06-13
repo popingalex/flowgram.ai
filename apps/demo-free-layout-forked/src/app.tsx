@@ -42,12 +42,16 @@ import {
   useEntityListActions,
   useCurrentEntity,
   useCurrentEntityActions,
+  useBehaviorActions,
+  useGraphActions,
 } from './stores';
 import { toggleMockMode, getApiMode } from './services/api-service';
 import { Editor } from './editor';
 import { TestNewArchitecture } from './components/test-new-architecture';
 // import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
 import { EnumStoreProvider } from './components/ext/entity-property-type-selector/enum-store';
+import { BehaviorTestPage } from './components/ext/behavior-test';
+import { EntityWorkflowSyncer } from './components/entity-workflow-syncer';
 // import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
 
 const { Header, Content } = Layout;
@@ -67,6 +71,25 @@ const EntityStoreInitializer: React.FC<{ children: React.ReactNode }> = ({ child
       initializedRef.current = true;
     }
   }, [loadEntities]);
+
+  return <>{children}</>;
+};
+
+// 函数行为数据初始化组件 - 加载后台函数列表
+const BehaviorStoreInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { loadBehaviors } = useBehaviorActions();
+  const { loadGraphs } = useGraphActions();
+  const initializedRef = React.useRef(false);
+
+  // 只在第一次加载时获取函数行为数据和工作流图数据
+  React.useEffect(() => {
+    if (!initializedRef.current) {
+      console.log('Loading behaviors and graphs from API...');
+      loadBehaviors();
+      loadGraphs();
+      initializedRef.current = true;
+    }
+  }, [loadBehaviors, loadGraphs]);
 
   return <>{children}</>;
 };
@@ -167,7 +190,8 @@ type PageType =
   | 'settings'
   | 'test-properties'
   // | 'test-module-entity' // 已删除
-  | 'test-new-architecture';
+  | 'test-new-architecture'
+  | 'test-behavior';
 
 // 简单的页面组件
 const EntityManagementPage: React.FC = () => (
@@ -206,6 +230,33 @@ const AppContent: React.FC = () => {
   const { getEntity, getEntityByStableId } = useEntityListActions();
   const [apiMode, setApiMode] = useState(getApiMode());
   const autoSelectedRef = React.useRef(false);
+
+  // 🧪 测试实体切换功能
+  const testEntitySwitch = React.useCallback(() => {
+    console.log('=== 测试实体切换 ===');
+    console.log('当前选中实体ID:', selectedEntityId);
+    console.log('可用实体数量:', entities.length);
+    console.log(
+      '所有实体:',
+      entities.map((e) => ({ id: e.id, name: e.name, _indexId: e._indexId }))
+    );
+
+    // 查找task实体
+    const taskEntity = entities.find((e) => e.id === 'task');
+    if (taskEntity) {
+      console.log('找到task实体，切换中...', taskEntity);
+      selectEntity(taskEntity);
+    } else {
+      // 如果没有task，切换到第一个不是当前选中的实体
+      const otherEntity = entities.find((e) => e._indexId !== selectedEntityId);
+      if (otherEntity) {
+        console.log('切换到其他实体:', otherEntity);
+        selectEntity(otherEntity);
+      } else {
+        console.log('没有找到其他实体可以切换');
+      }
+    }
+  }, [entities, selectedEntityId, selectEntity]);
 
   // 自动选择第一个实体 - 只执行一次
   React.useEffect(() => {
@@ -251,6 +302,7 @@ const AppContent: React.FC = () => {
     () => [
       { itemKey: 'test-new-architecture', text: '新架构测试' },
       { itemKey: 'test-properties', text: '属性编辑器测试' },
+      { itemKey: 'test-behavior', text: '函数行为测试' },
       // { itemKey: 'test-module-entity', text: '模块实体测试' }, // 已删除
     ],
     []
@@ -273,17 +325,30 @@ const AppContent: React.FC = () => {
 
   // 渲染主要内容区域
   const renderMainContent = () => {
-    if (currentPage === 'workflow') {
-      const selectedEntity = selectedEntityId ? getEntityByStableId(selectedEntityId) : null;
-      return selectedEntity ? (
-        <EntityEditProvider entity={selectedEntity}>
-          <Editor />
-        </EntityEditProvider>
-      ) : (
-        <div>请选择一个实体</div>
-      );
+    switch (currentPage) {
+      case 'workflow': {
+        const selectedEntity = selectedEntityId ? getEntityByStableId(selectedEntityId) : null;
+        return selectedEntity ? (
+          <EntityEditProvider entity={selectedEntity}>
+            <Editor />
+          </EntityEditProvider>
+        ) : (
+          <div>请选择一个实体</div>
+        );
+      }
+      case 'entities':
+        return <EntityManagementPage />;
+      case 'modules':
+        return <ModuleManagementPage />;
+      case 'settings':
+        return <SystemSettingsPage />;
+      case 'test-new-architecture':
+        return <TestNewArchitecture />;
+      case 'test-behavior':
+        return <BehaviorTestPage />;
+      default:
+        return <div>未知页面: {currentPage}</div>;
     }
-    return <div>未知页面</div>;
   };
 
   return (
@@ -300,6 +365,14 @@ const AppContent: React.FC = () => {
           footer={
             <Space>
               <EntityManagementSection />
+              <Button
+                size="small"
+                type="tertiary"
+                onClick={testEntitySwitch}
+                style={{ backgroundColor: '#ff6b6b', color: 'white' }}
+              >
+                测试切换
+              </Button>
               {(() => {
                 const selectedEntity = selectedEntityId
                   ? getEntityByStableId(selectedEntityId)
@@ -359,7 +432,10 @@ export const App: React.FC = () => (
   <EnumStoreProvider>
     <ModuleStoreProvider>
       <EntityStoreInitializer>
-        <AppContent />
+        <BehaviorStoreInitializer>
+          <EntityWorkflowSyncer />
+          <AppContent />
+        </BehaviorStoreInitializer>
       </EntityStoreInitializer>
     </ModuleStoreProvider>
   </EnumStoreProvider>

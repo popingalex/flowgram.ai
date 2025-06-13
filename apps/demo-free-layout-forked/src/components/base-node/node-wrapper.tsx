@@ -75,6 +75,8 @@ export const NodeWrapper: React.FC<NodeWrapperProps> = (props) => {
             ? '0 0 0 2px rgba(255, 140, 0, 0.3), 0 0 8px rgba(255, 140, 0, 0.2)'
             : undefined,
           transition: 'box-shadow 0.2s ease-in-out',
+          // 移除固定宽度，使用CSS的min-width
+          // width: 360,
         }}
       >
         {children}

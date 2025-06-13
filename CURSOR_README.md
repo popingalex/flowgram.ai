@@ -189,7 +189,40 @@ App
 
 ## 最近修复 (2025-01-27)
 
-### 1. 模块配置弹窗重构和nanoid关联
+### 1. 工作流图自动加载功能 ✅ 新增
+
+**功能**: 根据选中实体ID自动加载对应的后台工作流图
+
+**实现方案**:
+- **数据转换器**: 创建了`graph-to-workflow.ts`，将后台工作流图格式转换为编辑器可用格式
+- **节点类型映射**: `nest→start`, `action→invoke`, `condition→condition`, `sequence→condition`
+- **智能回退**: 如果没有找到对应工作流图，自动回退到使用实体数据生成默认工作流
+- **完整转换**: 支持节点数据、连线关系、输入输出参数的完整转换
+- **大小写兼容**: 自动处理实体ID和工作流图ID的大小写差异（如`vehicle`↔`Vehicle`）
+
+**技术细节**:
+- 在WorkflowEditor中集成GraphStore
+- 优先使用`getGraphById(entityId)`获取真实工作流图
+- 支持大小写不敏感匹配：先精确匹配，再大小写不敏感匹配
+- 自动网格布局，避免节点重叠
+- 保持原有的实体属性同步功能
+
+**解决的问题**:
+- 后台实体ID为小写（如`vehicle`, `task`）
+- 后台工作流图ID为大写（如`Vehicle`, `Task`）
+- 通过双重匹配策略确保能正确找到对应的工作流图
+
+### 2. Store架构简化
+
+**问题**: BehaviorStore和FunctionStore功能重复，FunctionStore只是BehaviorStore的包装层
+
+**修复方案**:
+- **删除FunctionStore**: 移除了多余的`function.store.ts`文件
+- **统一使用BehaviorStore**: 所有Java函数行为管理统一使用BehaviorStore
+- **简化架构**: 避免了不必要的数据转换和代码重复
+- **提升性能**: 减少了包装层的性能开销
+
+### 2. 模块配置弹窗重构和nanoid关联
 
 **问题**: 有两个重复的"模块配置"弹窗，界面有"模块"标签冗余，模块ID变更会丢失关联关系
 

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>实体切换测试</title>
+  </head>
+  <body>
+    <h1>实体切换测试</h1>
+    <p>打开浏览器控制台，然后点击下面的按钮来测试实体切换：</p>
+
+    <button onclick="testEntitySwitch()">切换到Task实体</button>
+    <button onclick="testEntitySwitchToTeam()">切换到Team实体</button>
+    <button onclick="getCurrentEntity()">获取当前实体</button>
+
+    <script>
+      function testEntitySwitch() {
+        // 在父窗口中执行实体切换
+        if (window.opener) {
+          window.opener.postMessage(
+            {
+              type: "SWITCH_ENTITY",
+              entityId: "task",
+            },
+            "*"
+          );
+        } else {
+          console.log("请在主应用中打开此页面");
+        }
+      }
+
+      function testEntitySwitchToTeam() {
+        if (window.opener) {
+          window.opener.postMessage(
+            {
+              type: "SWITCH_ENTITY",
+              entityId: "team",
+            },
+            "*"
+          );
+        } else {
+          console.log("请在主应用中打开此页面");
+        }
+      }
+
+      function getCurrentEntity() {
+        if (window.opener) {
+          window.opener.postMessage(
+            {
+              type: "GET_CURRENT_ENTITY",
+            },
+            "*"
+          );
+        } else {
+          console.log("请在主应用中打开此页面");
+        }
+      }
+
+      // 监听来自主应用的消息
+      window.addEventListener("message", function (event) {
+        console.log("收到消息:", event.data);
+      });
+    </script>
+  </body>
+</html>

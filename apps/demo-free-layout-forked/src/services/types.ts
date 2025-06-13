@@ -55,3 +55,48 @@ export interface EnumClass {
   createdAt?: string;
   updatedAt?: string;
 }
+
+// 函数参数接口
+export interface BehaviorParameter {
+  name: string;
+  type: string;
+  description?: string;
+  required?: boolean;
+  default?: any;
+  enum?: string[];
+  format?: string; // email, date, url等
+}
+
+// 函数返回值接口
+export interface BehaviorReturn {
+  type: string;
+  description?: string;
+  properties?: Record<string, BehaviorParameter>;
+}
+
+// 后台函数行为定义接口 (对应 /hub/behaviors/ API)
+export interface BehaviorDef {
+  id: string; // 全限定函数ID
+  name: string; // 方法名
+  description: string;
+  className?: string; // 类名
+  fullClassName?: string; // 完整类名
+  methodName?: string; // 方法名
+  category?: string;
+  endpoint?: string; // 可选，Java函数没有HTTP端点
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'; // 可选，Java函数没有HTTP方法
+  headers?: Record<string, string>;
+  parameters: BehaviorParameter[];
+  returns: BehaviorReturn;
+  timeout?: number;
+  retryCount?: number;
+  deprecated?: boolean;
+  tags?: string[];
+  examples?: Array<{
+    name: string;
+    description: string;
+    input: Record<string, any>;
+    output: any;
+  }>;
+  _indexId?: string; // 稳定的索引ID，用作React key
+}

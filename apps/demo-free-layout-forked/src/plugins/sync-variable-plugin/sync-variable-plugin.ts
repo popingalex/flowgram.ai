@@ -30,11 +30,12 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
          * @param value - The output data to synchronize.
          */
         const syncOutputs = (value: any) => {
-          console.log(`[SyncVariablePlugin] Syncing outputs for node ${node.id}:`, value);
+          // 减少日志输出，避免控制台刷屏
+          // console.log(`[SyncVariablePlugin] Syncing outputs for node ${node.id}:`, value);
 
           if (!value) {
             // If the output data is empty, clear the variable
-            console.log(`[SyncVariablePlugin] Clearing variable for node ${node.id}`);
+            // console.log(`[SyncVariablePlugin] Clearing variable for node ${node.id}`);
             variableData.clearVar();
             return;
           }
@@ -67,9 +68,8 @@ export const createSyncVariablePlugin: PluginCreator<SyncVariablePluginOptions> 
             );
           } else {
             // If the AST cannot be created, clear the variable
-            console.warn(
-              `[SyncVariablePlugin] Failed to create AST for node ${node.id}, clearing variable`
-            );
+            // 减少警告日志输出
+            // console.warn(`[SyncVariablePlugin] Failed to create AST for node ${node.id}, clearing variable`);
             variableData.clearVar();
           }
         };

@@ -20,6 +20,7 @@ export const AutoLayout = () => {
         theme="borderless"
         onClick={autoLayout}
         icon={IconAutoLayout}
+        data-auto-layout-button="true"
       />
     </Tooltip>
   );

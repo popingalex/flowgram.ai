@@ -105,7 +105,10 @@ export const useModuleStore = create<ModuleStore>()(
             })),
           }));
           set({ modules: modulesWithIndex, loading: false });
-          console.log('🔄 ModuleStore: 加载完成', { count: modulesWithIndex.length });
+          console.log(
+            `[ModuleStore] 加载完成，共 ${modulesWithIndex.length} 个模块:`,
+            modulesWithIndex
+          );
         } catch (error) {
           set({ error: (error as Error).message, loading: false });
         }
@@ -186,11 +189,6 @@ export const useModuleStore = create<ModuleStore>()(
             // 重置为原始内容，保持编辑状态
             editState.editingModule = JSON.parse(JSON.stringify(editState.originalModule));
             editState.isDirty = false;
-            console.log('🔄 重置模块更改:', {
-              moduleId,
-              originalAttrs: editState.originalModule.attributes.length,
-              resetAttrs: editState.editingModule.attributes.length,
-            });
           }
         });
       },

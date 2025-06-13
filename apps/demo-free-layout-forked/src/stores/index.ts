@@ -10,6 +10,42 @@ export {
 } from './current-entity.store';
 export type { CurrentEntityState, CurrentEntityActions } from './current-entity.store';
 
+// 函数行为管理
+export {
+  useBehaviorStore,
+  useBehaviorList,
+  useBehaviorActions,
+  useBehaviorLoading,
+  useBehaviorError,
+  useBehaviorCategories,
+} from './behavior.store';
+export type { BehaviorStoreState, BehaviorActions, BehaviorStore } from './behavior.store';
+
+// 工作流图管理
+export {
+  useGraphStore,
+  useGraphList,
+  useGraphActions,
+  useGraphLoading,
+  useGraphError,
+} from './graph.store';
+export type {
+  GraphStoreState,
+  GraphActions,
+  GraphStore,
+  WorkflowGraph,
+  WorkflowGraphNode,
+  WorkflowGraphEdge,
+} from './graph.store';
+
+// 当前工作流管理
+export {
+  useCurrentWorkflowStore,
+  useCurrentWorkflow,
+  useCurrentWorkflowActions,
+} from './current-workflow.store';
+export type { CurrentWorkflowState, CurrentWorkflowActions } from './current-workflow.store';
+
 // 兼容性导出 - 为了让现有代码能够正常工作
 // 将新的 hooks 映射到旧的命名
 export { useEntityList as useEntityStore } from './entity-list';

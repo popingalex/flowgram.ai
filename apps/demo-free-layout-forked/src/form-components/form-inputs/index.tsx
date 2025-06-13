@@ -1,10 +1,10 @@
 import { Field } from '@flowgram.ai/free-layout-editor';
-import { DynamicValueInput } from '@flowgram.ai/form-materials';
+import { IJsonSchema as JsonSchema } from '@flowgram.ai/form-materials';
 
 import { FormItem } from '../form-item';
 import { Feedback } from '../feedback';
-import { JsonSchema } from '../../typings';
 import { useNodeRenderContext } from '../../hooks';
+import { EnhancedDynamicValueInput } from '../../components/ext/enhanced-dynamic-value-input/index';
 
 export function FormInputs() {
   const { readonly } = useNodeRenderContext();
@@ -21,20 +21,22 @@ export function FormInputs() {
           return (
             <Field key={key} name={`inputsValues.${key}`} defaultValue={property.default}>
               {({ field, fieldState }) => (
-                <FormItem
-                  name={key}
-                  type={property.type as string}
-                  required={required.includes(key)}
-                >
-                  <DynamicValueInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    readonly={readonly}
-                    hasError={Object.keys(fieldState?.errors || {}).length > 0}
-                    schema={property}
-                  />
-                  <Feedback errors={fieldState?.errors} />
-                </FormItem>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <FormItem
+                    name={key}
+                    type={property.type as string}
+                    required={required.includes(key)}
+                  >
+                    <EnhancedDynamicValueInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      readonly={readonly}
+                      hasError={Object.keys(fieldState?.errors || {}).length > 0}
+                      schema={property}
+                    />
+                    <Feedback errors={fieldState?.errors} />
+                  </FormItem>
+                </div>
               )}
             </Field>
           );

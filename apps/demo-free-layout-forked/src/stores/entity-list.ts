@@ -95,14 +95,10 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
         loading: false,
       });
 
-      console.log('🔍 EntityList Store loaded entities:', {
-        count: entitiesWithIndex.length,
-        entities: entitiesWithIndex.map((entity) => ({
-          id: entity.id,
-          name: entity.name,
-          _indexId: entity._indexId,
-        })),
-      });
+      console.log(
+        `[EntityStore] 加载完成，共 ${entitiesWithIndex.length} 个实体:`,
+        entitiesWithIndex
+      );
     } catch (error) {
       console.error('Failed to load entities:', error);
       set({

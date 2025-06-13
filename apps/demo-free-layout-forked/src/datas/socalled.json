@@ -1,0 +1,2636 @@
+{
+  "nodes": [
+    {
+      "id": "$start",
+      "type": "start",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle",
+        "name": "Vehicle",
+        "description": "",
+        "outputs": {}
+      }
+    },
+    {
+      "id": "Vehicle.before",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "before",
+        "name": "before",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.before",
+          "name": "before",
+          "description": "Action: before",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "Vehicle.executeTask",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "executeTask",
+        "name": "executeTask",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.executeTask",
+          "name": "executeTask",
+          "description": "Action: executeTask",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.executeTask",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.executeTask 条件",
+        "name": "executeTask Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "task_id"]
+              },
+              "operator": "is_not_empty",
+              "right": {
+                "type": "constant",
+                "content": ""
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.simulateRescuePersonnel",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "simulateRescuePersonnel",
+        "name": "simulateRescuePersonnel",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.simulateRescuePersonnel",
+          "name": "simulateRescuePersonnel",
+          "description": "Action: simulateRescuePersonnel",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.simulateRescuePersonnel",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.simulateRescuePersonnel 条件",
+        "name": "simulateRescuePersonnel Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "rescue_personnel"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.simulateStringingEquipment",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "simulateStringingEquipment",
+        "name": "simulateStringingEquipment",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.simulateStringingEquipment",
+          "name": "simulateStringingEquipment",
+          "description": "Action: simulateStringingEquipment",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.simulateStringingEquipment",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.simulateStringingEquipment 条件",
+        "name": "simulateStringingEquipment Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "stringing_equipment"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.simulateHelicopter",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "simulateHelicopter",
+        "name": "simulateHelicopter",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.simulateHelicopter",
+          "name": "simulateHelicopter",
+          "description": "Action: simulateHelicopter",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.simulateHelicopter",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.simulateHelicopter 条件",
+        "name": "simulateHelicopter Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "helicopter"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.simulateDrainDevice",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "simulateDrainDevice",
+        "name": "simulateDrainDevice",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.simulateDrainDevice",
+          "name": "simulateDrainDevice",
+          "description": "Action: simulateDrainDevice",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.simulateDrainDevice",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.simulateDrainDevice 条件",
+        "name": "simulateDrainDevice Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "in",
+              "right": {
+                "type": "constant",
+                "content": "['vertical_absorbs_water','mother_absorbs_water','drainage']"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.simulateTransport",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "simulateTransport",
+        "name": "simulateTransport",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.simulateTransport",
+          "name": "simulateTransport",
+          "description": "Action: simulateTransport",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.simulateTransport",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.simulateTransport 条件",
+        "name": "simulateTransport Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "transport"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.simulateBoatBridge",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "simulateBoatBridge",
+        "name": "simulateBoatBridge",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.simulateBoatBridge",
+          "name": "simulateBoatBridge",
+          "description": "Action: simulateBoatBridge",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.simulateBoatBridge",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.simulateBoatBridge 条件",
+        "name": "simulateBoatBridge Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "boat_bridge"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.simulate",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "simulate",
+        "name": "simulate",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.simulate",
+          "name": "simulate",
+          "description": "Action: simulate",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.simulate",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.simulate 条件",
+        "name": "simulate Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "drone"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.simulateDumper",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "simulateDumper",
+        "name": "simulateDumper",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.simulateDumper",
+          "name": "simulateDumper",
+          "description": "Action: simulateDumper",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.simulateDumper",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.simulateDumper 条件",
+        "name": "simulateDumper Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "dumper"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.simulateDozer",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "simulateDozer",
+        "name": "simulateDozer",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.simulateDozer",
+          "name": "simulateDozer",
+          "description": "Action: simulateDozer",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.simulateDozer",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.simulateDozer 条件",
+        "name": "simulateDozer Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "dozer"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.simulateDigger",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "simulateDigger",
+        "name": "simulateDigger",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.simulateDigger",
+          "name": "simulateDigger",
+          "description": "Action: simulateDigger",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.simulateDigger",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.simulateDigger 条件",
+        "name": "simulateDigger Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "digger"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.simulateBarge",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "simulateBarge",
+        "name": "simulateBarge",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.simulateBarge",
+          "name": "simulateBarge",
+          "description": "Action: simulateBarge",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.simulateBarge",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.simulateBarge 条件",
+        "name": "simulateBarge Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "in",
+              "right": {
+                "type": "constant",
+                "content": "['barge','self_unloading_barge']"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.helicopterAction",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "helicopterAction",
+        "name": "helicopterAction",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.helicopterAction",
+          "name": "helicopterAction",
+          "description": "Action: helicopterAction",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.helicopterAction",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.helicopterAction 条件",
+        "name": "helicopterAction Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/commands"]
+              },
+              "operator": "contains",
+              "right": {
+                "type": "constant",
+                "content": "{'command': 'delivery'}"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/action"]
+              },
+              "operator": "neq",
+              "right": {
+                "type": "constant",
+                "content": "move"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "helicopter"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.drainDeviceAction",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "drainDeviceAction",
+        "name": "drainDeviceAction",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.drainDeviceAction",
+          "name": "drainDeviceAction",
+          "description": "Action: drainDeviceAction",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.drainDeviceAction",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.drainDeviceAction 条件",
+        "name": "drainDeviceAction Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/commands"]
+              },
+              "operator": "contains",
+              "right": {
+                "type": "constant",
+                "content": "{'command': 'drainage'}"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/action"]
+              },
+              "operator": "neq",
+              "right": {
+                "type": "constant",
+                "content": "move"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "in",
+              "right": {
+                "type": "constant",
+                "content": "['vertical_absorbs_water','mother_absorbs_water','drainage']"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.transportAction",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "transportAction",
+        "name": "transportAction",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.transportAction",
+          "name": "transportAction",
+          "description": "Action: transportAction",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.transportAction",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.transportAction 条件",
+        "name": "transportAction Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/commands"]
+              },
+              "operator": "contains",
+              "right": {
+                "type": "constant",
+                "content": "{'command': 'transfer'}"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/action"]
+              },
+              "operator": "neq",
+              "right": {
+                "type": "constant",
+                "content": "move"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "transport"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.boatBridgeAction",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "boatBridgeAction",
+        "name": "boatBridgeAction",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.boatBridgeAction",
+          "name": "boatBridgeAction",
+          "description": "Action: boatBridgeAction",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.boatBridgeAction",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.boatBridgeAction 条件",
+        "name": "boatBridgeAction Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/commands"]
+              },
+              "operator": "contains",
+              "right": {
+                "type": "constant",
+                "content": "{'command': 'transfer'}"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/action"]
+              },
+              "operator": "neq",
+              "right": {
+                "type": "constant",
+                "content": "move"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "boat_bridge"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.dumperAction",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "dumperAction",
+        "name": "dumperAction",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.dumperAction",
+          "name": "dumperAction",
+          "description": "Action: dumperAction",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.dumperAction",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.dumperAction 条件",
+        "name": "dumperAction Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/commands"]
+              },
+              "operator": "contains",
+              "right": {
+                "type": "constant",
+                "content": "{'command': 'delivery'}"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/action"]
+              },
+              "operator": "neq",
+              "right": {
+                "type": "constant",
+                "content": "move"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "dumper"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.dozerAction",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "dozerAction",
+        "name": "dozerAction",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.dozerAction",
+          "name": "dozerAction",
+          "description": "Action: dozerAction",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.dozerAction",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.dozerAction 条件",
+        "name": "dozerAction Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/commands"]
+              },
+              "operator": "contains",
+              "right": {
+                "type": "constant",
+                "content": "{'command': 'delivery'}"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/action"]
+              },
+              "operator": "neq",
+              "right": {
+                "type": "constant",
+                "content": "move"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "dozer"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.bargeAction",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "bargeAction",
+        "name": "bargeAction",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.bargeAction",
+          "name": "bargeAction",
+          "description": "Action: bargeAction",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.bargeAction",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.bargeAction 条件",
+        "name": "bargeAction Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/commands"]
+              },
+              "operator": "contains",
+              "right": {
+                "type": "constant",
+                "content": "{'command': 'delivery'}"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "in",
+              "right": {
+                "type": "constant",
+                "content": "['barge','self_unloading_barge']"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.simpleMove",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "simpleMove",
+        "name": "simpleMove",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.simpleMove",
+          "name": "simpleMove",
+          "description": "Action: simpleMove",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.simpleMove",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.simpleMove 条件",
+        "name": "simpleMove Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/commands"]
+              },
+              "operator": "contains",
+              "right": {
+                "type": "constant",
+                "content": "{'command': 'move'}"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/action"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "move"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.moveOnRoad",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "moveOnRoad",
+        "name": "moveOnRoad",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.moveOnRoad",
+          "name": "moveOnRoad",
+          "description": "Action: moveOnRoad",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.moveOnRoad",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.moveOnRoad 条件",
+        "name": "moveOnRoad Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/commands"]
+              },
+              "operator": "contains",
+              "right": {
+                "type": "constant",
+                "content": "{'command': 'delivery'}"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/action"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "move"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "in",
+              "right": {
+                "type": "constant",
+                "content": "['dozer','dumper']"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    },
+    {
+      "id": "Vehicle.moveInSky",
+      "type": "invoke",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "moveInSky",
+        "name": "moveInSky",
+        "description": "",
+        "functionMeta": {
+          "id": "Vehicle.moveInSky",
+          "name": "moveInSky",
+          "description": "Action: moveInSky",
+          "functionType": "backend-action"
+        },
+        "inputs": {
+          "context": {
+            "name": "context",
+            "type": "object",
+            "description": "Parameter: context (Context)",
+            "value": null,
+            "_originalType": "u"
+          },
+          "instance": {
+            "name": "instance",
+            "type": "object",
+            "description": "Parameter: instance (InstanceIO)",
+            "value": null,
+            "_originalType": "u"
+          }
+        },
+        "outputs": {}
+      }
+    },
+    {
+      "id": "$condition/Vehicle.moveInSky",
+      "type": "condition",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "data": {
+        "title": "Vehicle.moveInSky 条件",
+        "name": "moveInSky Condition",
+        "description": "",
+        "conditions": [
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/commands"]
+              },
+              "operator": "contains",
+              "right": {
+                "type": "constant",
+                "content": "{'command': 'delivery'}"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "controlled/action"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "move"
+              }
+            }
+          },
+          {
+            "key": "$out",
+            "value": {
+              "left": {
+                "type": "ref",
+                "content": ["$start", "vehicle/type"]
+              },
+              "operator": "eq",
+              "right": {
+                "type": "constant",
+                "content": "helicopter"
+              }
+            }
+          }
+        ],
+        "expression": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "sourceNodeID": "$condition/Vehicle.executeTask",
+      "targetNodeID": "Vehicle.executeTask",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.simulateRescuePersonnel",
+      "targetNodeID": "Vehicle.simulateRescuePersonnel",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.simulateStringingEquipment",
+      "targetNodeID": "Vehicle.simulateStringingEquipment",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.simulateHelicopter",
+      "targetNodeID": "Vehicle.simulateHelicopter",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.simulateDrainDevice",
+      "targetNodeID": "Vehicle.simulateDrainDevice",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.simulateTransport",
+      "targetNodeID": "Vehicle.simulateTransport",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.simulateBoatBridge",
+      "targetNodeID": "Vehicle.simulateBoatBridge",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.simulate",
+      "targetNodeID": "Vehicle.simulate",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.simulateDumper",
+      "targetNodeID": "Vehicle.simulateDumper",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.simulateDozer",
+      "targetNodeID": "Vehicle.simulateDozer",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.simulateDigger",
+      "targetNodeID": "Vehicle.simulateDigger",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.simulateBarge",
+      "targetNodeID": "Vehicle.simulateBarge",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.helicopterAction",
+      "targetNodeID": "Vehicle.helicopterAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.drainDeviceAction",
+      "targetNodeID": "Vehicle.drainDeviceAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.transportAction",
+      "targetNodeID": "Vehicle.transportAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.boatBridgeAction",
+      "targetNodeID": "Vehicle.boatBridgeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.dumperAction",
+      "targetNodeID": "Vehicle.dumperAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.dozerAction",
+      "targetNodeID": "Vehicle.dozerAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.bargeAction",
+      "targetNodeID": "Vehicle.bargeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.simpleMove",
+      "targetNodeID": "Vehicle.simpleMove",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.moveOnRoad",
+      "targetNodeID": "Vehicle.moveOnRoad",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$condition/Vehicle.moveInSky",
+      "targetNodeID": "Vehicle.moveInSky",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "$start",
+      "targetNodeID": "Vehicle.before",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.before",
+      "targetNodeID": "$condition/Vehicle.executeTask",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.executeTask",
+      "targetNodeID": "$condition/Vehicle.simulateRescuePersonnel",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.executeTask",
+      "targetNodeID": "$condition/Vehicle.simulateStringingEquipment",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.executeTask",
+      "targetNodeID": "$condition/Vehicle.simulateHelicopter",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.executeTask",
+      "targetNodeID": "$condition/Vehicle.simulateDrainDevice",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.executeTask",
+      "targetNodeID": "$condition/Vehicle.simulateTransport",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.executeTask",
+      "targetNodeID": "$condition/Vehicle.simulateBoatBridge",
+      "sourcePortID": "$out"
+      // "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.executeTask",
+      "targetNodeID": "$condition/Vehicle.simulate",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.executeTask",
+      "targetNodeID": "$condition/Vehicle.simulateDumper",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.executeTask",
+      "targetNodeID": "$condition/Vehicle.simulateDozer",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.executeTask",
+      "targetNodeID": "$condition/Vehicle.simulateDigger",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.executeTask",
+      "targetNodeID": "$condition/Vehicle.simulateBarge",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateRescuePersonnel",
+      "targetNodeID": "$condition/Vehicle.helicopterAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateRescuePersonnel",
+      "targetNodeID": "$condition/Vehicle.drainDeviceAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateRescuePersonnel",
+      "targetNodeID": "$condition/Vehicle.transportAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateRescuePersonnel",
+      "targetNodeID": "$condition/Vehicle.boatBridgeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateRescuePersonnel",
+      "targetNodeID": "$condition/Vehicle.dumperAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateRescuePersonnel",
+      "targetNodeID": "$condition/Vehicle.dozerAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateRescuePersonnel",
+      "targetNodeID": "$condition/Vehicle.bargeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateRescuePersonnel",
+      "targetNodeID": "$condition/Vehicle.simpleMove",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateRescuePersonnel",
+      "targetNodeID": "$condition/Vehicle.moveOnRoad",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateRescuePersonnel",
+      "targetNodeID": "$condition/Vehicle.moveInSky",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateStringingEquipment",
+      "targetNodeID": "$condition/Vehicle.helicopterAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateStringingEquipment",
+      "targetNodeID": "$condition/Vehicle.drainDeviceAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateStringingEquipment",
+      "targetNodeID": "$condition/Vehicle.transportAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateStringingEquipment",
+      "targetNodeID": "$condition/Vehicle.boatBridgeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateStringingEquipment",
+      "targetNodeID": "$condition/Vehicle.dumperAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateStringingEquipment",
+      "targetNodeID": "$condition/Vehicle.dozerAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateStringingEquipment",
+      "targetNodeID": "$condition/Vehicle.bargeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateStringingEquipment",
+      "targetNodeID": "$condition/Vehicle.simpleMove",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateStringingEquipment",
+      "targetNodeID": "$condition/Vehicle.moveOnRoad",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateStringingEquipment",
+      "targetNodeID": "$condition/Vehicle.moveInSky",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateHelicopter",
+      "targetNodeID": "$condition/Vehicle.helicopterAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateHelicopter",
+      "targetNodeID": "$condition/Vehicle.drainDeviceAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateHelicopter",
+      "targetNodeID": "$condition/Vehicle.transportAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateHelicopter",
+      "targetNodeID": "$condition/Vehicle.boatBridgeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateHelicopter",
+      "targetNodeID": "$condition/Vehicle.dumperAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateHelicopter",
+      "targetNodeID": "$condition/Vehicle.dozerAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateHelicopter",
+      "targetNodeID": "$condition/Vehicle.bargeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateHelicopter",
+      "targetNodeID": "$condition/Vehicle.simpleMove",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateHelicopter",
+      "targetNodeID": "$condition/Vehicle.moveOnRoad",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateHelicopter",
+      "targetNodeID": "$condition/Vehicle.moveInSky",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDrainDevice",
+      "targetNodeID": "$condition/Vehicle.helicopterAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDrainDevice",
+      "targetNodeID": "$condition/Vehicle.drainDeviceAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDrainDevice",
+      "targetNodeID": "$condition/Vehicle.transportAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDrainDevice",
+      "targetNodeID": "$condition/Vehicle.boatBridgeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDrainDevice",
+      "targetNodeID": "$condition/Vehicle.dumperAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDrainDevice",
+      "targetNodeID": "$condition/Vehicle.dozerAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDrainDevice",
+      "targetNodeID": "$condition/Vehicle.bargeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDrainDevice",
+      "targetNodeID": "$condition/Vehicle.simpleMove",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDrainDevice",
+      "targetNodeID": "$condition/Vehicle.moveOnRoad",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDrainDevice",
+      "targetNodeID": "$condition/Vehicle.moveInSky",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateTransport",
+      "targetNodeID": "$condition/Vehicle.helicopterAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateTransport",
+      "targetNodeID": "$condition/Vehicle.drainDeviceAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateTransport",
+      "targetNodeID": "$condition/Vehicle.transportAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateTransport",
+      "targetNodeID": "$condition/Vehicle.boatBridgeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateTransport",
+      "targetNodeID": "$condition/Vehicle.dumperAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateTransport",
+      "targetNodeID": "$condition/Vehicle.dozerAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateTransport",
+      "targetNodeID": "$condition/Vehicle.bargeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateTransport",
+      "targetNodeID": "$condition/Vehicle.simpleMove",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateTransport",
+      "targetNodeID": "$condition/Vehicle.moveOnRoad",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateTransport",
+      "targetNodeID": "$condition/Vehicle.moveInSky",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBoatBridge",
+      "targetNodeID": "$condition/Vehicle.helicopterAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBoatBridge",
+      "targetNodeID": "$condition/Vehicle.drainDeviceAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBoatBridge",
+      "targetNodeID": "$condition/Vehicle.transportAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBoatBridge",
+      "targetNodeID": "$condition/Vehicle.boatBridgeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBoatBridge",
+      "targetNodeID": "$condition/Vehicle.dumperAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBoatBridge",
+      "targetNodeID": "$condition/Vehicle.dozerAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBoatBridge",
+      "targetNodeID": "$condition/Vehicle.bargeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBoatBridge",
+      "targetNodeID": "$condition/Vehicle.simpleMove",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBoatBridge",
+      "targetNodeID": "$condition/Vehicle.moveOnRoad",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBoatBridge",
+      "targetNodeID": "$condition/Vehicle.moveInSky",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulate",
+      "targetNodeID": "$condition/Vehicle.helicopterAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulate",
+      "targetNodeID": "$condition/Vehicle.drainDeviceAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulate",
+      "targetNodeID": "$condition/Vehicle.transportAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulate",
+      "targetNodeID": "$condition/Vehicle.boatBridgeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulate",
+      "targetNodeID": "$condition/Vehicle.dumperAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulate",
+      "targetNodeID": "$condition/Vehicle.dozerAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulate",
+      "targetNodeID": "$condition/Vehicle.bargeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulate",
+      "targetNodeID": "$condition/Vehicle.simpleMove",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulate",
+      "targetNodeID": "$condition/Vehicle.moveOnRoad",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulate",
+      "targetNodeID": "$condition/Vehicle.moveInSky",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDumper",
+      "targetNodeID": "$condition/Vehicle.helicopterAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDumper",
+      "targetNodeID": "$condition/Vehicle.drainDeviceAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDumper",
+      "targetNodeID": "$condition/Vehicle.transportAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDumper",
+      "targetNodeID": "$condition/Vehicle.boatBridgeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDumper",
+      "targetNodeID": "$condition/Vehicle.dumperAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDumper",
+      "targetNodeID": "$condition/Vehicle.dozerAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDumper",
+      "targetNodeID": "$condition/Vehicle.bargeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDumper",
+      "targetNodeID": "$condition/Vehicle.simpleMove",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDumper",
+      "targetNodeID": "$condition/Vehicle.moveOnRoad",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDumper",
+      "targetNodeID": "$condition/Vehicle.moveInSky",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDozer",
+      "targetNodeID": "$condition/Vehicle.helicopterAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDozer",
+      "targetNodeID": "$condition/Vehicle.drainDeviceAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDozer",
+      "targetNodeID": "$condition/Vehicle.transportAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDozer",
+      "targetNodeID": "$condition/Vehicle.boatBridgeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDozer",
+      "targetNodeID": "$condition/Vehicle.dumperAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDozer",
+      "targetNodeID": "$condition/Vehicle.dozerAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDozer",
+      "targetNodeID": "$condition/Vehicle.bargeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDozer",
+      "targetNodeID": "$condition/Vehicle.simpleMove",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDozer",
+      "targetNodeID": "$condition/Vehicle.moveOnRoad",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDozer",
+      "targetNodeID": "$condition/Vehicle.moveInSky",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDigger",
+      "targetNodeID": "$condition/Vehicle.helicopterAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDigger",
+      "targetNodeID": "$condition/Vehicle.drainDeviceAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDigger",
+      "targetNodeID": "$condition/Vehicle.transportAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDigger",
+      "targetNodeID": "$condition/Vehicle.boatBridgeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDigger",
+      "targetNodeID": "$condition/Vehicle.dumperAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDigger",
+      "targetNodeID": "$condition/Vehicle.dozerAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDigger",
+      "targetNodeID": "$condition/Vehicle.bargeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDigger",
+      "targetNodeID": "$condition/Vehicle.simpleMove",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDigger",
+      "targetNodeID": "$condition/Vehicle.moveOnRoad",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateDigger",
+      "targetNodeID": "$condition/Vehicle.moveInSky",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBarge",
+      "targetNodeID": "$condition/Vehicle.helicopterAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBarge",
+      "targetNodeID": "$condition/Vehicle.drainDeviceAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBarge",
+      "targetNodeID": "$condition/Vehicle.transportAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBarge",
+      "targetNodeID": "$condition/Vehicle.boatBridgeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBarge",
+      "targetNodeID": "$condition/Vehicle.dumperAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBarge",
+      "targetNodeID": "$condition/Vehicle.dozerAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBarge",
+      "targetNodeID": "$condition/Vehicle.bargeAction",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBarge",
+      "targetNodeID": "$condition/Vehicle.simpleMove",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBarge",
+      "targetNodeID": "$condition/Vehicle.moveOnRoad",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    },
+    {
+      "sourceNodeID": "Vehicle.simulateBarge",
+      "targetNodeID": "$condition/Vehicle.moveInSky",
+      "sourcePortID": "$out",
+      "targetPortID": "$in"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 1
+  },
+  "_needsAutoLayout": true
+}

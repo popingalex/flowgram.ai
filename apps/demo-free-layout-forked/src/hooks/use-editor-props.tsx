@@ -254,6 +254,6 @@ export function useEditorProps(
         }),
       ],
     }),
-    [initialData, nodeRegistries]
+    [nodeRegistries] // 移除initialData依赖，避免频繁重新创建编辑器
   );
 }

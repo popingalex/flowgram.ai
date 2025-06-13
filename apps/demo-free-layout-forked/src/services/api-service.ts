@@ -1,8 +1,58 @@
 // 统一的API服务管理器
 // 处理真实请求和mock备选，在真实请求失败时自动使用mock数据
 
-import type { Module, Entity, EnumClass } from './types';
-import { MOCK_MODULES, MOCK_ENTITIES, MOCK_ENUM_CLASSES } from './mock-data';
+import type { Module, Entity, EnumClass, BehaviorDef, BehaviorParameter } from './types';
+import { MOCK_MODULES, MOCK_ENTITIES, MOCK_ENUM_CLASSES, MOCK_BEHAVIORS } from './mock-data';
+
+// 后台返回的Java行为数据格式
+interface BackendBehaviorDef {
+  id: string;
+  returns: {
+    // 修正：真实API返回的是 "returns" 而不是 "returnAttr"
+    id: string;
+    type: string;
+    name?: string;
+  };
+  params: Array<{
+    id: string;
+    type: string;
+    desc?: string; // 真实数据类型
+    name?: string;
+  }>;
+  javadoc: string;
+  type: 'normal' | 'contract';
+}
+
+// 将后台数据转换为前端格式
+const transformBackendBehavior = (backendBehavior: BackendBehaviorDef): BehaviorDef => {
+  // 从Java全限定ID提取信息: com.gsafety.simulation.behavior.entity.Rain.simulateRain
+  const idParts = backendBehavior.id.split('.');
+  const methodName = idParts[idParts.length - 1] || 'unknown'; // 最后一个是方法名
+  const fullClassName = idParts.slice(0, -1).join('.'); // 除了最后一个都是完整类名
+  const classNameParts = fullClassName.split('.');
+  const className = classNameParts[classNameParts.length - 1] || 'Unknown'; // 类名是完整类名的最后一部分
+
+  // 转换参数 - 保持原始type
+  const parameters: BehaviorParameter[] = backendBehavior.params.map((param) => ({
+    name: param.id,
+    type: param.type, // 使用原始type
+    description: param.desc || param.id, // desc作为描述
+  }));
+
+  return {
+    id: backendBehavior.id,
+    name: methodName,
+    description: backendBehavior.javadoc || '',
+    className: className, // Rain
+    fullClassName: fullClassName, // com.gsafety.simulation.behavior.entity.Rain
+    methodName: methodName, // simulateRain
+    parameters,
+    returns: {
+      type: backendBehavior.returns.type,
+      description: '',
+    },
+  };
+};
 
 // API配置
 const API_CONFIG = {
@@ -11,12 +61,13 @@ const API_CONFIG = {
     MODULE: '/cm/module/',
     ENTITY: '/cm/entity/',
     ENUM: '/cm/enum/',
+    FUNCTION: '/hub/behaviors/',
   },
   TIMEOUT: 5000, // 5秒超时
 };
 
 // 全局mock模式状态
-let isMockMode = true; // 临时启用Mock模式避免API错误
+let isMockMode = false; // 尝试使用真实API，失败时自动降级到Mock
 
 // 切换mock模式
 export const toggleMockMode = () => {
@@ -96,6 +147,14 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
   if (url.includes('/cm/enum/')) {
     if (method === 'GET') {
       return Object.values(MOCK_ENUM_CLASSES);
+    }
+    return { success: true };
+  }
+
+  // 函数行为API
+  if (url.includes('/hub/behaviors/')) {
+    if (method === 'GET') {
+      return url.endsWith('/hub/behaviors/') ? MOCK_BEHAVIORS : MOCK_BEHAVIORS[0];
     }
     return { success: true };
   }
@@ -234,6 +293,55 @@ export const enumApi = {
   // 删除枚举类
   delete: (id: string): Promise<void> => {
     const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.ENUM}${id}/`);
+    return apiRequest(url, { method: 'DELETE' });
+  },
+};
+
+// 函数行为相关API
+export const behaviorApi = {
+  // 获取所有函数行为
+  getAll: async (): Promise<BehaviorDef[]> => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.FUNCTION);
+    const rawData = await apiRequest(url);
+
+    // 如果是后台真实数据，需要转换格式
+    if (Array.isArray(rawData) && rawData.length > 0 && 'returns' in rawData[0]) {
+      console.log(`[BehaviorAPI] 检测到后台数据格式，转换中... (${rawData.length} 条记录)`);
+      return rawData.map((item: BackendBehaviorDef) => transformBackendBehavior(item));
+    }
+
+    // 如果是Mock数据，直接返回
+    console.log(`[BehaviorAPI] 使用Mock数据格式 (${rawData.length} 条记录)`);
+    return rawData;
+  },
+
+  // 获取单个函数行为
+  getById: (id: string): Promise<BehaviorDef> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.FUNCTION}${id}/`);
+    return apiRequest(url);
+  },
+
+  // 创建函数行为
+  create: (behavior: Omit<BehaviorDef, 'deprecated'>): Promise<BehaviorDef> => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.FUNCTION);
+    return apiRequest(url, {
+      method: 'POST',
+      body: JSON.stringify({ ...behavior, deprecated: false }),
+    });
+  },
+
+  // 更新函数行为
+  update: (id: string, updates: Partial<BehaviorDef>): Promise<BehaviorDef> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.FUNCTION}${id}/`);
+    return apiRequest(url, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  // 删除函数行为
+  delete: (id: string): Promise<void> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.FUNCTION}${id}/`);
     return apiRequest(url, { method: 'DELETE' });
   },
 };

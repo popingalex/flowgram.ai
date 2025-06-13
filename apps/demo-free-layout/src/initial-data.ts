@@ -55,7 +55,46 @@ export const initialData: FlowDocumentJSON = {
         title: 'Condition',
         conditions: [
           {
-            key: 'if_0',
+            key: '$if_0',
+            value: {
+              left: {
+                type: 'ref',
+                content: ['start_0', 'query'],
+              },
+              operator: 'contains',
+              right: {
+                type: 'constant',
+                content: 'Hello Flow.',
+              },
+            },
+          },
+          {
+            key: 'if_f0rOAt',
+            value: {
+              left: {
+                type: 'ref',
+                content: ['start_0', 'enable'],
+              },
+              operator: 'is_true',
+            },
+          },
+        ],
+      },
+    },
+    {
+      id: 'condition_1',
+      type: 'condition',
+      meta: {
+        position: {
+          x: 640,
+          y: 663.25,
+        },
+      },
+      data: {
+        title: 'Condition',
+        conditions: [
+          {
+            key: '$if_0',
             value: {
               left: {
                 type: 'ref',
@@ -407,7 +446,7 @@ export const initialData: FlowDocumentJSON = {
         {
           sourceNodeID: 'condition_0',
           targetNodeID: 'llm_l_TcE',
-          sourcePortID: 'if_0',
+          sourcePortID: '$if_0',
         },
       ],
     },
@@ -418,9 +457,18 @@ export const initialData: FlowDocumentJSON = {
       targetNodeID: 'condition_0',
     },
     {
+      sourceNodeID: 'start_0',
+      targetNodeID: 'condition_1',
+    },
+    {
       sourceNodeID: 'condition_0',
       targetNodeID: 'llm_l_TcE',
-      sourcePortID: 'if_0',
+      sourcePortID: '$if_0',
+    },
+    {
+      sourceNodeID: 'condition_1',
+      targetNodeID: 'loop_H8M3U',
+      sourcePortID: '$if_0',
     },
     {
       sourceNodeID: 'condition_0',

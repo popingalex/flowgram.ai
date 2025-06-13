@@ -43,7 +43,6 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
 
   const handleModalConfirm = (selectedIds: string[]) => {
     if (currentEntity) {
-      console.log('💾 FormModuleOutputs: 保存模块配置:', { selectedIds });
       updateEntity(currentEntity.id, { ...currentEntity, bundles: selectedIds });
     }
     setIsModalVisible(false);
@@ -58,10 +57,6 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
     if (!currentEntity?.bundles) return [];
 
     const { modules } = useModuleStore.getState();
-    console.log('🔗 FormModuleOutputs: 准备节点模块数据:', {
-      bundles: currentEntity.bundles,
-      modulesCount: modules.length,
-    });
 
     // 通过nanoid或ID匹配模块
     const matchedModules = modules.filter((module) => {
@@ -69,16 +64,6 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
         currentEntity.bundles.includes(module._indexId || '') ||
         currentEntity.bundles.includes(module.id);
       return isMatched;
-    });
-
-    // 统一打印模块匹配结果
-    console.log('🔗 FormModuleOutputs: 模块匹配结果:', {
-      bundles: currentEntity.bundles,
-      matched: matchedModules.map((m) => ({
-        id: m.id,
-        name: m.name,
-        nanoid: m._indexId,
-      })),
     });
 
     return matchedModules.map((module) => ({

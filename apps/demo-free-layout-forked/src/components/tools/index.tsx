@@ -15,6 +15,7 @@ import { Readonly } from './readonly';
 import { MinimapSwitch } from './minimap-switch';
 import { Minimap } from './minimap';
 import { Interactive } from './interactive';
+import { GenerateEntityWorkflow } from './generate-entity-workflow';
 import { FitView } from './fit-view';
 import { Comment } from './comment';
 import { AutoLayout } from './auto-layout';
@@ -50,6 +51,7 @@ export const DemoTools = () => {
         <Minimap visible={minimapVisible} />
         <Readonly />
         <Comment />
+        <GenerateEntityWorkflow disabled={playground.config.readonly} />
         <Tooltip content="Undo">
           <IconButton
             type="tertiary"

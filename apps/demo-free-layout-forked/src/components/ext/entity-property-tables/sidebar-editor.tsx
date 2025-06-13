@@ -24,11 +24,11 @@ import {
   IconSetting,
 } from '@douyinfe/semi-icons';
 
-import type { Attribute } from '../entity-store'; // 直接使用Store中的类型
 import { DataRestrictionModal } from '../entity-property-type-selector/data-restriction-modal';
 import { EntityPropertyTypeSelector } from '../entity-property-type-selector';
 import { TypedParser, Primitive } from '../../../typings/mas/typed';
 import { useCurrentEntityActions, useCurrentEntityStore } from '../../../stores';
+import type { Attribute } from '../../../services/types'; // 从services导入Attribute类型
 
 interface EditableEntityAttributeTableProps {
   readonly?: boolean;
@@ -57,8 +57,6 @@ const AttributeIdInput = React.memo(
         return attr?.isModuleProperty || false;
       })
     );
-
-    console.log('🔍 AttributeIdInput 渲染:', attributeId, value);
 
     return (
       <Input
@@ -100,8 +98,6 @@ const AttributeNameInput = React.memo(
       })
     );
 
-    console.log('🔍 AttributeNameInput 渲染:', attributeId, value);
-
     return (
       <Input
         value={value}
@@ -141,17 +137,6 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
       useShallow((state) => state.editingEntity?.attributes || [])
     );
 
-    // 🔍 调试：监控组件渲染
-    console.log('🔍 EditableEntityAttributeTable 渲染:', {
-      attributesCount: attributes.length,
-      attributesRef: attributes,
-      attributeIds: attributes.map((attr: any) => ({
-        _indexId: attr._indexId,
-        id: attr.id,
-        name: attr.name,
-      })),
-    });
-
     const toggleExpand = (id: string) => {
       const newExpanded = new Set(expandedRows);
       if (newExpanded.has(id)) {
@@ -165,27 +150,16 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
     // 🎯 稳定的事件处理函数引用
     const stableFieldChange = React.useCallback(
       (id: string, field: string, value: any) => {
-        console.log('🔍 直接修改属性字段:', { id, field, value });
         updateAttributeProperty(id, field, value);
       },
       [updateAttributeProperty]
     );
 
     const handleDelete = (id: string) => {
-      console.log('🗑️ 删除属性:', {
-        attributeIndexId: id,
-        当前属性列表: attributes.map((attr) => ({
-          id: attr.id,
-          name: attr.name,
-          _indexId: attr._indexId,
-        })),
-      });
       removeAttribute(id);
-      console.log('🗑️ 删除操作已调用');
     };
 
     const handleAdd = () => {
-      console.log('🔍 添加属性');
       const newAttribute: Attribute = {
         _indexId: nanoid(),
         id: '',
@@ -294,14 +268,6 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
                   // 使用TypedParser解析类型
                   const typedInfo = TypedParser.fromString(record.type);
 
-                  console.log('🔍 类型解析调试:', {
-                    原始类型: record.type,
-                    解析结果: typedInfo,
-                    维度: typedInfo.dimensions,
-                    属性数: typedInfo.attributes.length,
-                    primitive类型: typedInfo.primitive,
-                  });
-
                   // 转换为JSON Schema格式
                   if (typedInfo.dimensions.length > 0) {
                     // 数组类型
@@ -324,8 +290,6 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
                       }
                     })();
 
-                    console.log('🔍 数组类型转换:', { itemType });
-
                     return {
                       type: 'array',
                       items: { type: itemType },
@@ -333,7 +297,7 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
                     };
                   } else if (typedInfo.attributes.length > 0) {
                     // 复合对象类型
-                    console.log('🔍 对象类型转换');
+
                     return {
                       type: 'object',
                       ...(record.enumClassId && { enumClassId: record.enumClassId }),
@@ -354,8 +318,6 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
                           return 'unknown';
                       }
                     })();
-
-                    console.log('🔍 原始类型转换:', { primitiveType });
 
                     return {
                       type: primitiveType,
@@ -466,6 +428,12 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
           expandedRowKeys={Array.from(expandedRows)}
           hideExpandedColumn={false}
           indentSize={0}
+          // 🎯 控制哪些行可以展开：只有复合类型才可以展开
+          rowExpandable={(record) => {
+            if (!record) return false;
+            const typedInfo = TypedParser.fromString(record.type);
+            return typedInfo.attributes.length > 0; // 只有有子属性的复合类型才可以展开
+          }}
           onExpand={(expanded, record) => {
             if (expanded && record && (record as any)._indexId) {
               setExpandedRows((prev) => new Set([...prev, (record as any)._indexId]));

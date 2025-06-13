@@ -59,18 +59,6 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
         const nodeProperties: PropertyData[] = useMemo(() => {
           const properties = value?.properties || {};
 
-          console.log('🔍 FormOutputs - 节点属性转换调试:', {
-            isStartNode,
-            propertiesCount: Object.keys(properties).length,
-            properties: Object.entries(properties).map(([key, prop]) => ({
-              key,
-              propId: (prop as any).id,
-              propName: (prop as any).name,
-              isEntityProperty: (prop as any).isEntityProperty,
-              isModuleProperty: (prop as any).isModuleProperty,
-            })),
-          });
-
           const processedProperties = Object.entries(properties)
             .filter(([key, property]) => {
               const prop = property as any;
@@ -81,7 +69,15 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
                 // 只显示实体属性，不显示模块具体属性
                 return prop.isEntityProperty || (prop.isModuleProperty && !prop.id?.includes('/'));
               }
-              return true;
+
+              // 🎯 非Start节点：不显示实体属性，只显示节点自身的输出属性
+              // 特别处理invoke节点和end节点，确保不显示实体属性
+              if (node?.type === 'invoke' || node?.type === 'end') {
+                return !prop.isEntityProperty && !prop.isModuleProperty;
+              }
+
+              // 其他节点的处理逻辑
+              return !prop.isEntityProperty && !prop.isModuleProperty;
             })
             .map(([key, property]) => {
               const prop = property as any;
@@ -95,23 +91,8 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
               };
             });
 
-          // 统一打印属性转换结果
-          console.log('🔍 FormOutputs - 属性转换结果:', {
-            总属性数: Object.keys(properties).length,
-            过滤后属性数: processedProperties.length,
-            isStartNode,
-            properties: processedProperties.map((p) => ({
-              key: p.key,
-              id: p.id,
-              name: p.name,
-              type: p.type,
-            })),
-          });
-
           return processedProperties;
         }, [value, isStartNode, renderKey]); // 保持renderKey作为依赖，但不作为Field的key
-
-        console.log('🔍 FormOutputs - 最终节点属性数组:', nodeProperties);
 
         return <UnifiedPropertyDisplay properties={nodeProperties} mode="node" />;
       }}
