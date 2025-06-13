@@ -2,6 +2,7 @@ export enum WorkflowNodeType {
   Start = 'start',
   End = 'end',
   LLM = 'llm',
+  Action = 'action',
   Invoke = 'invoke',
   Condition = 'condition',
   Loop = 'loop',

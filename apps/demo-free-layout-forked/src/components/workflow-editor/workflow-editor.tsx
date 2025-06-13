@@ -10,6 +10,7 @@ import {
   FormModelV2,
   WorkflowNodeEntity,
 } from '@flowgram.ai/free-layout-editor';
+import { Spin } from '@douyinfe/semi-ui';
 
 import '@flowgram.ai/free-layout-editor/index.css';
 import '../../styles/index.css';
@@ -299,109 +300,71 @@ const EntityPropertySyncer: React.FC = () => {
 };
 
 export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className }) => {
-  const { editingEntity, selectedEntityId } = useCurrentEntity();
-  const { getEntityByStableId } = useEntityListActions();
-  const { getModulesByIds } = useModuleStore();
-  const { graphs } = useGraphList();
-  const { getGraphById } = useGraphActions();
+  const { loadModules } = useModuleStore();
+  const { workflowData, entityId, loading } = useCurrentGraph();
 
-  // 新增：当前图store
-  const { workflowData: currentWorkflowData, entityId: currentEntityId } = useCurrentGraph();
+  // 使用当前图的工作流数据，如果没有则使用初始数据
+  const finalWorkflowData = workflowData || initialData;
+  const editorProps = useEditorProps(finalWorkflowData, nodeRegistries);
 
-  // 记录已经自动布局过的实体，避免重复布局
-  const autoLayoutedEntitiesRef = React.useRef<Set<string>>(new Set());
+  useEffect(() => {
+    loadModules();
+  }, [loadModules]);
 
-  // 🎯 实体切换时清除布局记录
-  React.useEffect(() => {
-    if (currentEntityId) {
-      // 当实体切换时，清除之前的布局记录，确保新实体可以触发自动布局
-      autoLayoutedEntitiesRef.current.clear();
-      console.log('🎯 实体切换，清除布局记录:', currentEntityId);
-    }
-  }, [currentEntityId]);
+  // 添加调试信息
+  console.log('[WorkflowEditor] 渲染状态:', {
+    hasWorkflowData: !!workflowData,
+    nodeCount: workflowData?.nodes?.length || 0,
+    edgeCount: workflowData?.edges?.length || 0,
+    entityId,
+    loading,
+  });
 
-  // 🎯 自动布局逻辑：监听工作流数据变化，触发自动布局
-  React.useEffect(() => {
-    if (!currentWorkflowData || !currentEntityId) return;
+  // 自动布局逻辑 - 当有新的工作流数据时触发
+  useEffect(() => {
+    if (!loading && workflowData && workflowData.nodes?.length > 0) {
+      console.log('[WorkflowEditor] 触发自动布局，节点数:', workflowData.nodes.length);
 
-    // 只有标记需要自动布局时才触发
-    if (currentWorkflowData._needsAutoLayout) {
-      // 记录当前实体已经布局过
-      const layoutKey = `${currentEntityId}-${currentWorkflowData.nodes?.length || 0}`;
-
-      // 避免在短时间内重复布局同一个状态（防抖）
-      if (autoLayoutedEntitiesRef.current.has(layoutKey)) {
-        console.log('🎯 跳过重复布局:', layoutKey);
-        return;
-      }
-
-      autoLayoutedEntitiesRef.current.add(layoutKey);
-
+      // 延迟执行确保DOM已渲染
       setTimeout(() => {
-        // 直接使用flowgram的自动布局服务
         const autoLayoutButton = document.querySelector(
           '[data-auto-layout-button]'
         ) as HTMLButtonElement;
         if (autoLayoutButton) {
-          console.log('🎯 触发自动布局:', layoutKey);
+          console.log('[WorkflowEditor] 执行自动布局');
           autoLayoutButton.click();
 
-          // autoLayout完成后调用fitView
+          // 布局完成后适应视图
           setTimeout(() => {
-            // 通过全局事件或直接调用fitView
-            const event = new CustomEvent('triggerFitView');
-            window.dispatchEvent(event);
-            console.log('🎯 自动布局完成，触发fitView事件');
-          }, 500); // 等待autoLayout完成
+            const fitViewButton = document.querySelector(
+              '[data-fit-view-button]'
+            ) as HTMLButtonElement;
+            if (fitViewButton) {
+              console.log('[WorkflowEditor] 适应视图');
+              fitViewButton.click();
+            }
+          }, 500);
         }
-      }, 300); // 增加延迟确保DOM完全渲染
+      }, 1000);
     }
-  }, [currentWorkflowData, currentEntityId]);
-
-  // 🎯 从CurrentGraphStore获取工作流数据，只有有数据时才渲染
-  const workflowData = currentWorkflowData || initialData;
-  const hasValidData = workflowData && workflowData.nodes && workflowData.nodes.length > 0;
-
-  const editorProps = useEditorProps(workflowData, nodeRegistries);
+  }, [loading, workflowData?.nodes?.length, entityId]); // 依赖entityId确保切换实体时重新布局
 
   return (
-    <div
-      className={`doc-free-feature-overview ${className || ''}`}
-      style={{
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        ...style,
-      }}
-    >
+    <div style={style} className={className}>
       <EnumStoreProvider>
-        {hasValidData ? (
-          <FreeLayoutEditorProvider key={`workflow-${currentEntityId}`} {...editorProps}>
-            <SidebarProvider selectedEntityId={selectedEntityId || undefined}>
-              <div className="demo-container">
-                <EditorRenderer className="demo-editor" />
-              </div>
-              <DemoTools />
-              <SidebarRenderer />
-              <EntityPropertySyncer />
-            </SidebarProvider>
-          </FreeLayoutEditorProvider>
-        ) : (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              color: '#666',
-              fontSize: '16px',
-            }}
+        <SidebarProvider>
+          <FreeLayoutEditorProvider
+            key={`workflow-${entityId}-${workflowData?.nodes?.length || 0}`} // 使用entityId和节点数确保数据变化时重新渲染
+            nodeRegistries={nodeRegistries}
+            initialData={finalWorkflowData}
+            {...editorProps}
           >
-            正在加载工作流数据...
-          </div>
-        )}
+            <EntityPropertySyncer />
+            <EditorRenderer />
+            <SidebarRenderer />
+            <DemoTools />
+          </FreeLayoutEditorProvider>
+        </SidebarProvider>
       </EnumStoreProvider>
     </div>
   );

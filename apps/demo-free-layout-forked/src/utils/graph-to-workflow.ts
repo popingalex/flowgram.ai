@@ -5,7 +5,8 @@ import type { WorkflowGraph, WorkflowGraphNode, WorkflowGraphEdge } from '../sto
 // 节点类型映射：后台类型 -> 编辑器类型
 const NODE_TYPE_MAPPING: Record<string, string> = {
   nest: 'start',
-  action: 'invoke',
+  action: 'action',
+  invoke: 'action', // invoke节点映射为action
   condition: 'condition',
   sequence: 'phase',
   fallback: 'phase',
@@ -25,15 +26,16 @@ function calculateNodePosition(
     case 'start':
       return { x: 100, y: 50 + index * 100 }; // 起始节点左上角
 
+    case 'action':
     case 'invoke':
-      // invoke节点按order分层布局
-      const invokeX = 200 + order * 300; // 按order水平分布
-      const invokeY = 200 + (index % 3) * 150; // 同order内垂直排列
-      return { x: invokeX, y: invokeY };
+      // action/invoke节点按order分层布局
+      const actionX = 200 + order * 300; // 按order水平分布
+      const actionY = 200 + (index % 3) * 150; // 同order内垂直排列
+      return { x: actionX, y: actionY };
 
     case 'condition':
-      // condition节点按order分层，位于对应invoke节点前面
-      const conditionX = 50 + order * 300; // 比对应invoke节点靠左
+      // condition节点按order分层，位于对应action节点前面
+      const conditionX = 50 + order * 300; // 比对应action节点靠左
       const conditionY = 200 + (index % 3) * 150; // 同order内垂直排列
       return { x: conditionX, y: conditionY };
 
@@ -82,6 +84,7 @@ function convertGraphNodeToWorkflowNode(
         },
       };
 
+    case 'action':
     case 'invoke':
       return {
         ...baseNode,
@@ -100,7 +103,15 @@ function convertGraphNodeToWorkflowNode(
       };
 
     case 'condition':
-      const conditions = convertGraphConditionsToConditionData(graphNode.state?.conditions || []);
+      // 🔧 修复：直接使用已有的conditions数据，不需要重新转换
+      // 检查是否已经有转换好的conditions数据
+      let existingConditions = null;
+
+      // 否则尝试从state.conditions转换
+      const conditions =
+        existingConditions ||
+        convertGraphConditionsToConditionData(graphNode.state?.conditions || []);
+
       // 🔧 修复：condition节点标题处理，去掉$condition/前缀显示实际名称
       let conditionTitle = graphNode.name || '条件分支';
       if (graphNode.id && graphNode.id.startsWith('$condition/')) {
@@ -482,12 +493,12 @@ function analyzePhaseStructure(graph: WorkflowGraph) {
 // 将后台工作流图边转换为编辑器连线格式
 function convertGraphEdgesToWorkflowEdges(edges: WorkflowGraphEdge[]): any[] {
   return edges.map((edge, index) => {
-    // 🔧 修复：使用正确的字段名 sourceNodeID 和 targetNodeID
+    // 🔧 修复：保留sourcePortID和targetPortID，特别是condition节点的$out端口
     const edgeData = {
       sourceNodeID: edge.input.node,
       targetNodeID: edge.output.node,
-      sourcePortID: edge.input.socket === '$out' ? undefined : edge.input.socket,
-      targetPortID: edge.output.socket === '$in' ? undefined : edge.output.socket,
+      sourcePortID: edge.input.socket, // 保留所有sourcePortID，包括$out
+      targetPortID: edge.output.socket === '$in' ? undefined : edge.output.socket, // 只有$in才省略
     };
 
     return edgeData;
@@ -497,14 +508,20 @@ function convertGraphEdgesToWorkflowEdges(edges: WorkflowGraphEdge[]): any[] {
 // 主转换函数：将后台工作流图转换为编辑器可用的工作流数据
 export function convertGraphToWorkflowData(graph: WorkflowGraph): any {
   console.log(
-    `[GraphConverter] 转换图${graph.id}，节点${graph.nodes.length}个，边${
+    `[GraphConverter] 🔄 开始转换图 ${graph.id}，节点${graph.nodes?.length || 0}个，边${
       graph.edges?.length || 0
     }条`
   );
 
-  try {
-    // 🔧 简单方案：所有节点平铺，保留所有连线，让dagre处理布局
+  // 🔧 打印转换前的完整行为树数据
+  console.log(`[GraphConverter] 📥 转换前完整行为树:`, {
+    graphId: graph.id,
+    totalNodes: graph.nodes?.length || 0,
+    totalEdges: graph.edges?.length || 0,
+    completeGraph: graph,
+  });
 
+  try {
     // 转换所有节点
     const mainNodes = graph.nodes
       .map((node, index) => {
@@ -524,36 +541,22 @@ export function convertGraphToWorkflowData(graph: WorkflowGraph): any {
       })
       .filter(Boolean); // 过滤掉转换失败的节点
 
-    // 转换所有连线 - 正确处理端口ID
-    const mainEdges = (graph.edges || []).map((edge) => {
-      const edgeData: any = {
-        sourceNodeID: edge.input.node,
-        targetNodeID: edge.output.node,
-      };
-
-      // 🔧 修复：条件节点的$out端口需要保留，只有$in端口才省略
-      if (edge.input.socket && edge.input.socket !== '$in') {
-        edgeData.sourcePortID = edge.input.socket;
-      }
-      if (edge.output.socket && edge.output.socket !== '$in') {
-        edgeData.targetPortID = edge.output.socket;
-      }
-
-      return edgeData;
-    });
+    // 转换所有连线
+    const mainEdges = convertGraphEdgesToWorkflowEdges(graph.edges || []);
 
     const workflowData = {
       nodes: mainNodes,
       edges: mainEdges,
       viewport: { x: 0, y: 0, zoom: 1 },
-      // 触发dagre自动布局
       _needsAutoLayout: true,
     };
 
-    console.log(`[GraphConverter] 转换完成: ${mainNodes.length}个节点, ${mainEdges.length}条连线`);
-
-    // 直接输出完整的转换结果
-    console.log('[GraphConverter] 转换后的完整工作流数据:', workflowData);
+    // 🔧 打印转换后的完整工作流数据
+    console.log(`[GraphConverter] 📤 转换后完整工作流数据:`, {
+      totalNodes: workflowData.nodes.length,
+      totalEdges: workflowData.edges.length,
+      completeWorkflow: workflowData,
+    });
 
     return workflowData;
   } catch (error) {

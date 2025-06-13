@@ -3,11 +3,11 @@ import { StartNodeRegistry } from './start';
 import { PhaseNodeRegistry } from './phase';
 import { LoopNodeRegistry } from './loop';
 import { LLMNodeRegistry } from './llm';
-import { InvokeNodeRegistry } from './invoke';
 import { EndNodeRegistry } from './end';
 import { WorkflowNodeType } from './constants';
 import { ConditionNodeRegistry } from './condition';
 import { CommentNodeRegistry } from './comment';
+import { ActionNodeRegistry, InvokeNodeRegistry } from './action';
 export { WorkflowNodeType } from './constants';
 
 export const nodeRegistries: FlowNodeRegistry[] = [
@@ -15,6 +15,7 @@ export const nodeRegistries: FlowNodeRegistry[] = [
   StartNodeRegistry,
   EndNodeRegistry,
   LLMNodeRegistry,
+  ActionNodeRegistry,
   InvokeNodeRegistry,
   LoopNodeRegistry,
   PhaseNodeRegistry,

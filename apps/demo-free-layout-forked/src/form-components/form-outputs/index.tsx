@@ -72,7 +72,7 @@ export function FormOutputs({ isSidebar: propIsSidebar }: FormOutputsProps = {})
 
               // 🎯 非Start节点：不显示实体属性，只显示节点自身的输出属性
               // 特别处理invoke节点和end节点，确保不显示实体属性
-              if (node?.type === 'invoke' || node?.type === 'end') {
+              if (node?.type === 'action' || node?.type === 'invoke' || node?.type === 'end') {
                 return !prop.isEntityProperty && !prop.isModuleProperty;
               }
 

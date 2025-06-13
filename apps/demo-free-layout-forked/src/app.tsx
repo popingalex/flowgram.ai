@@ -328,12 +328,34 @@ const AppContent: React.FC = () => {
     switch (currentPage) {
       case 'workflow': {
         const selectedEntity = selectedEntityId ? getEntityByStableId(selectedEntityId) : null;
+
+        // 🔍 添加调试信息
+        console.log('🔍 [App] workflow页面渲染检查:', {
+          selectedEntityId,
+          hasSelectedEntity: !!selectedEntity,
+          selectedEntityName: selectedEntity?.name,
+          selectedEntityRealId: selectedEntity?.id,
+          entitiesCount: entities.length,
+          entitiesIds: entities.map((e) => ({ _indexId: e._indexId, id: e.id, name: e.name })),
+        });
+
         return selectedEntity ? (
           <EntityEditProvider entity={selectedEntity}>
             <Editor />
           </EntityEditProvider>
         ) : (
-          <div>请选择一个实体</div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              fontSize: '18px',
+              color: '#666',
+            }}
+          >
+            请选择一个实体 (selectedEntityId: {selectedEntityId})
+          </div>
         );
       }
       case 'entities':

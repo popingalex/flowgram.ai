@@ -92,7 +92,7 @@ export const GenerateEntityWorkflow: React.FC<{ disabled?: boolean }> = ({ disab
             title: graphNode.name,
             description: graphNode.desc,
             // 根据节点类型设置特定数据
-            ...(nodeType === 'invoke' && {
+            ...((nodeType === 'action' || nodeType === 'invoke') && {
               selectedFunction: {
                 id: graphNode.id,
                 name: graphNode.name,

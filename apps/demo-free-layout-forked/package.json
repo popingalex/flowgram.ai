@@ -48,7 +48,6 @@
     "immer": "~10.1.1"
   },
   "devDependencies": {
-    "@flowgram.ai/ts-config": "workspace:*",
     "@flowgram.ai/eslint-config": "workspace:*",
     "@rsbuild/core": "^1.2.16",
     "@rsbuild/plugin-react": "^1.1.1",
