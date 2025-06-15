@@ -1928,6 +1928,9 @@ importers:
       '@flowgram.ai/utils':
         specifier: workspace:*
         version: link:../utils
+      i18n-js:
+        specifier: ^4.5.1
+        version: 4.5.1
     devDependencies:
       '@flowgram.ai/eslint-config':
         specifier: workspace:*
@@ -2761,6 +2764,9 @@ importers:
       '@flowgram.ai/free-lines-plugin':
         specifier: workspace:*
         version: link:../free-lines-plugin
+      '@flowgram.ai/i18n':
+        specifier: workspace:*
+        version: link:../../common/i18n
       '@flowgram.ai/renderer':
         specifier: workspace:*
         version: link:../../canvas-engine/renderer
@@ -10306,6 +10312,10 @@ packages:
   /big.js@5.2.2:
     resolution: {integrity: sha512-vyL2OymJxmarO8gxMr0mhChsO9QGwhynfuu4+MHTAW6czfq9humCB7rKpUjDd9YUiDPU4mzpyupFSvOClAwbmQ==}
 
+  /bignumber.js@9.3.0:
+    resolution: {integrity: sha512-EM7aMFTXbptt/wZdMlBv2t8IViwQL+h6SLHosp8Yf0dqJMTnY6iL32opnAB6kAdL0SZPuvcAzFr31o0c/R3/RA==}
+    dev: false
+
   /binary-extensions@2.3.0:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
     engines: {node: '>=8'}
@@ -13054,6 +13064,14 @@ packages:
     dependencies:
       ms: 2.1.3
 
+  /i18n-js@4.5.1:
+    resolution: {integrity: sha512-n7jojFj1WC0tztgr0I8jqTXuIlY1xNzXnC3mjKX/YjJhimdM+jXM8vOmn9d3xQFNC6qDHJ4ovhdrGXrRXLIGkA==}
+    dependencies:
+      bignumber.js: 9.3.0
+      lodash: 4.17.21
+      make-plural: 7.4.0
+    dev: false
+
   /iconv-lite@0.4.24:
     resolution: {integrity: sha512-v3MXnZAcvnywkTUEZomIActle7RXXeedOR31wwl7VlyoXO4Qi9arvSenNQWne1TcRwhCL1HwLI21bEqdpj8/rA==}
     engines: {node: '>=0.10.0'}
@@ -14118,6 +14136,10 @@ packages:
 
   /make-error@1.3.6:
     resolution: {integrity: sha512-s8UhlNe7vPKomQhC1qFelMokr/Sc3AgNbso3n74mVPA5LTZwkB9NlXf4XPamLxJE8h0gh73rM94xvwRT2CVInw==}
+    dev: false
+
+  /make-plural@7.4.0:
+    resolution: {integrity: sha512-4/gC9KVNTV6pvYg2gFeQYTW3mWaoJt7WZE5vrp1KnQDgW92JtYZnzmZT81oj/dUTqAIu0ufI2x3dkgu3bB1tYg==}
     dev: false
 
   /markdown-extensions@1.1.1:
