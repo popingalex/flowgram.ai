@@ -86,13 +86,22 @@ function convertGraphNodeToWorkflowNode(
 
     case 'action':
     case 'invoke':
+      // 🔧 添加调试日志
+      // console.log(`[GraphConverter] 转换action节点: ${graphNode.id}`, {
+      //   name: graphNode.name,
+      //   type: graphNode.type,
+      //   exp: graphNode.exp,
+      //   expId: graphNode.exp?.id,
+      //   fallbackId: graphNode.id,
+      // });
+
       return {
         ...baseNode,
         data: {
           ...baseNode.data,
           title: graphNode.name || `调用${graphNode.id}`, // 显示具体的函数名
           functionMeta: {
-            id: graphNode.id,
+            id: graphNode.exp?.id || graphNode.id, // 🔧 修复：使用exp.id作为函数ID，这样能正确匹配behavior数据
             name: graphNode.name,
             description: `Action: ${graphNode.name}`,
             functionType: 'backend-action',
@@ -527,20 +536,6 @@ function convertGraphEdgesToWorkflowEdges(edges: WorkflowGraphEdge[]): any[] {
 
 // 主转换函数：将后台工作流图转换为编辑器可用的工作流数据
 export function convertGraphToWorkflowData(graph: WorkflowGraph): any {
-  console.log(
-    `[GraphConverter] 🔄 开始转换图 ${graph.id}，节点${graph.nodes?.length || 0}个，边${
-      graph.edges?.length || 0
-    }条`
-  );
-
-  // 🔧 打印转换前的完整行为树数据
-  console.log(`[GraphConverter] 📥 转换前完整行为树:`, {
-    graphId: graph.id,
-    totalNodes: graph.nodes?.length || 0,
-    totalEdges: graph.edges?.length || 0,
-    completeGraph: graph,
-  });
-
   try {
     // 转换所有节点
     const mainNodes = graph.nodes
@@ -570,13 +565,6 @@ export function convertGraphToWorkflowData(graph: WorkflowGraph): any {
       viewport: { x: 0, y: 0, zoom: 1 },
       _needsAutoLayout: true,
     };
-
-    // 🔧 打印转换后的完整工作流数据
-    console.log(`[GraphConverter] 📤 转换后完整工作流数据:`, {
-      totalNodes: workflowData.nodes.length,
-      totalEdges: workflowData.edges.length,
-      completeWorkflow: workflowData,
-    });
 
     return workflowData;
   } catch (error) {

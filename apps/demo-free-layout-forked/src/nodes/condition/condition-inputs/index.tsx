@@ -1,12 +1,13 @@
 import { nanoid } from 'nanoid';
 import { Field, FieldArray } from '@flowgram.ai/free-layout-editor';
-import { ConditionRow, ConditionRowValueType, VariableSelector } from '@flowgram.ai/form-materials';
+import { ConditionRowValueType, VariableSelector } from '@flowgram.ai/form-materials';
 import { Button } from '@douyinfe/semi-ui';
 import { IconPlus, IconCrossCircleStroked } from '@douyinfe/semi-icons';
 
 import { useNodeRenderContext } from '../../../hooks';
 import { FormItem } from '../../../form-components';
 import { Feedback } from '../../../form-components';
+import { EnhancedConditionRow } from '../../../components/ext/enhanced-condition-row';
 import { ConditionPort } from './styles';
 
 interface ConditionValue {
@@ -25,7 +26,7 @@ export function ConditionInputs() {
               {({ field: childField, fieldState: childState }) => (
                 <FormItem name="if" type="boolean" required={true} labelWidth={40}>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <ConditionRow
+                    <EnhancedConditionRow
                       readonly={readonly}
                       style={{ flexGrow: 1 }}
                       value={childField.value.value}

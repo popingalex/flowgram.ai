@@ -1,30 +1,31 @@
 import React, { useState, useLayoutEffect } from 'react';
 
-import { VariableSelector, TypeSelector, DynamicValueInput } from '@flowgram.ai/form-materials';
+import { VariableSelector, TypeSelector } from '@flowgram.ai/form-materials';
 import { Input, Button } from '@douyinfe/semi-ui';
 import { IconCrossCircleStroked } from '@douyinfe/semi-icons';
 
-import { JsonSchema } from '../../typings';
+import { ExtendedJsonSchema } from '../../typings/extended-json-schema';
+import { EnhancedDynamicValueInput } from '../../components/ext/enhanced-dynamic-value-input';
 import { LeftColumn, Row } from './styles';
 
 export interface PropertyEditProps {
   propertyKey: string;
-  value: JsonSchema;
+  value: ExtendedJsonSchema;
   useFx?: boolean;
   disabled?: boolean;
-  onChange: (value: JsonSchema, propertyKey: string, newPropertyKey?: string) => void;
+  onChange: (value: ExtendedJsonSchema, propertyKey: string, newPropertyKey?: string) => void;
   onDelete?: () => void;
 }
 
 export const PropertyEdit: React.FC<PropertyEditProps> = (props) => {
   const { value, disabled } = props;
   const [inputKey, updateKey] = useState(props.propertyKey);
-  const updateProperty = (key: keyof JsonSchema, val: any) => {
+  const updateProperty = (key: keyof ExtendedJsonSchema, val: any) => {
     value[key] = val;
     props.onChange(value, props.propertyKey);
   };
 
-  const partialUpdateProperty = (val?: Partial<JsonSchema>) => {
+  const partialUpdateProperty = (val?: Partial<ExtendedJsonSchema>) => {
     props.onChange({ ...value, ...val }, props.propertyKey);
   };
 
@@ -56,7 +57,7 @@ export const PropertyEdit: React.FC<PropertyEditProps> = (props) => {
         />
       </LeftColumn>
       {
-        <DynamicValueInput
+        <EnhancedDynamicValueInput
           value={value.default}
           onChange={(val) => updateProperty('default', val)}
           schema={value}

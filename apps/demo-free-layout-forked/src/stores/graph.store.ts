@@ -62,6 +62,7 @@ export interface WorkflowGraphNode {
     }>;
   }>;
   exp?: {
+    id?: string; // 🔧 新增：函数的完整ID，如 com.gsafety.simulation.behavior.entity.Vehicle.dumperAction
     body?: string;
   };
   threshold?: number;

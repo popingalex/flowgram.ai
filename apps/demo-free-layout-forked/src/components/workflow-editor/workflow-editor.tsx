@@ -264,10 +264,15 @@ const EntityPropertySyncer: React.FC = () => {
                   },
                 }),
                 _indexId: attr._indexId || nanoid(),
-                isModuleProperty: true,
-                moduleId: module.id,
-                // 🎯 添加完整路径信息，用于变量引擎查找
-                fullPath: moduleAttrKey,
+                // 🎯 将模块属性分类信息设置到meta字段中
+                meta: {
+                  ...attr.meta, // 保留原有meta信息
+                  isModuleProperty: true,
+                  moduleId: module.id,
+                  moduleName: module.name,
+                  title: attr.name, // 显示名称
+                  fullPath: moduleAttrKey, // 完整路径信息，用于变量引擎查找
+                },
               };
             });
 
@@ -409,27 +414,15 @@ export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className
     loadModules();
   }, [loadModules]);
 
-  // 添加调试信息
-  console.log('[WorkflowEditor] 渲染状态:', {
-    hasWorkflowData: !!workflowData,
-    nodeCount: workflowData?.nodes?.length || 0,
-    edgeCount: workflowData?.edges?.length || 0,
-    entityId,
-    loading,
-  });
-
   // 自动布局逻辑 - 当有新的工作流数据时触发
   useEffect(() => {
     if (!loading && workflowData && workflowData.nodes?.length > 0) {
-      console.log('[WorkflowEditor] 触发自动布局，节点数:', workflowData.nodes.length);
-
       // 延迟执行确保DOM已渲染
       setTimeout(() => {
         const autoLayoutButton = document.querySelector(
           '[data-auto-layout-button]'
         ) as HTMLButtonElement;
         if (autoLayoutButton) {
-          console.log('[WorkflowEditor] 执行自动布局');
           autoLayoutButton.click();
 
           // 布局完成后适应视图
@@ -438,7 +431,6 @@ export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className
               '[data-fit-view-button]'
             ) as HTMLButtonElement;
             if (fitViewButton) {
-              console.log('[WorkflowEditor] 适应视图');
               fitViewButton.click();
             }
           }, 500);

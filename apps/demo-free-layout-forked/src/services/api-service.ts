@@ -47,6 +47,7 @@ const transformBackendBehavior = (backendBehavior: BackendBehaviorDef): Behavior
     className: className, // Rain
     fullClassName: fullClassName, // com.gsafety.simulation.behavior.entity.Rain
     methodName: methodName, // simulateRain
+    category: className, // 🔧 添加category字段，使用className作为分类
     parameters,
     returns: {
       type: backendBehavior.returns.type,

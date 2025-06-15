@@ -18,35 +18,32 @@ export function useEnhancedVariableTree(params: {
   const available = useScopeAvailable();
 
   const getVariableTypeIcon = useCallback((variable: VariableField) => {
-    if (variable.meta?.icon) {
-      if (typeof variable.meta.icon === 'string') {
-        return <img style={{ marginRight: 8 }} width={12} height={12} src={variable.meta.icon} />;
-      }
-
-      return variable.meta.icon;
+    const type = variable?.type;
+    if (!type) {
+      return <Icon size="small" svg={VariableTypeIcons.string} />;
     }
 
-    const _type = variable.type;
-
-    if (ASTMatch.isArray(_type)) {
-      return (
-        <Icon
-          size="small"
-          svg={ArrayIcons[_type.items?.kind.toLowerCase()] || VariableTypeIcons.array}
-        />
-      );
+    if (ASTMatch.isString(type)) {
+      return <Icon size="small" svg={VariableTypeIcons.string} />;
     }
 
-    if (ASTMatch.isCustomType(_type)) {
-      const typeName = _type.typeName;
-      if (typeName && typeof typeName === 'string') {
-        return <Icon size="small" svg={VariableTypeIcons[typeName.toLowerCase()]} />;
-      }
-      // 如果typeName无效，返回默认图标
+    if (ASTMatch.isNumber(type)) {
+      return <Icon size="small" svg={VariableTypeIcons.number} />;
+    }
+
+    if (ASTMatch.isBoolean(type)) {
+      return <Icon size="small" svg={VariableTypeIcons.boolean} />;
+    }
+
+    if (ASTMatch.isArray(type)) {
+      return <Icon size="small" svg={ArrayIcons.array} />;
+    }
+
+    if (ASTMatch.isObject(type)) {
       return <Icon size="small" svg={VariableTypeIcons.object} />;
     }
 
-    return <Icon size="small" svg={VariableTypeIcons[variable.type?.kind.toLowerCase()]} />;
+    return <Icon size="small" svg={VariableTypeIcons.string} />;
   }, []);
 
   const renderVariable = (
@@ -72,19 +69,21 @@ export function useEnhancedVariableTree(params: {
         // 分类属性
         properties.forEach((_property) => {
           const prop = _property as VariableField;
-          const propMeta = prop.meta as any;
+          const propKey = prop.key;
 
-          if (propMeta?.isContextProperty) {
-            // 上下文属性
+          // 🎯 根据key格式判断属性类型，而不依赖meta信息
+          if (propKey === '$context') {
+            // $context属性
             contextProperties.push(prop);
-          } else if (propMeta?.isModuleProperty && propMeta?.moduleId) {
-            // 模块属性
-            if (!moduleGroups[propMeta.moduleId]) {
-              moduleGroups[propMeta.moduleId] = [];
+          } else if (propKey.includes('/') && !propKey.startsWith('$')) {
+            // 模块属性：格式为 "模块名/属性名"，如 "controlled/action_target"
+            const [moduleId] = propKey.split('/');
+            if (!moduleGroups[moduleId]) {
+              moduleGroups[moduleId] = [];
             }
-            moduleGroups[propMeta.moduleId].push(prop);
+            moduleGroups[moduleId].push(prop);
           } else {
-            // 实体属性
+            // 实体属性：不包含"/"的普通属性
             entityProperties.push(prop);
           }
         });
@@ -100,20 +99,57 @@ export function useEnhancedVariableTree(params: {
         // 添加模块分组
         Object.entries(moduleGroups).forEach(([moduleId, moduleProps]) => {
           if (moduleProps.length > 0) {
-            const moduleName = (moduleProps[0].meta as any)?.moduleName || moduleId;
+            // 🎯 使用moduleId作为显示名称，因为meta信息不可用
+            const moduleName = moduleId;
 
             // 创建模块分组节点
             const moduleGroupNode: TreeNodeData = {
-              key: `${variable.key}.${moduleId}`,
-              label: `${moduleId} (${moduleName})`,
-              value: `${variable.key}.${moduleId}`,
-              keyPath: [variable.key, moduleId],
-              icon: <Icon size="small" svg={VariableTypeIcons.object} />,
-              disabled: true, // 分组节点不可选中
+              key: `${variable.key}.module_group_${moduleId}`,
+              label: (
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: '#1890ff',
+                    fontWeight: 500,
+                    fontSize: '13px',
+                  }}
+                >
+                  {moduleName} ({moduleProps.length})
+                </div>
+              ),
+              value: `${variable.key}.module_group_${moduleId}`,
+              keyPath: [variable.key, `module_group_${moduleId}`],
+              disabled: true, // 🎯 分组节点不可选中，但可以展开
               children: moduleProps
                 .map((prop) => {
-                  const rendered = renderVariable(prop, [...parentFields, variable]);
-                  return rendered;
+                  // 🎯 为模块内属性创建简化显示的节点
+                  const originalKey = prop.key;
+
+                  // 计算简化的显示名称（去掉模块前缀）
+                  const simplifiedKey = originalKey.startsWith(`${moduleId}/`)
+                    ? originalKey.replace(`${moduleId}/`, '')
+                    : originalKey;
+
+                  // 构建完整的keyPath（用于实际选择）
+                  const fullKeyPath = [
+                    ...parentFields.map((_field) => _field.key),
+                    variable.key,
+                    originalKey,
+                  ];
+
+                  // 🎯 构建简化的label，不再依赖meta.title
+                  const simplifiedLabel = <span style={{ fontWeight: 400 }}>{simplifiedKey}</span>;
+
+                  return {
+                    key: fullKeyPath.join('.'),
+                    label: simplifiedLabel,
+                    value: fullKeyPath.join('.'),
+                    keyPath: fullKeyPath,
+                    icon: getVariableTypeIcon(prop),
+                    disabled: false, // 🎯 模块内属性可以选中
+                    rootMeta: variable.meta,
+                  };
                 })
                 .filter(Boolean) as TreeNodeData[],
             };
@@ -152,12 +188,9 @@ export function useEnhancedVariableTree(params: {
       : false;
     const isSchemaMatch = isSchemaInclude && !isSchemaExclude;
 
-    // 🎯 检查是否为对象容器（Context、模块等）或$start节点
-    const variableMeta = variable.meta as any;
-    const isObjectContainer =
-      variableMeta?.isObjectContainer ||
-      variableMeta?.isContextProperty ||
-      variableMeta?.isModuleProperty;
+    // 🎯 检查是否为$context节点
+    const isContextNode =
+      variable.key === '$context' && parentFields.length === 1 && parentFields[0]?.key === '$start';
 
     // 🎯 检查是否为$start节点（根节点）
     const isStartNode = variable.key === '$start' && parentFields.length === 0;
@@ -167,8 +200,11 @@ export function useEnhancedVariableTree(params: {
       return null;
     }
 
-    // 🎯 $start节点不可直接选中，只能展开
-    const shouldDisable = !isSchemaMatch || (!!children?.length && isStartNode);
+    // 🎯 禁用逻辑：
+    // - $context节点：不可选中，但可以展开查看子节点
+    // - $start节点：如果有子节点则不可选中，但可以展开
+    // - 不匹配schema的节点：不可选中
+    const shouldDisable = isContextNode || (!!children?.length && isStartNode) || !isSchemaMatch;
 
     // 🎯 构建左右布局的label - 显示ID和中文名
     const labelElement = variable.meta?.title ? (
@@ -180,13 +216,34 @@ export function useEnhancedVariableTree(params: {
           width: '100%',
         }}
       >
-        <span>{variable.key}</span>
-        <span style={{ color: '#666', fontSize: '12px', marginLeft: '8px' }}>
+        <span
+          style={{
+            fontWeight: isContextNode ? 500 : 400,
+            color: isContextNode ? '#1890ff' : 'inherit',
+          }}
+        >
+          {variable.key}
+        </span>
+        <span
+          style={{
+            color: '#666',
+            fontSize: '12px',
+            marginLeft: '8px',
+            fontStyle: 'italic',
+          }}
+        >
           {variable.meta.title}
         </span>
       </div>
     ) : (
-      variable.key
+      <span
+        style={{
+          fontWeight: isContextNode ? 500 : 400,
+          color: isContextNode ? '#1890ff' : 'inherit',
+        }}
+      >
+        {variable.key}
+      </span>
     );
 
     return {
