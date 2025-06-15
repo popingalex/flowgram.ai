@@ -4,6 +4,8 @@ import { devtools } from 'zustand/middleware';
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
 
+import { REAL_GRAPHS } from '../mock-data';
+
 // 工作流图数据类型
 export interface WorkflowGraphNode {
   id: string;
@@ -122,7 +124,6 @@ const useGraphStoreBase = create<GraphStore>()(
 
         // 避免重复加载 - 5分钟内不重复请求
         if (state.lastLoaded && Date.now() - state.lastLoaded < 5 * 60 * 1000) {
-          console.log('[GraphStore] 使用缓存数据，跳过API请求');
           return;
         }
 
@@ -132,48 +133,26 @@ const useGraphStoreBase = create<GraphStore>()(
         });
 
         try {
-          console.log('[GraphStore] 开始加载工作流图列表...');
+          const response = await fetch('http://localhost:9999/hub/graphs/');
 
-          // 尝试真实API，失败时使用mock数据
-          let graphs: WorkflowGraph[];
-          try {
-            const response = await fetch('http://localhost:9999/hub/graphs/');
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            graphs = await response.json();
-            console.log('[GraphStore] 使用真实API数据');
-          } catch (apiError) {
-            console.warn('[GraphStore] 真实API失败，使用mock数据:', apiError);
-            // 动态导入mock数据
-            const { REAL_GRAPHS } = await import('../mock-data');
-            graphs = REAL_GRAPHS;
-            console.log('[GraphStore] 使用mock数据');
+          if (response.ok) {
+            const data = await response.json();
+            set((state) => {
+              state.graphs = data;
+              state.lastLoaded = Date.now();
+            });
+          } else {
+            throw new Error(`HTTP ${response.status}`);
           }
-
-          console.log(`[GraphStore] 加载完成，共 ${graphs.length} 个工作流图`);
-
-          // 为每个graph添加稳定的索引ID (如果需要)
-          const graphsWithIndex = graphs.map((graph) => ({
-            ...graph,
-            _indexId: graph.id, // 使用graph.id作为索引ID
-          }));
-
+        } catch (error) {
+          // 使用mock数据作为备选
           set((state) => {
-            state.graphs = graphsWithIndex;
-            state.loading = false;
+            state.graphs = REAL_GRAPHS;
             state.lastLoaded = Date.now();
           });
-
-          console.log(
-            `[GraphStore] 工作流图ID列表:`,
-            graphs.map((g) => g.id)
-          );
-        } catch (error) {
-          console.error('[GraphStore] 加载失败:', error);
+        } finally {
           set((state) => {
             state.loading = false;
-            state.error = error instanceof Error ? error.message : '加载工作流图失败';
           });
         }
       },

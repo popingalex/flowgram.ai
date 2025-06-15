@@ -56,16 +56,23 @@ const useBehaviorStoreBase = create<BehaviorStore>()(
         });
 
         try {
-          console.log('[BehaviorStore] 开始加载函数行为列表...');
           const behaviors = await behaviorApi.getAll();
-
-          console.log(`[BehaviorStore] 加载完成，共 ${behaviors.length} 个函数行为`);
+          console.log('🔍 [BehaviorStore] API返回的原始数据:', {
+            behaviorsCount: behaviors.length,
+            firstBehavior: behaviors[0],
+            behaviors: behaviors.slice(0, 3),
+          });
 
           // 为每个behavior添加稳定的索引ID (如果没有)
           const behaviorsWithIndex = behaviors.map((behavior) => ({
             ...behavior,
             _indexId: behavior._indexId || nanoid(), // 如果后台没有提供_indexId，生成一个
           }));
+
+          console.log('🔍 [BehaviorStore] 处理后的数据:', {
+            behaviorsWithIndexCount: behaviorsWithIndex.length,
+            firstProcessed: behaviorsWithIndex[0],
+          });
 
           // 提取分类
           const categories = Array.from(
@@ -74,6 +81,8 @@ const useBehaviorStoreBase = create<BehaviorStore>()(
             )
           ).sort();
 
+          console.log('🔍 [BehaviorStore] 提取的分类:', categories);
+
           set((state) => {
             state.behaviors = behaviorsWithIndex;
             state.categories = categories;
@@ -81,7 +90,7 @@ const useBehaviorStoreBase = create<BehaviorStore>()(
             state.lastLoaded = Date.now();
           });
 
-          console.log(`[BehaviorStore] 数据处理完成，分类数: ${categories.length}`);
+          console.log('🔍 [BehaviorStore] 数据已保存到store');
         } catch (error) {
           console.error('[BehaviorStore] 加载失败:', error);
           set((state) => {

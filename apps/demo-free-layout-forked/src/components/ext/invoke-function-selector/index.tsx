@@ -22,18 +22,20 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
 
   React.useEffect(() => {
     loadBehaviors();
+    // console.log('🔍 [InvokeFunctionSelector] 加载函数行为...');
   }, [loadBehaviors]);
+
+  // React.useEffect(() => {
+  //   console.log('🔍 [InvokeFunctionSelector] behaviors更新:', {
+  //     behaviorsCount: behaviors.length,
+  //     loading,
+  //     behaviors: behaviors.slice(0, 3), // 只显示前3个
+  //   });
+  // }, [behaviors, loading]);
 
   // 计算实际显示的value - 支持从后台functionMeta.id转换为_indexId
   const displayValue = React.useMemo(() => {
-    console.log('[InvokeFunctionSelector] displayValue计算开始:', {
-      value,
-      behaviorsCount: behaviors.length,
-      hasPlaygroundEntity: !!playgroundEntity,
-    });
-
     if (value) {
-      console.log('[InvokeFunctionSelector] 使用已有的value:', value);
       return value; // 如果已经有_indexId，直接使用
     }
 
@@ -41,67 +43,35 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
     if (playgroundEntity) {
       try {
         const formData = playgroundEntity.getData(FlowNodeFormData);
-        console.log('[InvokeFunctionSelector] 获取到formData:', !!formData);
 
         if (formData) {
           const formModel = formData.getFormModel();
-          console.log('[InvokeFunctionSelector] 获取到formModel:', !!formModel);
 
           if (formModel && formModel.values) {
-            console.log('[InvokeFunctionSelector] formModel.values完整结构:', formModel.values);
-            console.log(
-              '[InvokeFunctionSelector] formModel.values的keys:',
-              Object.keys(formModel.values)
-            );
-
             if (formModel.values.data) {
               const functionMeta = formModel.values.data.functionMeta;
-              console.log('[InvokeFunctionSelector] functionMeta对象:', functionMeta);
-
               const functionId = functionMeta?.id;
-              console.log('[InvokeFunctionSelector] 提取的functionId:', functionId);
 
               if (functionId) {
                 // 🔧 修复：直接使用functionMeta.id查找对应的behavior，然后返回其_indexId
                 const matchedBehavior = behaviors.find((b) => b.id === functionId);
                 if (matchedBehavior) {
-                  console.log(
-                    `[InvokeFunctionSelector] 找到匹配的函数: ${functionId} -> ${matchedBehavior._indexId}`
-                  );
                   return matchedBehavior._indexId;
-                } else {
-                  console.warn(`[InvokeFunctionSelector] 未找到匹配的函数: ${functionId}`);
-                  console.log(
-                    '[InvokeFunctionSelector] 可用的behavior IDs:',
-                    behaviors.map((b) => b.id)
-                  );
                 }
-              } else {
-                console.warn('[InvokeFunctionSelector] functionMeta.id为空');
               }
             } else {
-              console.warn('[InvokeFunctionSelector] formModel.values.data不存在');
               // 🔧 尝试直接从formModel.values中获取functionMeta
               const functionMeta = formModel.values.functionMeta;
-              console.log('[InvokeFunctionSelector] 尝试直接获取functionMeta:', functionMeta);
 
               if (functionMeta && functionMeta.id) {
                 const functionId = functionMeta.id;
-                console.log('[InvokeFunctionSelector] 从根级别获取的functionId:', functionId);
 
                 const matchedBehavior = behaviors.find((b) => b.id === functionId);
                 if (matchedBehavior) {
-                  console.log(
-                    `[InvokeFunctionSelector] 找到匹配的函数: ${functionId} -> ${matchedBehavior._indexId}`
-                  );
                   return matchedBehavior._indexId;
-                } else {
-                  console.warn(`[InvokeFunctionSelector] 未找到匹配的函数: ${functionId}`);
                 }
               }
             }
-          } else {
-            console.warn('[InvokeFunctionSelector] formModel.values不存在');
           }
         }
       } catch (error) {
@@ -109,7 +79,6 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
       }
     }
 
-    console.log('[InvokeFunctionSelector] displayValue计算结束，返回undefined');
     return undefined;
   }, [value, behaviors, playgroundEntity]);
 
@@ -190,6 +159,14 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
         };
       });
   }, [behaviors, expandedKeys, displayValue]); // 🔧 添加displayValue为依赖，确保选中状态变化时重新渲染
+
+  // React.useEffect(() => {
+  //   console.log('🔍 [InvokeFunctionSelector] treeData更新:', {
+  //     treeDataLength: treeData.length,
+  //     categories: treeData.map((item) => item.label),
+  //     displayValue,
+  //   });
+  // }, [treeData, displayValue]);
 
   // 处理函数选择，动态更新inputs和outputs
   const handleFunctionSelect = (selectedValue: string) => {

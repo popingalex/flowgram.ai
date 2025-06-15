@@ -51,7 +51,6 @@ export const useCurrentGraphStore = create<CurrentGraphStore>()(
       // 设置当前图
       setGraph: (workflowData, entityId, graphId) => {
         set((state) => {
-          console.log(`[CurrentGraphStore] 设置图: 实体=${entityId}, 图=${graphId}`);
           state.workflowData = workflowData;
           state.entityId = entityId;
           state.graphId = graphId;
@@ -63,21 +62,16 @@ export const useCurrentGraphStore = create<CurrentGraphStore>()(
       // 清除当前图
       clearGraph: () => {
         set((state) => {
-          console.log(`[CurrentGraphStore] 清除图`);
-          state.workflowData = null;
           state.entityId = null;
           state.graphId = null;
-          state.loading = false;
-          state.error = null;
+          state.workflowData = null;
         });
       },
 
       // 更新工作流数据
-      updateWorkflowData: (workflowData) => {
+      updateWorkflowData: (data: any) => {
         set((state) => {
-          console.log(`[CurrentGraphStore] 更新工作流数据`);
-          state.workflowData = workflowData;
-          state.error = null;
+          state.workflowData = data;
         });
       },
 

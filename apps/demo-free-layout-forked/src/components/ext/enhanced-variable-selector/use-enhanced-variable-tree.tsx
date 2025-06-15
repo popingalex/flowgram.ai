@@ -110,7 +110,7 @@ export function useEnhancedVariableTree(params: {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    color: '#1890ff',
+                    color: 'inherit',
                     fontWeight: 500,
                     fontSize: '13px',
                   }}
@@ -219,7 +219,7 @@ export function useEnhancedVariableTree(params: {
         <span
           style={{
             fontWeight: isContextNode ? 500 : 400,
-            color: isContextNode ? '#1890ff' : 'inherit',
+            color: 'inherit',
           }}
         >
           {variable.key}
@@ -239,7 +239,7 @@ export function useEnhancedVariableTree(params: {
       <span
         style={{
           fontWeight: isContextNode ? 500 : 400,
-          color: isContextNode ? '#1890ff' : 'inherit',
+          color: 'inherit',
         }}
       >
         {variable.key}

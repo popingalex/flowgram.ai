@@ -1,11 +1,6 @@
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 
-import {
-  DynamicValueInput,
-  JsonSchemaBasicType,
-  VariableSelector,
-} from '@flowgram.ai/form-materials';
-import { Input } from '@douyinfe/semi-ui';
+import { JsonSchemaBasicType } from '@flowgram.ai/form-materials';
 
 import { useCurrentEntity } from '../../../stores/current-entity.store';
 import { Op, ConditionRowValueType } from './types';
@@ -67,11 +62,11 @@ export function EnhancedConditionRow({ style, value, onChange, readonly }: PropT
               onChange={(v) => onChange({ ...value, right: v })}
             />
           ) : (
-            <Input
-              size="small"
-              disabled
-              value={opConfig?.rightDisplay || 'Empty'}
-              placeholder="No target schema"
+            <EnhancedDynamicValueInput
+              readonly={readonly}
+              value={right}
+              schema={{ type: 'string', extra: { weak: true } }}
+              onChange={(v) => onChange({ ...value, right: v })}
             />
           )}
         </UIRight>

@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 
 import { ConstantInput, IFlowConstantRefValue, IJsonSchema } from '@flowgram.ai/form-materials';
 import { IconButton } from '@douyinfe/semi-ui';
+import { Input } from '@douyinfe/semi-ui';
 import { IconSetting } from '@douyinfe/semi-icons';
 
 import { UIContainer, UIMain, UITrigger } from './styles';
@@ -41,16 +42,33 @@ export function EnhancedDynamicValueInput({
   }, [schema]);
 
   const renderMain = () => {
+    if (readonly) {
+      return (
+        <Input
+          size="small"
+          disabled
+          value={String(value?.content || '')}
+          style={{ backgroundColor: '#f5f5f5', color: '#666' }}
+        />
+      );
+    }
+
     if (value?.type === 'ref') {
-      // Display Variable Or Delete
       return (
         <EnhancedVariableSelector
-          value={value?.content}
-          onChange={(_v: string[] | undefined) =>
-            onChange(_v ? { type: 'ref', content: _v } : undefined)
-          }
-          includeSchema={includeSchema}
           readonly={readonly}
+          style={{ width: '100%' }}
+          value={Array.isArray(value.content) ? value.content : undefined}
+          onChange={(v) => {
+            if (v && v.length > 0) {
+              onChange?.({
+                type: 'ref',
+                content: v,
+              });
+            } else {
+              onChange?.(undefined);
+            }
+          }}
         />
       );
     }
@@ -58,10 +76,9 @@ export function EnhancedDynamicValueInput({
     return (
       <ConstantInput
         value={value?.content}
-        onChange={(_v: any) => onChange({ type: 'constant', content: _v })}
+        onChange={(v) => onChange({ type: 'constant', content: v })}
         schema={schema || { type: 'string' }}
         readonly={readonly}
-        {...(constantProps as any)}
       />
     );
   };
@@ -69,8 +86,14 @@ export function EnhancedDynamicValueInput({
   const renderTrigger = () => (
     <EnhancedVariableSelector
       style={{ width: '100%' }}
-      value={value?.type === 'ref' ? value?.content : undefined}
-      onChange={(_v: string[] | undefined) => onChange({ type: 'ref', content: _v })}
+      value={value?.type === 'ref' && Array.isArray(value.content) ? value.content : undefined}
+      onChange={(v: string[] | undefined) => {
+        if (v && v.length > 0) {
+          onChange({ type: 'ref', content: v });
+        } else {
+          onChange({ type: 'ref', content: [] });
+        }
+      }}
       includeSchema={includeSchema}
       readonly={readonly}
       triggerRender={() => (

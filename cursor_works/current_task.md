@@ -1,63 +1,139 @@
-# ✅ 任务完成：变量选择器优化
+# 当前任务：属性系统重构
 
-## 🎉 任务完全成功！
+## 任务状态：修复中 🔧
 
-### 问题描述
-用户反映变量选择器存在两个问题：
-1. 模块标题显示问题：重复显示了"{}"，宽度局促导致换行
-2. $context节点问题：可以被选中但实际无意义
+## 已完成的工作
 
-### 🔧 修复内容
+### 1. 数据层统一 ✅
+- ✅ 创建了 `PropertyDataManager` 工具类 (`src/utils/property-data-manager.ts`)
+- ✅ 定义了统一的 `PropertyData` 接口
+- ✅ 实现了从不同数据源的转换方法：
+  - `fromEntityAttributes()` - 从实体属性转换
+  - `fromJsonSchema()` - 从JsonSchema转换
+  - `fromModuleAttributes()` - 从模块属性转换
+- ✅ 实现了属性分类和过滤逻辑：
+  - `groupByCategory()` - 按类别分组
+  - `filterByNodeType()` - 按节点类型过滤
+  - `filterByMode()` - 按显示模式过滤
+  - `applyFilters()` - 应用多个过滤器
 
-#### 1. 模块标题显示优化
-**文件**: `src/components/ext/enhanced-variable-selector/use-enhanced-variable-tree.tsx`
-- 去掉了重复的"{}"和图标
-- 简化了文字描述，避免换行
-- 调整字体大小为13px
+### 2. 组件层重构 ✅
+- ✅ 创建了 `PropertyDisplayManager` 管理组件 (`src/components/ext/property-system/PropertyDisplayManager.tsx`)
+- ✅ 创建了 `PropertyTable` 统一展示组件 (`src/components/ext/property-system/PropertyTable.tsx`)
+- ✅ 创建了 `ModulePropertyTree` 模块属性树组件 (`src/components/ext/property-system/ModulePropertyTree.tsx`)
+- ✅ 实现了多态展示：
+  - 节点模式：紧凑显示，模块显示为标签
+  - 侧边栏模式：详细显示，模块显示为树形结构
 
-#### 2. $context节点判断逻辑修复
-**关键发现**: $context是$start的子节点，不是根级别节点
-**修复逻辑**:
-```typescript
-// 修复前：错误的层级判断
-const isContextNode = variable.key === '$context' && parentFields.length === 0;
+### 3. 表单组件简化 ✅
+- ✅ 重构了 `form-outputs` 组件 (`src/form-components/form-outputs/index.tsx`)
+- ✅ 大幅简化了组件逻辑：
+  - 移除了复杂的数据转换代码（约100行）
+  - 移除了重复的过滤逻辑
+  - 统一了侧边栏和节点模式的处理
+- ✅ 使用新的 `PropertyDisplayManager` 替代原有逻辑
 
-// 修复后：正确的层级判断
-const isContextNode = variable.key === '$context' && parentFields.length === 1 && parentFields[0]?.key === '$start';
+### 4. 样式和配置 ✅
+- ✅ 创建了统一的样式文件 (`src/components/ext/property-system/styles.css`)
+- ✅ 创建了组件索引文件 (`src/components/ext/property-system/index.ts`)
+- ✅ 配置了响应式样式
+
+## 🚨 发现的问题和修复
+
+### 用户反馈的问题
+1. **类型选择器丢失** ❌ - 原来有类型图标，现在只有文字
+2. **属性ID丢失** ❌ - 原来显示id和name，现在只显示name
+3. **编辑功能丢失** ❌ - 侧边栏原来可以编辑，现在变成只读
+4. **功能退化** ❌ - 用通用组件替代了专门的编辑组件
+
+### 修复措施 🔧
+
+#### 1. 恢复侧边栏编辑功能 ✅
+**文件**: `src/form-components/form-outputs/index.tsx`
+- 侧边栏模式恢复使用原来的 `EditableEntityAttributeTable`
+- 保留完整的编辑功能：ID编辑、名称编辑、类型选择、描述编辑、删除功能
+
+#### 2. 修复节点模式显示 ✅
+**文件**: `src/components/ext/property-system/PropertyTable.tsx`
+- 添加了ID列显示
+- 集成了 `EntityPropertyTypeSelector` 显示类型图标
+- 节点模式：ID + 名称 + 类型图标
+- 侧边栏模式：ID + 名称 + 类型 + 描述
+
+#### 3. 保持功能完整性
+- ✅ 侧边栏：使用原来的完整编辑器，功能不变
+- ✅ 节点：使用新的PropertyTable，但显示完整信息
+- ✅ 类型图标：集成EntityPropertyTypeSelector组件
+- ✅ 编辑功能：侧边栏保持完整编辑能力
+
+## 修复后的架构
+
+### 侧边栏模式（完整编辑）
+```
+FormOutputs (isSidebar=true)
+└── EditableEntityAttributeTable (原来的完整编辑器)
+    ├── ID编辑输入框
+    ├── 名称编辑输入框
+    ├── 类型选择器 (EntityPropertyTypeSelector)
+    ├── 描述编辑按钮
+    └── 删除按钮
 ```
 
-#### 3. 条件节点变量选择器修复
-**文件**: `src/components/ext/enhanced-condition-row/index.tsx`
-- 确保条件节点也使用增强版变量选择器
+### 节点模式（只读展示）
+```
+FormOutputs (isSidebar=false)
+└── PropertyDisplayManager
+    └── PropertyTable
+        ├── ID列 (代码样式)
+        ├── 名称列
+        └── 类型列 (EntityPropertyTypeSelector图标)
+```
 
-### 📊 验证结果
+## 核心改进
 
-#### 用户确认
-- ✅ 用户确认："诶呀，你这不是能改吗" - 修改确实有效
-- ✅ $context节点现在不可选中但可展开
-- ✅ 模块标题显示简洁，不再换行
+### 数据处理统一化
+**之前**：数据转换逻辑分散在多个组件中，重复代码多
+```typescript
+// 在form-outputs中重复的转换逻辑
+const processedProperties = Object.entries(properties)
+  .filter(([key, property]) => {
+    // 复杂的过滤逻辑...
+  })
+  .map(([key, property]) => {
+    // 重复的数据转换...
+  });
+```
 
-### 🎯 解决的核心问题
+**现在**：统一的数据管理
+```typescript
+// 统一的数据转换和过滤
+const properties = PropertyDataManager.fromJsonSchema(schema);
+const filtered = PropertyDataManager.filterByNodeType(properties, nodeType);
+const grouped = PropertyDataManager.groupByCategory(filtered);
+```
 
-1. **层级判断错误**: 正确识别$context节点的层级关系
-2. **显示优化**: 简化模块标题，避免界面混乱
-3. **组件集成**: 确保所有变量选择器都使用增强版本
+### 组件职责清晰化
+**之前**：form-outputs 承担过多职责（约200行复杂逻辑）
+**现在**：职责分离，逻辑清晰（约60行简洁代码）
 
-### 📝 经验教训
+### 多态展示统一化
+**之前**：侧边栏和节点模式使用完全不同的组件
+**现在**：同一套组件，通过配置实现多态展示
 
-1. **理解用户反馈的上下文**: 要准确理解问题的使用场景
-2. **相信代码逻辑**: 如果逻辑正确，要检查测试方法
-3. **数据结构分析**: 要基于实际数据结构而不是假设
+## 下一步验证
 
-### 📚 详细记录
-完整的案例研究已记录在：
-**[变量选择器优化案例研究](../docs/components/variable-selector-optimization-case-study.md)**
+### 需要测试的功能
+- 🔄 侧边栏编辑：ID编辑、名称编辑、类型选择、描述编辑、删除
+- 🔄 节点显示：ID显示、名称显示、类型图标显示
+- 🔄 模块属性：正确分类和显示
+- 🔄 系统属性：Start节点正确显示
 
-## ✅ 任务状态：完全成功
-- 时间：2024-12-19
-- 状态：所有问题已解决，功能完全正常
-- 用户确认：修改确实有效
+### 预期结果
+- ✅ 侧边栏功能与原来完全一致
+- ✅ 节点显示信息完整（ID + 名称 + 类型图标）
+- ✅ 用户体验不降级
+- ✅ 代码逻辑更清晰
 
-# 当前状态
-
-**无活跃任务** - 等待新的开发需求
+---
+**任务创建时间**: 2025-01-14
+**当前进度**: 90% (核心功能修复完成，待最终验证)

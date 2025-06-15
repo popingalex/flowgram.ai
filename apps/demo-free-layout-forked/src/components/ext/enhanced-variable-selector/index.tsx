@@ -144,8 +144,8 @@ export const EnhancedVariableSelector = ({
         validateStatus={hasError ? 'error' : undefined}
         expandAction="click"
         treeNodeLabelProp="label"
-        treeNodeFilterProp="title"
         filterTreeNode={filterTreeNode}
+        searchPosition="dropdown"
         showClear={false}
         arrowIcon={<IconChevronDownStroked size="small" />}
         triggerRender={triggerRender}

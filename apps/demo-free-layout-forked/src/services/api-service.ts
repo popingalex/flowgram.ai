@@ -1,6 +1,8 @@
 // 统一的API服务管理器
 // 处理真实请求和mock备选，在真实请求失败时自动使用mock数据
 
+import { nanoid } from 'nanoid';
+
 import type { Module, Entity, EnumClass, BehaviorDef, BehaviorParameter } from './types';
 import { MOCK_MODULES, MOCK_ENTITIES, MOCK_ENUM_CLASSES, MOCK_BEHAVIORS } from './mock-data';
 import { REAL_MODULES, REAL_ENTITIES, REAL_ENUMS, REAL_BEHAVIORS, REAL_GRAPHS } from '../mock-data';
@@ -120,74 +122,45 @@ const realApiRequest = async (url: string, options?: RequestInit) => {
   return response.json();
 };
 
-// Mock API处理函数
+// Mock API请求处理
 const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> => {
-  console.log(`[MOCK] ${options?.method || 'GET'} ${url}`);
-
-  // 模拟网络延迟
-  await new Promise((resolve) => setTimeout(resolve, 300));
-
   const method = options?.method || 'GET';
 
-  // 模块API - 使用真实数据
-  if (url.includes('/cm/module/')) {
-    if (method === 'GET') {
-      return url.endsWith('/cm/module/') ? REAL_MODULES : REAL_MODULES[0];
-    }
-    return { success: true };
-  }
+  // 模拟网络延迟
+  await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 200));
 
-  // 实体API - 使用真实数据
-  if (url.includes('/cm/entity/')) {
-    if (method === 'GET') {
-      return url.endsWith('/cm/entity/') ? REAL_ENTITIES : REAL_ENTITIES[0];
-    }
-    return { success: true };
-  }
-
-  // 枚举API - 使用真实数据（可能是错误对象）
-  if (url.includes('/cm/enum/')) {
-    if (method === 'GET') {
-      // 如果是错误对象，返回空数组
-      return Array.isArray(REAL_ENUMS) ? REAL_ENUMS : [];
-    }
-    return { success: true };
-  }
-
-  // 函数行为API - 使用真实数据
   if (url.includes('/hub/behaviors/')) {
-    if (method === 'GET') {
-      return url.endsWith('/hub/behaviors/') ? REAL_BEHAVIORS : REAL_BEHAVIORS[0];
-    }
-    return { success: true };
+    return REAL_BEHAVIORS;
   }
 
-  // 工作流图API - 使用真实数据
   if (url.includes('/hub/graphs/')) {
-    if (method === 'GET') {
-      return url.endsWith('/hub/graphs/') ? REAL_GRAPHS : REAL_GRAPHS[0];
-    }
-    return { success: true };
+    return REAL_GRAPHS;
   }
 
-  throw new Error(`Mock not implemented for: ${url}`);
+  if (url.includes('/cm/entity/')) {
+    return REAL_ENTITIES;
+  }
+
+  if (url.includes('/cm/module/')) {
+    return REAL_MODULES;
+  }
+
+  if (url.includes('/cm/enum/')) {
+    return REAL_ENUMS;
+  }
+
+  throw new Error(`Mock API: 未找到匹配的路由 ${method} ${url}`);
 };
 
-// 统一的API请求入口
-export const apiRequest = async (url: string, options?: RequestInit) => {
-  // 如果是mock模式，直接使用mock数据
-  if (isMockMode) {
-    return mockApiRequest(url, options);
-  }
-
-  // 尝试真实API请求，失败时使用mock作为备选
+// 统一的API请求函数
+const apiRequest = async (url: string, options?: RequestInit): Promise<any> => {
   try {
-    console.log(`[API] ${options?.method || 'GET'} ${url}`);
-    return await realApiRequest(url, options);
+    // 尝试真实API请求
+    const response = await realApiRequest(url, options);
+    return response;
   } catch (error) {
-    console.warn(`真实API请求失败，使用Mock数据作为备选:`, error);
-    console.log(`[FALLBACK] 切换到Mock模式处理请求`);
-    return mockApiRequest(url, options);
+    // 真实API失败，切换到Mock模式
+    return await mockApiRequest(url, options);
   }
 };
 
@@ -312,18 +285,79 @@ export const enumApi = {
 export const behaviorApi = {
   // 获取所有函数行为
   getAll: async (): Promise<BehaviorDef[]> => {
-    const url = buildApiUrl(API_CONFIG.ENDPOINTS.FUNCTION);
-    const rawData = await apiRequest(url);
+    const rawData = await apiRequest('http://localhost:9999/hub/behaviors/');
+    console.log('🔍 [behaviorApi] 原始API数据:', {
+      isArray: Array.isArray(rawData),
+      length: rawData?.length,
+      firstItem: rawData?.[0],
+    });
 
-    // 如果是后台真实数据，需要转换格式
-    if (Array.isArray(rawData) && rawData.length > 0 && 'returns' in rawData[0]) {
-      console.log(`[BehaviorAPI] 检测到后台数据格式，转换中... (${rawData.length} 条记录)`);
-      return rawData.map((item: BackendBehaviorDef) => transformBackendBehavior(item));
+    // 检查数据格式并转换
+    if (Array.isArray(rawData) && rawData.length > 0) {
+      const firstItem = rawData[0];
+
+      // 检查是否是后台数据格式（有fullClassName字段）或者Mock数据格式（有id和params字段）
+      if (firstItem.fullClassName) {
+        // 后台数据格式，需要转换
+        return rawData.map((item: any) => ({
+          id: item.id,
+          name: item.name || item.methodName || 'Unknown',
+          description: item.description || `Action: ${item.methodName || item.name}`,
+          functionType: item.functionType || 'backend-action',
+          category: item.className || 'Unknown',
+          fullClassName: item.fullClassName,
+          methodName: item.methodName,
+          parameters: item.parameters || [],
+          returns: item.returns || { id: 'result', type: 'void', name: 'result' },
+          returnType: item.returnType || 'void',
+          tags: item.tags || [],
+          _indexId: item._indexId || nanoid(),
+        }));
+      } else if (firstItem.id && firstItem.params) {
+        // Mock数据格式（behaviors.json），需要转换为标准格式
+        console.log('🔍 [behaviorApi] 检测到Mock数据格式，开始转换...');
+        return rawData.map((item: any) => {
+          // 从完整的Java类名中提取类名和方法名
+          const fullId = item.id || '';
+          const parts = fullId.split('.');
+          const methodName = parts[parts.length - 1] || 'unknown';
+          const className = parts[parts.length - 2] || 'Unknown';
+
+          return {
+            id: item.id,
+            name: methodName,
+            description: item.javadoc || `${className}.${methodName}`,
+            functionType: item.type === 'contract' ? 'contract' : 'backend-action',
+            category: className,
+            fullClassName: fullId,
+            methodName: methodName,
+            parameters: (item.params || []).map((param: any) => ({
+              id: param.id,
+              name: param.id,
+              type: param.type,
+              description: param.desc || '',
+              required: true,
+            })),
+            returns: {
+              id: item.returns?.id || 'result',
+              type: item.returns?.type || 'void',
+              name: item.returns?.name || 'result',
+              description: '函数返回值',
+            },
+            returnType: item.returns?.type || 'void',
+            tags: [],
+            _indexId: nanoid(),
+          };
+        });
+      } else {
+        // 已经是标准格式，直接使用
+        console.log('🔍 [behaviorApi] 检测到标准格式，直接使用');
+        return rawData;
+      }
     }
 
-    // 如果是Mock数据，直接返回
-    console.log(`[BehaviorAPI] 使用Mock数据格式 (${rawData.length} 条记录)`);
-    return rawData;
+    console.log('🔍 [behaviorApi] 没有数据或数据格式不正确，返回空数组');
+    return [];
   },
 
   // 获取单个函数行为

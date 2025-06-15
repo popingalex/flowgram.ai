@@ -105,10 +105,6 @@ export const useModuleStore = create<ModuleStore>()(
             })),
           }));
           set({ modules: modulesWithIndex, loading: false });
-          console.log(
-            `[ModuleStore] 加载完成，共 ${modulesWithIndex.length} 个模块:`,
-            modulesWithIndex
-          );
         } catch (error) {
           set({ error: (error as Error).message, loading: false });
         }
@@ -130,7 +126,6 @@ export const useModuleStore = create<ModuleStore>()(
               editingModule,
               isDirty: false,
             });
-            console.log('📝 开始编辑模块:', moduleId);
           }
         });
       },
@@ -144,11 +139,6 @@ export const useModuleStore = create<ModuleStore>()(
 
             // 🎯 智能dirty检测：检查是否真的有变化
             editState.isDirty = get().checkModuleReallyDirty(editState);
-            console.log('🔧 更新编辑模块:', {
-              moduleId,
-              updates,
-              isDirty: editState.isDirty,
-            });
           }
         });
       },
@@ -173,8 +163,6 @@ export const useModuleStore = create<ModuleStore>()(
             editState.originalModule = { ...editState.editingModule };
             editState.isDirty = false;
           });
-
-          console.log('💾 保存模块成功:', moduleId);
         } catch (error) {
           console.error('💾 保存模块失败:', error);
           throw error;
@@ -227,7 +215,6 @@ export const useModuleStore = create<ModuleStore>()(
           set((state) => {
             state.modules.push(newModule);
           });
-          console.log('➕ 创建模块成功:', newModule.id);
         } catch (error) {
           console.error('➕ 创建模块失败:', error);
           throw error;
@@ -248,8 +235,6 @@ export const useModuleStore = create<ModuleStore>()(
           set((state) => {
             state.modules[moduleIndex] = updatedModule;
           });
-
-          console.log('🔧 直接更新模块成功:', moduleId);
         } catch (error) {
           console.error('🔧 直接更新模块失败:', error);
           throw error;
@@ -264,7 +249,6 @@ export const useModuleStore = create<ModuleStore>()(
             state.modules = state.modules.filter((m) => m.id !== moduleId);
             state.editingModules.delete(moduleId);
           });
-          console.log('🗑️ 删除模块成功:', moduleId);
         } catch (error) {
           console.error('🗑️ 删除模块失败:', error);
           throw error;
@@ -295,8 +279,6 @@ export const useModuleStore = create<ModuleStore>()(
           set((state) => {
             state.modules[moduleIndex] = updatedModule;
           });
-
-          console.log('➕ 直接添加属性成功:', { moduleId, attributeId: newAttribute.id });
         } catch (error) {
           console.error('➕ 直接添加属性失败:', error);
           throw error;
@@ -330,8 +312,6 @@ export const useModuleStore = create<ModuleStore>()(
           set((state) => {
             state.modules[moduleIndex] = updatedModule;
           });
-
-          console.log('🗑️ 直接删除属性成功:', { moduleId, attributeId });
         } catch (error) {
           console.error('🗑️ 直接删除属性失败:', error);
           throw error;
@@ -357,11 +337,6 @@ export const useModuleStore = create<ModuleStore>()(
 
             // 🎯 智能dirty检测：检查是否真的有变化
             editState.isDirty = get().checkModuleReallyDirty(editState);
-            console.log('➕ 添加属性到编辑模块:', {
-              moduleId,
-              attributeId: newAttribute.id,
-              isDirty: editState.isDirty,
-            });
           }
         });
       },
@@ -379,12 +354,6 @@ export const useModuleStore = create<ModuleStore>()(
 
               // 🎯 智能dirty检测：检查是否真的有变化
               editState.isDirty = get().checkModuleReallyDirty(editState);
-              console.log('🔧 更新编辑模块属性:', {
-                moduleId,
-                attributeId,
-                updates,
-                isDirty: editState.isDirty,
-              });
             }
           }
         });
@@ -404,11 +373,6 @@ export const useModuleStore = create<ModuleStore>()(
 
               // 🎯 智能dirty检测：检查是否真的有变化
               editState.isDirty = get().checkModuleReallyDirty(editState);
-              console.log('🗑️ 从编辑模块删除属性:', {
-                moduleId,
-                attributeId: deletedAttr.id,
-                isDirty: editState.isDirty,
-              });
             }
           }
         });
@@ -423,8 +387,6 @@ export const useModuleStore = create<ModuleStore>()(
 
         if (dirtyModuleIds.length === 0) return;
 
-        console.log('💾 批量保存模块:', dirtyModuleIds);
-
         for (const moduleId of dirtyModuleIds) {
           try {
             await get().saveModule(moduleId);
@@ -438,7 +400,6 @@ export const useModuleStore = create<ModuleStore>()(
       discardAllChanges: () => {
         set((state) => {
           state.editingModules.clear();
-          console.log('❌ 丢弃所有模块更改');
         });
       },
 

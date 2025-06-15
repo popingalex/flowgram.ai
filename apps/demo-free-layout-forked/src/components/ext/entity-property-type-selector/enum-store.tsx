@@ -33,9 +33,10 @@ const initialState: EnumStoreState = {
 function enumStoreReducer(state: EnumStoreState, action: EnumStoreAction): EnumStoreState {
   switch (action.type) {
     case 'SET_ENUM_CLASSES':
+      const enumClasses = Array.isArray(action.payload) ? action.payload : [];
       return {
         ...state,
-        enumClasses: action.payload.reduce((acc, enumClass) => {
+        enumClasses: enumClasses.reduce((acc, enumClass) => {
           acc[enumClass.id] = enumClass;
           return acc;
         }, {} as Record<string, EnumClass>),

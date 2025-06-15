@@ -12,6 +12,7 @@ import {
   Tag,
   Modal,
   TextArea,
+  Typography,
 } from '@douyinfe/semi-ui';
 import {
   IconPlus,
@@ -117,6 +118,7 @@ AttributeNameInput.displayName = 'AttributeNameInput';
 export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTableProps> = React.memo(
   ({ readonly = false }) => {
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+    const [isExpanded, setIsExpanded] = useState(true); // 添加整体展开状态
     const [descriptionEditModal, setDescriptionEditModal] = useState<{
       visible: boolean;
       attributeId: string;
@@ -418,41 +420,62 @@ export const EditableEntityAttributeTable: React.FC<EditableEntityAttributeTable
 
     return (
       <div style={{ width: '100%' }}>
-        <Table
-          columns={columns}
-          dataSource={attributes}
-          rowKey="_indexId"
-          pagination={false}
-          size="small"
-          expandedRowRender={expandedRowRender}
-          expandedRowKeys={Array.from(expandedRows)}
-          hideExpandedColumn={false}
-          indentSize={0}
-          // 🎯 控制哪些行可以展开：只有复合类型才可以展开
-          rowExpandable={(record) => {
-            if (!record) return false;
-            const typedInfo = TypedParser.fromString(record.type);
-            return typedInfo.attributes.length > 0; // 只有有子属性的复合类型才可以展开
-          }}
-          onExpand={(expanded, record) => {
-            if (expanded && record && (record as any)._indexId) {
-              setExpandedRows((prev) => new Set([...prev, (record as any)._indexId]));
-            } else if (!expanded && record && (record as any)._indexId) {
-              setExpandedRows((prev) => {
-                const newSet = new Set(prev);
-                newSet.delete((record as any)._indexId);
-                return newSet;
-              });
-            }
-          }}
+        {/* 统一的标题样式 */}
+        <div
+          className="property-table-title"
           style={{
-            borderRadius: '6px',
-            border: '1px solid var(--semi-color-border)',
-            overflow: 'hidden',
-            width: '100%',
-            tableLayout: 'fixed', // 强制使用固定表格布局
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            marginBottom: '0px',
           }}
-        />
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded ? <IconChevronDown size="small" /> : <IconChevronRight size="small" />}
+          <Typography.Text strong>实体属性</Typography.Text>
+          <Typography.Text type="tertiary" size="small">
+            ({attributes.length})
+          </Typography.Text>
+        </div>
+
+        {isExpanded && (
+          <Table
+            columns={columns}
+            dataSource={attributes}
+            rowKey="_indexId"
+            pagination={false}
+            size="small"
+            expandedRowRender={expandedRowRender}
+            expandedRowKeys={Array.from(expandedRows)}
+            hideExpandedColumn={false}
+            indentSize={0}
+            // 🎯 控制哪些行可以展开：只有复合类型才可以展开
+            rowExpandable={(record) => {
+              if (!record) return false;
+              const typedInfo = TypedParser.fromString(record.type);
+              return typedInfo.attributes.length > 0; // 只有有子属性的复合类型才可以展开
+            }}
+            onExpand={(expanded, record) => {
+              if (expanded && record && (record as any)._indexId) {
+                setExpandedRows((prev) => new Set([...prev, (record as any)._indexId]));
+              } else if (!expanded && record && (record as any)._indexId) {
+                setExpandedRows((prev) => {
+                  const newSet = new Set(prev);
+                  newSet.delete((record as any)._indexId);
+                  return newSet;
+                });
+              }
+            }}
+            style={{
+              borderRadius: '6px',
+              border: '1px solid var(--semi-color-border)',
+              overflow: 'hidden',
+              width: '100%',
+              tableLayout: 'fixed', // 强制使用固定表格布局
+            }}
+          />
+        )}
 
         {/* 描述编辑弹窗 */}
         <Modal

@@ -205,7 +205,6 @@ ModuleAttributeNameInput.displayName = 'ModuleAttributeNameInput';
 
 // 🎯 边栏模块属性表 - 只显示已关联的模块，不支持编辑
 const SidebarModulePropertyTable: React.FC<ModulePropertyTreeTableProps> = ({
-  showTitle = false, // 默认不显示标题，避免重复
   title = '模块属性',
 }) => {
   const [configModalVisible, setConfigModalVisible] = useState(false);
@@ -377,12 +376,6 @@ const SidebarModulePropertyTable: React.FC<ModulePropertyTreeTableProps> = ({
 
   return (
     <div>
-      {showTitle && (
-        <div style={{ marginBottom: 16 }}>
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>{title}</h3>
-        </div>
-      )}
-
       <Table
         columns={sidebarColumns}
         dataSource={linkedModuleTreeData}

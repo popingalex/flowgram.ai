@@ -17,9 +17,7 @@ export const renderForm = () => (
     <FormHeader />
     <FormContent>
       <FormEntityMetas />
-      <Typography.Title heading={6}>实体属性</Typography.Title>
       <FormOutputs />
-      <Typography.Title heading={6}>实体模块</Typography.Title>
       <FormModuleOutputs />
     </FormContent>
   </>
