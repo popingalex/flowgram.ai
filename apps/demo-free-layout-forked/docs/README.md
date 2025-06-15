@@ -74,6 +74,12 @@
     - 详细实现步骤
     - 验证方案和测试
 
+13. **[变量选择器优化案例研究](./components/variable-selector-optimization-case-study.md)** ✅已完成
+    - 完整的问题分析和解决过程
+    - 调试过程中的经验教训
+    - $context节点层级判断修复
+    - 模块标题显示优化
+
 ## 最新更新
 
 ### 2025-01-14 - Start 节点属性展示修复
