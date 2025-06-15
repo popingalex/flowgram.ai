@@ -127,6 +127,35 @@ interface WorkflowEditorProps {
 // FormModuleOutputs: 模块属性表
 ```
 
+#### 4. 条件节点组件
+
+条件节点支持状态分组显示功能：
+
+```typescript
+// 位置：src/nodes/condition/condition-inputs/
+// 功能：
+// - 按状态ID分组显示条件
+// - 提供状态标识和视觉分隔
+// - 支持状态名称友好显示
+// - 保持原有编辑功能
+
+interface StateGroupProps {
+  stateId: string;
+  children: React.ReactNode;
+}
+
+// 状态分组逻辑
+const conditionsByState: Record<string, Array<{ child: any; index: number }>> = {};
+field.map((child: any, index: number) => {
+  const stateId = child.value?.key || '$out';
+  if (!conditionsByState[stateId]) {
+    conditionsByState[stateId] = [];
+  }
+  conditionsByState[stateId].push({ child, index });
+  return null;
+});
+```
+
 ### 属性展示组件
 
 #### UnifiedPropertyDisplay

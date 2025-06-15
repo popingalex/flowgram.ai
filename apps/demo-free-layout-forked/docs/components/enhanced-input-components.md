@@ -104,6 +104,104 @@ enhanced-condition-row/
 └── __tests__/         # 测试文件
 ```
 
+### 4. condition-inputs 条件输入组件（状态分组功能）✅
+
+#### 功能描述
+- 条件节点的输入组件，支持按状态分组显示条件
+- 解决了用户无法区分不同状态条件的问题
+- 提供清晰的视觉分组和状态标识
+
+#### 核心特性
+
+##### 🎯 状态分组显示
+```typescript
+// 按状态ID分组条件
+const conditionsByState: Record<string, Array<{ child: any; index: number }>> = {};
+
+field.map((child: any, index: number) => {
+  const stateId = child.value?.key || '$out';
+  if (!conditionsByState[stateId]) {
+    conditionsByState[stateId] = [];
+  }
+  conditionsByState[stateId].push({ child, index });
+  return null;
+});
+```
+
+##### 🎯 状态标识组件
+```typescript
+function StateGroup({ stateId, children }: { stateId: string; children: React.ReactNode }) {
+  const getStateDisplayName = (stateId: string) => {
+    if (stateId === '$out') return '默认输出';
+
+    // 处理格式如 "Vehicle.dumperAction_state" -> "dumperAction"
+    const parts = stateId.split('.');
+    if (parts.length > 1) {
+      const lastPart = parts[parts.length - 1];
+      return lastPart.replace('_state', '').replace(/([A-Z])/g, ' $1').trim();
+    }
+
+    return stateId;
+  };
+
+  return (
+    <div style={{ marginBottom: '16px' }}>
+      <Divider
+        margin="12px"
+        align="left"
+        style={{
+          borderColor: '#1890ff',
+          borderWidth: '1px'
+        }}
+      >
+        <Typography.Text
+          strong
+          style={{
+            color: '#1890ff',
+            fontSize: '13px',
+            padding: '2px 8px',
+            backgroundColor: '#f0f8ff',
+            borderRadius: '4px',
+            border: '1px solid #d6e4ff'
+          }}
+        >
+          状态: {getStateDisplayName(stateId)}
+        </Typography.Text>
+      </Divider>
+      <div style={{ paddingLeft: '8px' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+```
+
+##### 🎯 视觉设计优化
+- **蓝色分隔线**：使用带颜色的分隔线区分不同状态
+- **状态标签**：显示友好的状态名称，自动从状态ID提取
+- **层次缩进**：每个状态组的条件都有左侧缩进，增强层次感
+- **保持功能**：完全保留原有的条件编辑和删除功能
+
+#### 解决的问题
+- ❌ **问题**：条件节点中的多个条件混在一起显示，用户无法区分哪些条件属于同一个状态
+- ✅ **解决**：按状态分组显示，每组条件都有明确的状态标识和视觉分隔
+
+#### 数据流程
+```
+后端数据 (states[].conditions)
+  ↓
+graph-to-workflow.ts (添加_stateId标记)
+  ↓
+condition-inputs/index.tsx (按_stateId分组显示)
+  ↓
+用户界面 (状态分组的条件列表)
+```
+
+#### 文件位置
+```
+src/nodes/condition/condition-inputs/index.tsx
+```
+
 ## 🎯 关键优化点
 
 ### 1. 变量选择器交互优化
@@ -253,6 +351,13 @@ import { EnhancedDynamicValueInput } from '@/components/ext/enhanced-dynamic-val
 - [扩展组件开发规范](../development/extension-component-guidelines.md)
 
 ## 🔄 更新记录
+
+### 2025-01-14 - 条件节点状态分组功能 ✅
+- ✅ 添加条件节点状态分组显示功能
+- ✅ 实现状态标识组件 StateGroup
+- ✅ 优化条件分组的视觉设计（蓝色分隔线、状态标签）
+- ✅ 解决用户无法区分不同状态条件的问题
+- ✅ 保持原有条件编辑和删除功能完整性
 
 ### 2025-01-14 - 变量选择器优化
 - ✅ $context 节点设置为不可选中但可展开
