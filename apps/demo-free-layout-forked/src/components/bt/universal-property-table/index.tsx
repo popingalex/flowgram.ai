@@ -34,6 +34,12 @@ import { useModuleStore } from '../../../stores/module.store';
 import { useCurrentEntityActions, useCurrentEntityStore } from '../../../stores';
 import type { Attribute } from '../../../services/types';
 
+// 扩展Attribute类型以支持模块信息
+interface ExtendedAttribute extends Attribute {
+  moduleId?: string;
+  moduleName?: string;
+}
+
 const { Text } = Typography;
 
 export interface UniversalPropertyTableProps {
@@ -53,26 +59,16 @@ export interface UniversalPropertyTableProps {
 // 独立的属性字段组件
 const AttributeIdInput = React.memo(
   ({
-    attributeId,
+    record,
     onFieldChange,
     readonly: readonlyProp,
   }: {
-    attributeId: string;
+    record: ExtendedAttribute;
     onFieldChange: (id: string, field: string, value: any) => void;
     readonly: boolean;
   }) => {
-    const value = useCurrentEntityStore(
-      useShallow((state) => {
-        const attr = state.editingEntity?.attributes?.find((a) => a._indexId === attributeId);
-        return attr?.id || '';
-      })
-    );
-    const isModuleProperty = useCurrentEntityStore(
-      useShallow((state) => {
-        const attr = state.editingEntity?.attributes?.find((a) => a._indexId === attributeId);
-        return attr?.isModuleProperty || false;
-      })
-    );
+    const value = record.id || '';
+    const isModuleProperty = record.isModuleProperty || false;
 
     if (readonlyProp) {
       return (
@@ -91,7 +87,7 @@ const AttributeIdInput = React.memo(
     return (
       <Input
         value={value}
-        onChange={(newValue) => onFieldChange(attributeId, 'id', newValue)}
+        onChange={(newValue) => onFieldChange(record._indexId, 'id', newValue)}
         size="small"
         readOnly={isModuleProperty}
         placeholder="属性ID"
@@ -107,26 +103,16 @@ AttributeIdInput.displayName = 'AttributeIdInput';
 
 const AttributeNameInput = React.memo(
   ({
-    attributeId,
+    record,
     onFieldChange,
     readonly: readonlyProp,
   }: {
-    attributeId: string;
+    record: ExtendedAttribute;
     onFieldChange: (id: string, field: string, value: any) => void;
     readonly: boolean;
   }) => {
-    const value = useCurrentEntityStore(
-      useShallow((state) => {
-        const attr = state.editingEntity?.attributes?.find((a) => a._indexId === attributeId);
-        return attr?.name || '';
-      })
-    );
-    const isModuleProperty = useCurrentEntityStore(
-      useShallow((state) => {
-        const attr = state.editingEntity?.attributes?.find((a) => a._indexId === attributeId);
-        return attr?.isModuleProperty || false;
-      })
-    );
+    const value = record.name || '';
+    const isModuleProperty = record.isModuleProperty || false;
 
     if (readonlyProp) {
       return (
@@ -144,7 +130,7 @@ const AttributeNameInput = React.memo(
     return (
       <Input
         value={value}
-        onChange={(newValue) => onFieldChange(attributeId, 'name', newValue)}
+        onChange={(newValue) => onFieldChange(record._indexId, 'name', newValue)}
         size="small"
         readOnly={isModuleProperty}
         placeholder="属性名称"
@@ -283,7 +269,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
         width: 120,
         render: (_: any, record: Attribute) => (
           <AttributeIdInput
-            attributeId={record._indexId}
+            record={record}
             onFieldChange={stableFieldChange}
             readonly={isReadonly}
           />
@@ -296,7 +282,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
         render: (_: any, record: Attribute) => (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <AttributeNameInput
-              attributeId={record._indexId}
+              record={record}
               onFieldChange={stableFieldChange}
               readonly={isReadonly}
             />

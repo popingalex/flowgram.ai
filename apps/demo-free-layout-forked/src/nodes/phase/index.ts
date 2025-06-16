@@ -21,9 +21,9 @@ export const PhaseNodeRegistry: FlowNodeRegistry = {
   meta: {
     /**
      * Mark as subcanvas
-     * 子画布标记
+     * 子画布标记 - 暂时禁用，避免错误渲染成子画布
      */
-    isContainer: true,
+    isContainer: false,
     /**
      * The subcanvas default size setting
      * 子画布默认大小设置

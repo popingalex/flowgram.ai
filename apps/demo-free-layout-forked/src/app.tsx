@@ -29,6 +29,8 @@ import {
   IconGlobe,
   IconSave,
   IconUndo,
+  IconArticle,
+  IconBranch,
 } from '@douyinfe/semi-icons';
 
 // 现有的组件
@@ -52,7 +54,7 @@ import { Editor } from './editor';
 import { TestNewArchitecture } from './components/test-new-architecture';
 // import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
 import { EnumStoreProvider } from './components/ext/type-selector-ext/enum-store';
-import { BehaviorTestPage } from './components/ext/behavior-test';
+// import { BehaviorTestPage } from './components/ext/behavior-test'; // 已删除
 import { EntityWorkflowSyncer } from './components/entity-workflow-syncer';
 import { EntitySelector } from './components/entity-selector';
 // import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
@@ -318,7 +320,7 @@ const AppContent: React.FC = () => {
       case 'test-new-architecture':
         return <TestNewArchitecture />;
       case 'test-behavior':
-        return <BehaviorTestPage />;
+        return <div>测试页面已删除</div>;
       case 'test-variable-selector':
         return <div>VariableSelector测试页面</div>;
       default:
@@ -334,7 +336,7 @@ const AppContent: React.FC = () => {
           selectedKeys={[currentPage]}
           onSelect={handleNavSelect}
           header={{
-            logo: <IconSemiLogo style={{ fontSize: 36 }} />,
+            logo: <IconBranch style={{ fontSize: 36 }} />,
             text: 'Flowgram 流程设计器',
           }}
           footer={

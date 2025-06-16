@@ -92,6 +92,11 @@ export const NodeModuleDisplay: React.FC<NodeModuleDisplayProps> = ({ modules })
           backgroundColor: 'transparent',
         },
       })}
+      style={{
+        borderRadius: '6px',
+        border: '1px solid var(--semi-color-border)',
+        overflow: 'hidden',
+      }}
     />
   );
 };
