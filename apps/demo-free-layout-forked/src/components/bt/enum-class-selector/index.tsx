@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Button, Modal, Input, Space, Typography, List } from '@douyinfe/semi-ui';
 import { IconPlus } from '@douyinfe/semi-icons';
 
-import { useEnumStore } from '../type-selector-ext/enum-store';
+import { useEnumStore } from '../../ext/type-selector-ext/enum-store';
 import type { EnumClass } from '../../../services/types';
 
 const { Text } = Typography;

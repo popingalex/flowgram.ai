@@ -16,7 +16,7 @@ import '@flowgram.ai/free-layout-editor/index.css';
 import '../../styles/index.css';
 import { DemoTools } from '../tools';
 import { SidebarRenderer, SidebarProvider } from '../sidebar';
-import { EnumStoreProvider } from '../ext/entity-property-type-selector/enum-store';
+import { EnumStoreProvider } from '../ext/type-selector-ext/enum-store';
 import {
   convertGraphToWorkflowData,
   hasWorkflowGraphForEntity,

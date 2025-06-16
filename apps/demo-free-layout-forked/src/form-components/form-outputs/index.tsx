@@ -7,8 +7,7 @@ import { PropertyData } from '../../utils/property-data-manager';
 import { useCurrentEntity } from '../../stores/current-entity.store';
 import { useNodeRenderContext } from '../../hooks';
 import { IsSidebarContext } from '../../context';
-import { PropertyDisplayManager } from '../../components/ext/property-system/PropertyDisplayManager';
-import { SidebarEditor as EditableEntityAttributeTable } from '../../components/ext/entity-property-tables';
+import { UniversalPropertyTable } from '../../components/bt/universal-property-table';
 
 export interface FormOutputsProps {
   // 移除isSidebar参数，自动判断位置
@@ -22,8 +21,8 @@ export function FormOutputs() {
   const isSidebar = React.useContext(IsSidebarContext);
 
   // 获取节点信息
-  const nodeType = node?.type || 'unknown';
-  const isStartNode = nodeType === 'start' || nodeType === 'FlowNodeEntity';
+
+  const isStart = node.isStart;
 
   // 属性编辑处理（仅侧边栏使用）
   const handleEdit = (property: PropertyData) => {
@@ -38,26 +37,20 @@ export function FormOutputs() {
     // TODO: 实现属性选择逻辑
   };
 
-  if (isSidebar) {
-    // 侧边栏模式：使用原来的完整编辑器
-    return <EditableEntityAttributeTable readonly={false} />;
+  // 根据节点类型显示不同内容
+  if (isStart) {
+    // 实体节点：显示实体属性
+    return (
+      <UniversalPropertyTable
+        mode={isSidebar ? 'sidebar' : 'node'}
+        editable={isSidebar}
+        showEntityProperties={true}
+        showModuleProperties={false}
+        entityTitle="实体属性"
+      />
+    );
+  } else {
+    // 非实体节点：不显示实体属性
+    return null;
   }
-
-  // 节点模式：使用新的PropertyDisplayManager，纯只读
-  return (
-    <Field name="data.outputs">
-      {({ field: { value } }: FieldRenderProps<IJsonSchema>) => (
-        <PropertyDisplayManager
-          dataSource="schema"
-          schema={value}
-          mode="node"
-          nodeType={nodeType}
-          editable={false}
-          showModules={isStartNode}
-          showSystem={isStartNode}
-          // 节点模式不传递编辑回调，确保纯只读
-        />
-      )}
-    </Field>
-  );
 }

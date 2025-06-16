@@ -51,7 +51,7 @@ import { toggleMockMode, getApiMode } from './services/api-service';
 import { Editor } from './editor';
 import { TestNewArchitecture } from './components/test-new-architecture';
 // import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
-import { EnumStoreProvider } from './components/ext/entity-property-type-selector/enum-store';
+import { EnumStoreProvider } from './components/ext/type-selector-ext/enum-store';
 import { BehaviorTestPage } from './components/ext/behavior-test';
 import { EntityWorkflowSyncer } from './components/entity-workflow-syncer';
 import { EntitySelector } from './components/entity-selector';

@@ -25,8 +25,8 @@ import {
   IconSetting,
 } from '@douyinfe/semi-icons';
 
-import { DataRestrictionModal } from '../type-selector-ext/data-restriction-modal';
-import { EntityPropertyTypeSelector } from '../type-selector-ext';
+import { DataRestrictionModal } from '../../ext/type-selector-ext/data-restriction-modal';
+import { EntityPropertyTypeSelector } from '../../ext/type-selector-ext';
 import { TypedParser, Primitive } from '../../../typings/mas/typed';
 import { useCurrentEntityActions, useCurrentEntityStore } from '../../../stores';
 import type { Attribute } from '../../../services/types'; // 从services导入Attribute类型

@@ -25,8 +25,8 @@ import {
   IconUndo,
 } from '@douyinfe/semi-icons';
 
-import { EntityPropertyTypeSelector } from '../type-selector-ext';
-import { ModuleSelectorModal } from '../module-selector';
+import { ModuleSelectorModal } from '../module-table';
+import { EntityPropertyTypeSelector } from '../../ext/type-selector-ext';
 import { TypedParser, Primitive } from '../../../typings/mas/typed';
 import { useModuleStore } from '../../../stores/module.store';
 import { useEntityList } from '../../../stores';

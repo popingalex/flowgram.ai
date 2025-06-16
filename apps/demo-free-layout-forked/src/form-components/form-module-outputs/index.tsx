@@ -1,18 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 
-import { nanoid } from 'nanoid';
-import { Typography, Button } from '@douyinfe/semi-ui';
-import { IconChevronDown, IconChevronRight } from '@douyinfe/semi-icons';
-
-import { useModuleStore } from '../../stores/module.store';
 import { useCurrentEntity, useCurrentEntityActions } from '../../stores';
 import { useIsSidebar } from '../../hooks';
 import { ModuleSelectorModal } from '../../components/ext/module-selector';
-import {
-  NodeDisplay as NodeModuleDisplay,
-  SidebarTree as ModulePropertyTreeTable,
-} from '../../components/ext/module-property-tables';
-import type { NodeModuleData } from '../../components/ext/module-property-tables';
+import { UniversalPropertyTable } from '../../components/bt/universal-property-table';
 
 interface FormModuleOutputsProps {
   isSidebar?: boolean;
@@ -23,7 +14,6 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
   const isSidebar = propIsSidebar !== undefined ? propIsSidebar : hookIsSidebar;
   const { editingEntity } = useCurrentEntity();
   const { updateEntity } = useCurrentEntityActions();
-  const { getModulesByIds } = useModuleStore();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [focusModuleId, setFocusModuleId] = useState<string | undefined>();
@@ -53,95 +43,31 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
     setIsModalVisible(false);
   };
 
-  // 准备节点模块数据 - 使用nanoid匹配
-  const nodeModuleData: NodeModuleData[] = useMemo(() => {
-    if (!currentEntity?.bundles) return [];
-
-    const { modules } = useModuleStore.getState();
-
-    // 通过nanoid或ID匹配模块
-    const matchedModules = modules.filter((module) => {
-      const isMatched =
-        currentEntity.bundles.includes(module._indexId || '') ||
-        currentEntity.bundles.includes(module.id);
-      return isMatched;
-    });
-
-    return matchedModules.map((module) => ({
-      key: `module-${module._indexId || module.id}`, // 使用nanoid作为key
-      id: module.id,
-      name: module.name,
-      attributeCount: module.attributes?.length || 0,
-      attributes:
-        module.attributes?.map((attr: any) => ({
-          id: attr.id,
-          name: attr.name,
-          type: attr.type,
-        })) || [],
-    }));
-  }, [currentEntity]);
+  // 不再需要准备模块数据，PropertyPanel内部会处理
 
   if (!currentEntity) {
     return null;
   }
 
-  // 边栏模式：使用树形表格
-  if (isSidebar) {
-    return (
-      <>
-        <div
-          className="property-table-title"
-          style={{
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            marginBottom: '0px',
-          }}
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          {isExpanded ? <IconChevronDown size="small" /> : <IconChevronRight size="small" />}
-          <Typography.Text strong>实体模块</Typography.Text>
-          <Typography.Text type="tertiary" size="small">
-            ({nodeModuleData.length})
-          </Typography.Text>
-        </div>
-        {isExpanded && <ModulePropertyTreeTable />}
+  return (
+    <>
+      <UniversalPropertyTable
+        mode={isSidebar ? 'sidebar' : 'node'}
+        editable={isSidebar}
+        showEntityProperties={false}
+        showModuleProperties={true}
+        moduleTitle="实体模块"
+      />
 
-        {isModalVisible && currentEntity && (
-          <ModuleSelectorModal
-            visible={isModalVisible}
-            onConfirm={handleModalConfirm}
-            onCancel={handleModalCancel}
-            selectedModuleIds={currentEntity.bundles} // 直接传递bundles，包含nanoid
-            focusModuleId={focusModuleId}
-          />
-        )}
-      </>
-    );
-  }
-
-  // 节点模式：使用简单模块显示
-  return nodeModuleData.length > 0 ? (
-    <div>
-      <div
-        className="property-table-title"
-        style={{
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          marginBottom: '0px',
-        }}
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        {isExpanded ? <IconChevronDown size="small" /> : <IconChevronRight size="small" />}
-        <Typography.Text strong>实体模块</Typography.Text>
-        <Typography.Text type="tertiary" size="small">
-          ({nodeModuleData.length})
-        </Typography.Text>
-      </div>
-      {isExpanded && <NodeModuleDisplay modules={nodeModuleData} />}
-    </div>
-  ) : null;
+      {isModalVisible && currentEntity && (
+        <ModuleSelectorModal
+          visible={isModalVisible}
+          onConfirm={handleModalConfirm}
+          onCancel={handleModalCancel}
+          selectedModuleIds={currentEntity.bundles}
+          focusModuleId={focusModuleId}
+        />
+      )}
+    </>
+  );
 }

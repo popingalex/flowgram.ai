@@ -7,7 +7,7 @@ import { IconPlus, IconCrossCircleStroked } from '@douyinfe/semi-icons';
 import { useNodeRenderContext } from '../../../hooks';
 import { FormItem } from '../../../form-components';
 import { Feedback } from '../../../form-components';
-import { EnhancedConditionRow } from '../../../components/ext/enhanced-condition-row';
+import { EnhancedConditionRow } from '../../../components/ext/condition-row-ext';
 import { ConditionPort } from './styles';
 
 interface ConditionValue {

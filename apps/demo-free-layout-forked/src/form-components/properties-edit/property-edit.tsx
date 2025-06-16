@@ -5,7 +5,7 @@ import { Input, Button } from '@douyinfe/semi-ui';
 import { IconCrossCircleStroked } from '@douyinfe/semi-icons';
 
 import { ExtendedJsonSchema } from '../../typings/extended-json-schema';
-import { EnhancedDynamicValueInput } from '../../components/ext/enhanced-dynamic-value-input';
+import { EnhancedDynamicValueInput } from '../../components/ext/dynamic-value-input-ext';
 import { LeftColumn, Row } from './styles';
 
 export interface PropertyEditProps {

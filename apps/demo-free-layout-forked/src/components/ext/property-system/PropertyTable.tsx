@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Table, Button, Space, Typography, Tooltip } from '@douyinfe/semi-ui';
 import { IconEdit, IconDelete, IconChevronDown, IconChevronRight } from '@douyinfe/semi-icons';
 
-import { EntityPropertyTypeSelector } from '../entity-property-type-selector';
+import { EntityPropertyTypeSelector } from '../type-selector-ext';
 import { PropertyData } from '../../../utils/property-data-manager';
 
 export interface PropertyTableProps {

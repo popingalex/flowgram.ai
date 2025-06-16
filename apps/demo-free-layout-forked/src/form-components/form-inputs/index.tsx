@@ -4,7 +4,7 @@ import { IJsonSchema as JsonSchema } from '@flowgram.ai/form-materials';
 import { FormItem } from '../form-item';
 import { Feedback } from '../feedback';
 import { useNodeRenderContext } from '../../hooks';
-import { EnhancedDynamicValueInput } from '../../components/ext/enhanced-dynamic-value-input/index';
+import { EnhancedDynamicValueInput } from '../../components/ext/dynamic-value-input-ext/index';
 
 export function FormInputs() {
   const { readonly } = useNodeRenderContext();

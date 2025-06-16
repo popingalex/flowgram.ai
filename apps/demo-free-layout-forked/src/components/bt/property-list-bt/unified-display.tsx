@@ -3,7 +3,7 @@ import React from 'react';
 import { Table, Tag, Button, Tooltip } from '@douyinfe/semi-ui';
 import { IconSetting, IconMinus } from '@douyinfe/semi-icons';
 
-import { EntityPropertyTypeSelector } from '../type-selector-ext';
+import { EntityPropertyTypeSelector } from '../../ext/type-selector-ext';
 
 export interface PropertyData {
   key: string;

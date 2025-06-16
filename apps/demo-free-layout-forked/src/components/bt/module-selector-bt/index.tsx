@@ -242,44 +242,41 @@ const ModuleItem: React.FC<ModuleItemProps> = ({
             backgroundColor: 'var(--semi-color-bg-1)',
           }}
         >
-          {/* 使用统一的属性表格组件 */}
-          <div style={{ fontSize: '12px' }}>
-            <Text strong size="small" style={{ marginBottom: '8px', display: 'block' }}>
-              模块属性 ({module.attributes.length})
+          <Text strong size="small" style={{ marginBottom: '8px', display: 'block' }}>
+            模块属性 ({module.attributes.length})
+          </Text>
+          {module.attributes.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {module.attributes.map((attr, index) => (
+                <div
+                  key={attr.id || index}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '4px 8px',
+                    backgroundColor: 'var(--semi-color-bg-0)',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                  }}
+                >
+                  <span>
+                    <Text strong>{attr.name || attr.id}</Text>
+                    <Text type="tertiary" style={{ marginLeft: '8px' }}>
+                      {attr.id}
+                    </Text>
+                  </span>
+                  <Tag size="small" color="cyan">
+                    {attr.type}
+                  </Tag>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <Text type="tertiary" size="small">
+              暂无属性
             </Text>
-            {module.attributes.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {module.attributes.map((attr, index) => (
-                  <div
-                    key={attr.id || index}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '4px 8px',
-                      backgroundColor: 'var(--semi-color-bg-0)',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                    }}
-                  >
-                    <span>
-                      <Text strong>{attr.name || attr.id}</Text>
-                      <Text type="tertiary" style={{ marginLeft: '8px' }}>
-                        {attr.id}
-                      </Text>
-                    </span>
-                    <Tag size="small" color="cyan">
-                      {attr.type}
-                    </Tag>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <Text type="tertiary" size="small">
-                暂无属性
-              </Text>
-            )}
-          </div>
+          )}
         </div>
       )}
     </div>
