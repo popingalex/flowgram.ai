@@ -239,10 +239,6 @@ const EntityPropertySyncer: React.FC = () => {
               const moduleBusinessId = attr.id; // 直接使用完整ID，不需要添加前缀
               const moduleAttrIndexId = attr._indexId || `module_${module.id}_${attr.id}`;
 
-              console.log(
-                `[WorkflowEditor] 模块属性处理: ${attr.id} (displayId: ${attr.displayId || 'N/A'})`
-              );
-
               properties[moduleBusinessId] = {
                 ...attr, // 保留所有原始属性
                 id: moduleBusinessId, // 使用业务ID

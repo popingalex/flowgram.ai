@@ -101,45 +101,6 @@ export const EnhancedVariableSelector = ({
 
   const renderSelectedItem = useCallback(
     (_option: TreeNodeData) => {
-      // 🎯 只在有问题且数据已加载时打印错误信息，避免数据加载期间的误报
-      if (
-        process.env.NODE_ENV === 'development' &&
-        !_option?.keyPath &&
-        treeData.length > 0 &&
-        treeValue
-      ) {
-        // 收集所有可选择的路径用于调试
-        const collectSelectablePaths = (nodes: TreeNodeData[], paths: string[] = []): string[] => {
-          nodes.forEach((node) => {
-            if (!node.disabled && (!node.children || node.children.length === 0)) {
-              paths.push(node.value || node.keyPath?.join('.') || '');
-            }
-            if (node.children) {
-              collectSelectablePaths(node.children, paths);
-            }
-          });
-          return paths;
-        };
-
-        const allSelectablePaths = collectSelectablePaths(treeData);
-        const moduleRelatedPaths = allSelectablePaths.filter((path) => path.includes('/'));
-
-        console.error('[变量选择器] 无法找到选中项:', {
-          expectedPath: treeValue,
-          currentValue: value,
-          option: _option,
-          treeDataLength: treeData.length,
-          allSelectablePathsCount: allSelectablePaths.length,
-          moduleRelatedPaths: moduleRelatedPaths,
-          // 检查是否有相似的路径
-          similarPaths: allSelectablePaths.filter(
-            (path) =>
-              path.includes(treeValue?.split('.').pop() || '') ||
-              treeValue?.includes(path.split('.').pop() || '')
-          ),
-        });
-      }
-
       if (!_option?.keyPath) {
         return (
           <Tag
@@ -153,44 +114,38 @@ export const EnhancedVariableSelector = ({
         );
       }
 
+      // 🎯 为选中项构建更好的显示格式
+      const keyPath = _option.keyPath as string[];
+      let displayText = '';
+
+      if (keyPath.length >= 3 && keyPath[1] && keyPath[2]?.includes('/')) {
+        // 模块属性格式：$start.controlled/commands -> 显示为 controlled/commands
+        const moduleProperty = keyPath[2];
+        displayText = moduleProperty;
+      } else {
+        // 其他情况使用keyPath的最后一段
+        displayText = keyPath[keyPath.length - 1] || '';
+      }
+
       return (
         <Tag
           prefixIcon={renderIcon(_option.rootMeta?.icon || _option?.icon)}
           closable={!readonly}
           onClose={() => onChange(undefined)}
         >
-          <span style={{ fontWeight: 500 }}>
-            {_option.rootMeta?.title ? `${_option.rootMeta?.title} -` : null}
-          </span>
-          {_option.label}
+          {displayText}
         </Tag>
       );
     },
     [readonly, config?.notFoundContent, onChange, renderIcon]
   );
 
-  // 如果变量数据还没加载完成且有值，先显示加载状态
-  if (treeData.length === 0 && treeValue) {
-    return (
-      <TreeSelect
-        size="small"
-        disabled={true}
-        value={treeValue}
-        placeholder="正在加载变量..."
-        style={{ ...style, backgroundColor: '#f8f9fa' }}
-        renderSelectedItem={() => (
-          <Tag color="blue">{Array.isArray(value) ? value.join('.') : treeValue}</Tag>
-        )}
-      />
-    );
-  }
-
   return (
     <>
       <TreeSelect
         key={`${treeData.length}-${treeValue || 'empty'}`}
         dropdownMatchSelectWidth={false}
-        disabled={readonly}
+        disabled={false}
         treeData={treeData}
         size="small"
         value={treeValue}

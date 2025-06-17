@@ -141,18 +141,13 @@ function convertGraphNodeToWorkflowNode(
 
       const conditions = existingConditions || convertGraphConditionsToConditionData(allConditions);
 
-      // 🔧 修复：condition节点标题处理，去掉$condition/前缀显示实际名称
-      let conditionTitle = graphNode.name || '条件分支';
-      if (graphNode.id && graphNode.id.startsWith('$condition/')) {
-        const baseName = graphNode.id.replace('$condition/', '') || '条件分支';
-        conditionTitle = `${baseName} 条件`;
-      }
+      let conditionTitle = graphNode.id;
 
       return {
         ...baseNode,
         data: {
           ...baseNode.data,
-          title: conditionTitle, // 显示去掉前缀的条件名
+          title: conditionTitle,
           conditions:
             conditions.length > 0
               ? conditions
@@ -520,18 +515,58 @@ function analyzePhaseStructure(graph: WorkflowGraph) {
 }
 
 // 将后台工作流图边转换为编辑器连线格式
-function convertGraphEdgesToWorkflowEdges(edges: WorkflowGraphEdge[]): any[] {
-  return edges.map((edge, index) => {
-    // 🔧 修复：保留sourcePortID和targetPortID，特别是condition节点的$out端口
+function convertGraphEdgesToWorkflowEdges(edges: WorkflowGraphEdge[], nodes?: any[]): any[] {
+  console.log('[GraphConverter] 开始转换edges:', {
+    inputEdgesCount: edges.length,
+    edges: edges.slice(0, 3), // 只显示前3条避免日志过多
+  });
+
+  // 🔧 新增：构建节点到条件key的映射，用于修复条件节点的端口ID
+  const nodeToConditionKeyMap = new Map<string, string>();
+  if (nodes) {
+    nodes.forEach((node) => {
+      if (node.type === 'condition' && node.data?.conditions && node.data.conditions.length > 0) {
+        // 对于条件节点，使用第一个条件的key作为主要输出端口
+        const firstConditionKey = node.data.conditions[0].key;
+        if (firstConditionKey && firstConditionKey !== '$out') {
+          nodeToConditionKeyMap.set(node.id, firstConditionKey);
+        }
+      }
+    });
+  }
+
+  const convertedEdges = edges.map((edge, index) => {
+    let sourcePortID = edge.input.socket;
+    let targetPortID = edge.output.socket === '$in' ? undefined : edge.output.socket;
+
+    // 🔧 修复：如果源节点是条件节点且使用$out端口，尝试找到正确的条件端口ID
+    if (sourcePortID === '$out' && nodeToConditionKeyMap.has(edge.input.node)) {
+      const conditionKey = nodeToConditionKeyMap.get(edge.input.node);
+      if (conditionKey) {
+        sourcePortID = conditionKey;
+        console.log(
+          `[GraphConverter] 修复条件节点端口: ${edge.input.node} $out -> ${conditionKey}`
+        );
+      }
+    }
+
     const edgeData = {
       sourceNodeID: edge.input.node,
       targetNodeID: edge.output.node,
-      sourcePortID: edge.input.socket, // 保留所有sourcePortID，包括$out
-      targetPortID: edge.output.socket === '$in' ? undefined : edge.output.socket, // 只有$in才省略
+      sourcePortID: sourcePortID,
+      targetPortID: targetPortID,
     };
 
     return edgeData;
   });
+
+  console.log('[GraphConverter] 转换完成edges:', {
+    outputEdgesCount: convertedEdges.length,
+    edges: convertedEdges.slice(0, 5), // 显示前5条
+    conditionPortMappings: Object.fromEntries(nodeToConditionKeyMap), // 显示条件节点端口映射
+  });
+
+  return convertedEdges;
 }
 
 // 主转换函数：将后台工作流图转换为编辑器可用的工作流数据
@@ -556,8 +591,8 @@ export function convertGraphToWorkflowData(graph: WorkflowGraph): any {
       })
       .filter(Boolean); // 过滤掉转换失败的节点
 
-    // 转换所有连线
-    const mainEdges = convertGraphEdgesToWorkflowEdges(graph.edges || []);
+    // 🔧 修复：传递节点信息给边转换函数，用于修复条件节点端口ID
+    const mainEdges = convertGraphEdgesToWorkflowEdges(graph.edges || [], mainNodes);
 
     const workflowData = {
       nodes: mainNodes,

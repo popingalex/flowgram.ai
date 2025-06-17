@@ -1,0 +1,220 @@
+{
+  "description": "dozerAction的条件树结构示例 - 展示3个条件如何被拆分为独立节点",
+  "nodes": [
+    {
+      "id": "vehicle.dozer_action.condition.0",
+      "name": "命令包含{'command': 'delivery'}",
+      "type": "condition",
+      "inputs": [
+        {
+          "id": "$in",
+          "name": "$in",
+          "desc": "Execution input"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out",
+          "name": "$out",
+          "desc": "Execution output"
+        }
+      ],
+      "exp": {
+        "id": "vehicle.dozer_action.condition.0",
+        "body": "{'command': 'delivery'}",
+        "inputs": [
+          {
+            "id": "state_id",
+            "value": "dozer_action"
+          },
+          {
+            "id": "segments",
+            "value": "controlled/commands"
+          },
+          {
+            "id": "compare_operator",
+            "value": "CONTAINS"
+          },
+          {
+            "id": "partial",
+            "value": "true"
+          }
+        ]
+      }
+    },
+    {
+      "id": "vehicle.dozer_action.condition.1",
+      "name": "!动作=move",
+      "type": "condition",
+      "inputs": [
+        {
+          "id": "$in",
+          "name": "$in",
+          "desc": "Execution input"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out",
+          "name": "$out",
+          "desc": "Execution output"
+        }
+      ],
+      "exp": {
+        "id": "vehicle.dozer_action.condition.1",
+        "body": "move",
+        "inputs": [
+          {
+            "id": "state_id",
+            "value": "dozer_action"
+          },
+          {
+            "id": "segments",
+            "value": "controlled/action"
+          },
+          {
+            "id": "compare_operator",
+            "value": "EQUALS"
+          },
+          {
+            "id": "negation",
+            "value": "true"
+          }
+        ]
+      }
+    },
+    {
+      "id": "vehicle.dozer_action.condition.2",
+      "name": "车辆类型=dozer",
+      "type": "condition",
+      "inputs": [
+        {
+          "id": "$in",
+          "name": "$in",
+          "desc": "Execution input"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out",
+          "name": "$out",
+          "desc": "Execution output"
+        }
+      ],
+      "exp": {
+        "id": "vehicle.dozer_action.condition.2",
+        "body": "dozer",
+        "inputs": [
+          {
+            "id": "state_id",
+            "value": "dozer_action"
+          },
+          {
+            "id": "segments",
+            "value": "vehicle/type"
+          },
+          {
+            "id": "compare_operator",
+            "value": "EQUALS"
+          }
+        ]
+      }
+    },
+    {
+      "id": "vehicle.dozer_action",
+      "name": "dozer_action",
+      "type": "action",
+      "inputs": [
+        {
+          "id": "$in",
+          "name": "$in",
+          "desc": "Execution input"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "$out",
+          "name": "$out",
+          "desc": "Execution output"
+        }
+      ],
+      "states": [
+        {
+          "id": "dozer_action",
+          "order": 3,
+          "phase": "BEHAVE",
+          "match": "ALL",
+          "conditions": [
+            {
+              "segments": [
+                "controlled/commands"
+              ],
+              "value": "{'command': 'delivery'}",
+              "compareOperator": "CONTAINS",
+              "partial": true
+            },
+            {
+              "segments": [
+                "controlled/action"
+              ],
+              "value": "move",
+              "compareOperator": "EQUALS",
+              "negation": true
+            },
+            {
+              "segments": [
+                "vehicle/type"
+              ],
+              "value": "dozer",
+              "compareOperator": "EQUALS"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "input": {
+        "node": "vehicle.dozer_action.condition.0",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "vehicle.dozer_action.condition.1",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "vehicle.dozer_action.condition.1",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "vehicle.dozer_action.condition.2",
+        "socket": "$in"
+      }
+    },
+    {
+      "input": {
+        "node": "vehicle.dozer_action.condition.2",
+        "socket": "$out"
+      },
+      "output": {
+        "node": "vehicle.dozer_action",
+        "socket": "$in"
+      }
+    }
+  ],
+  "comparison": {
+    "原始模式": {
+      "节点数": 2,
+      "结构": "单一复合条件节点 → 动作节点",
+      "问题": "条件逻辑混合，难以调试"
+    },
+    "条件树模式": {
+      "节点数": 4,
+      "结构": "条件1 → 条件2 → 条件3 → 动作节点",
+      "优势": "条件逻辑清晰，易于调试和维护"
+    }
+  }
+}
