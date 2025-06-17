@@ -30,9 +30,10 @@ export const EntitySelector: React.FC = () => {
     // 计算模块数量
     const moduleCount = entity.bundles?.length || 0;
 
-    // 查找对应的工作流图
+    // 查找对应的工作流图 - 使用原始业务ID
+    const businessId = (entity as any).$id || entity.id;
     const entityGraph = graphs.find(
-      (graph: any) => graph.id === entity.id || graph.id.toLowerCase() === entity.id.toLowerCase()
+      (graph: any) => graph.id === businessId || graph.id.toLowerCase() === businessId.toLowerCase()
     );
     const workflowNodeCount = entityGraph?.nodes?.length || 0;
 
@@ -51,7 +52,8 @@ export const EntitySelector: React.FC = () => {
         showClear
         renderSelectedItem={(option: any) => {
           const entity = entities.find((e) => e._indexId === option.value);
-          return entity ? `${entity.name} (${entity.id})` : option.label;
+          const businessId = (entity as any)?.$id || entity?.id;
+          return entity ? `${entity.name} (${businessId})` : option.label;
         }}
       >
         {entities.map((entity) => {
@@ -68,7 +70,7 @@ export const EntitySelector: React.FC = () => {
                     marginBottom: '6px',
                   }}
                 >
-                  <span>{entity.id}</span>
+                  <span>{(entity as any).$id || entity.id}</span>
                   <span>{entity.name}</span>
                 </div>
                 {/* 第二行：属性模块数量 和 工作流节点数量 */}

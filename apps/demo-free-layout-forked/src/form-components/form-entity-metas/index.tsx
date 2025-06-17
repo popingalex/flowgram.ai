@@ -34,8 +34,8 @@ export function FormEntityMetas({ isSidebar }: FormEntityMetasProps) {
     <>
       <FormItem name="实体ID" type="string">
         <Input
-          value={editingEntity.id || ''}
-          onChange={(value) => handleMetaChange('id', value)}
+          value={(editingEntity as any).$id || editingEntity.id || ''}
+          onChange={(value) => handleMetaChange('$id', value)}
           size="small"
           placeholder="实体ID"
           readonly={!isInSidebar}
@@ -44,8 +44,8 @@ export function FormEntityMetas({ isSidebar }: FormEntityMetasProps) {
 
       <FormItem name="实体名称" type="string">
         <Input
-          value={editingEntity.name || ''}
-          onChange={(value) => handleMetaChange('name', value)}
+          value={(editingEntity as any).$name || editingEntity.name || ''}
+          onChange={(value) => handleMetaChange('$name', value)}
           size="small"
           placeholder="实体名称"
           readonly={!isInSidebar}
@@ -54,8 +54,8 @@ export function FormEntityMetas({ isSidebar }: FormEntityMetasProps) {
 
       <FormItem name="实体描述" type="string">
         <Input
-          value={editingEntity.description || ''}
-          onChange={(value) => handleMetaChange('description', value)}
+          value={(editingEntity as any).$description || editingEntity.description || ''}
+          onChange={(value) => handleMetaChange('$description', value)}
           size="small"
           placeholder="实体描述"
           readonly={!isInSidebar}

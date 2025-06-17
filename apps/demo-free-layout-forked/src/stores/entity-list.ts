@@ -72,23 +72,34 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
         throw new Error('Invalid entities data received');
       }
 
-      // 为没有索引ID的实体和属性生成稳定的索引
+      // 🎯 实现完整的$id转换系统
       const entitiesWithIndex = fetchedEntities.map((entity) => {
-        // 为实体生成稳定的_indexId
-        if (!entity._indexId) {
-          entity._indexId = nanoid();
-        }
+        // 🔑 生成统一的索引ID，确保id和_indexId一致
+        const indexId = entity._indexId || nanoid();
 
         return {
-          ...entity,
+          // 🔑 将原始业务ID存储到$id，生成nanoid作为界面索引ID
+          ...entity, // 保留所有原始字段
+          $id: entity.id, // 保存原始业务ID
+          id: indexId, // 使用统一的nanoid作为界面索引
+          $name: entity.name, // 保存原始名称
+          $description: entity.description, // 保存原始描述
+
+          // 转换属性
           attributes: (entity.attributes || []).map((attr) => {
-            if (!attr._indexId) {
-              attr._indexId = nanoid();
-            }
-            return attr;
+            const attrIndexId = attr._indexId || nanoid();
+            return {
+              ...attr, // 保留所有原始字段
+              $id: attr.id, // 保存原始业务ID
+              id: attrIndexId, // 使用统一的nanoid作为界面索引
+              _indexId: attrIndexId, // 确保一致性
+            };
           }),
+
+          // 确保_indexId存在且与id一致
+          _indexId: indexId, // 与id保持一致
         };
-      });
+      }) as Entity[];
 
       set({
         entities: entitiesWithIndex,
@@ -117,6 +128,7 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
         entity._indexId = nanoid();
       }
 
+      // 直接保存实体，bundles字段保持原样（业务ID）
       const savedEntity = await entityApi.update(entity.id, entity);
 
       set((state) => {

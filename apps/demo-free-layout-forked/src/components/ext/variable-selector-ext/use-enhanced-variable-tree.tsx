@@ -131,11 +131,12 @@ export function useEnhancedVariableTree(params: {
                     ? originalKey.replace(`${moduleId}/`, '')
                     : originalKey;
 
-                  // 构建完整的keyPath（用于实际选择）
+                  // 🎯 关键修复：构建正确的keyPath格式，保持与原有扁平格式兼容
+                  // 不使用分组路径，直接使用原始的模块属性路径
                   const fullKeyPath = [
                     ...parentFields.map((_field) => _field.key),
                     variable.key,
-                    originalKey,
+                    originalKey, // 保持原始的"模块名/属性名"格式
                   ];
 
                   // 🎯 构建简化的label，不再依赖meta.title
@@ -145,7 +146,7 @@ export function useEnhancedVariableTree(params: {
                     key: fullKeyPath.join('.'),
                     label: simplifiedLabel,
                     value: fullKeyPath.join('.'),
-                    keyPath: fullKeyPath,
+                    keyPath: fullKeyPath, // 这里保持原始的路径格式，与现有的变量值兼容
                     icon: getVariableTypeIcon(prop),
                     disabled: false, // 🎯 模块内属性可以选中
                     rootMeta: variable.meta,
@@ -206,8 +207,10 @@ export function useEnhancedVariableTree(params: {
     // - 不匹配schema的节点：不可选中
     const shouldDisable = isContextNode || (!!children?.length && isStartNode) || !isSchemaMatch;
 
-    // 🎯 构建左右布局的label - 显示ID和中文名
-    const labelElement = variable.meta?.title ? (
+    // 🎯 构建label - 显示key，如果有name则在右侧显示中文名
+    const variableName = (variable as any).name;
+
+    const labelElement = variableName ? (
       <div
         style={{
           display: 'flex',
@@ -232,7 +235,7 @@ export function useEnhancedVariableTree(params: {
             fontStyle: 'italic',
           }}
         >
-          {variable.meta.title}
+          {variableName}
         </span>
       </div>
     ) : (
@@ -258,7 +261,42 @@ export function useEnhancedVariableTree(params: {
     };
   };
 
-  return [...available.variables.slice(0).reverse()]
+  const result = [...available.variables.slice(0).reverse()]
     .map((_variable) => renderVariable(_variable as VariableField))
     .filter(Boolean) as TreeNodeData[];
+
+  // 只在开发环境且变量数量有变化时打印调试信息
+  if (process.env.NODE_ENV === 'development') {
+    const currentVariablesKey = available.variables.map((v) => v.key).join(',');
+    if ((window as any).__lastVariablesKey !== currentVariablesKey) {
+      // 🎯 收集所有可选择的叶子节点路径，用于调试
+      const collectSelectablePaths = (nodes: TreeNodeData[], paths: string[] = []): string[] => {
+        nodes.forEach((node) => {
+          if (!node.disabled && (!node.children || node.children.length === 0)) {
+            // 可选择的叶子节点
+            paths.push(node.value || node.keyPath?.join('.') || '');
+          }
+          if (node.children) {
+            collectSelectablePaths(node.children, paths);
+          }
+        });
+        return paths;
+      };
+
+      const selectablePaths = collectSelectablePaths(result);
+
+      console.log('[变量树] 变量数据更新:', {
+        availableVariablesCount: available.variables.length,
+        resultCount: result.length,
+        variableKeys: available.variables.map((v) => v.key),
+        selectablePathsCount: selectablePaths.length,
+        selectablePaths: selectablePaths,
+        // 特别关注模块属性的路径格式
+        modulePropertyPaths: selectablePaths.filter((path) => path.includes('/')),
+      });
+      (window as any).__lastVariablesKey = currentVariablesKey;
+    }
+  }
+
+  return result;
 }

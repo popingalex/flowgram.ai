@@ -225,8 +225,16 @@ const AppContent: React.FC = () => {
   React.useEffect(() => {
     if (!loading && entities.length > 0 && !selectedEntityId && !autoSelectedRef.current) {
       // 优先选择vehicle实体，如果没有则选择第一个
-      const vehicleEntity = entities.find((e) => e.id === 'vehicle');
+      const vehicleEntity = entities.find(
+        (e) => (e as any).$id === 'vehicle' || e.id === 'vehicle'
+      );
       const defaultEntity = vehicleEntity || entities[0];
+
+      console.log('[App] 自动选择实体:', {
+        totalEntities: entities.length,
+        selectedEntity: defaultEntity,
+        entityBusinessId: (defaultEntity as any).$id || defaultEntity.id,
+      });
 
       selectEntity(defaultEntity);
       autoSelectedRef.current = true;

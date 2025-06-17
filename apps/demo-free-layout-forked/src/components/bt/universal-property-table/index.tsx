@@ -224,7 +224,7 @@ const AttributeIdInput = React.memo(
     onFieldChange: (id: string, field: string, value: any) => void;
     readonly: boolean;
   }) => {
-    const value = record.id || '';
+    const value = (record as any).$id || record.id || '';
     const isModuleProperty = record.isModuleProperty || false;
 
     if (readonlyProp) {
@@ -244,7 +244,7 @@ const AttributeIdInput = React.memo(
     return (
       <Input
         value={value}
-        onChange={(newValue) => onFieldChange(record._indexId, 'id', newValue)}
+        onChange={(newValue) => onFieldChange(record._indexId, '$id', newValue)}
         size="small"
         readOnly={isModuleProperty}
         placeholder="属性ID"
@@ -268,7 +268,7 @@ const AttributeNameInput = React.memo(
     onFieldChange: (id: string, field: string, value: any) => void;
     readonly: boolean;
   }) => {
-    const value = record.name || '';
+    const value = (record as any).$name || record.name || '';
     const isModuleProperty = record.isModuleProperty || false;
 
     if (readonlyProp) {
@@ -287,7 +287,7 @@ const AttributeNameInput = React.memo(
     return (
       <Input
         value={value}
-        onChange={(newValue) => onFieldChange(record._indexId, 'name', newValue)}
+        onChange={(newValue) => onFieldChange(record._indexId, '$name', newValue)}
         size="small"
         readOnly={isModuleProperty}
         placeholder="属性名称"
@@ -462,13 +462,18 @@ const ModulePropertyTreeTable: React.FC = () => {
       const entityBundles = editingEntity.bundles;
       console.log('🔄 同步选中状态:', { entityBundles, modules: modules.length });
 
+      // 🎯 导入IdTransform工具
+      const { IdTransform } = require('../../../utils/id-transform');
+
       const selectedNanoids = modules
         .filter((module) => {
-          const isSelected =
-            entityBundles.includes(module._indexId || '') || entityBundles.includes(module.id);
+          // 🎯 检查实体关联是否包含此模块（通过任意ID匹配）
+          const isSelected = entityBundles.some(
+            (bundleId) => bundleId === module.id || bundleId === module._indexId
+          );
           return isSelected;
         })
-        .map((module) => module._indexId || module.id);
+        .map((module) => IdTransform.getModuleStableId(module));
 
       console.log('🔍 计算出的选中模块:', selectedNanoids);
       setSelectedModules(selectedNanoids);
@@ -655,10 +660,13 @@ const ModulePropertyTreeTable: React.FC = () => {
   const linkedModuleTreeData = React.useMemo(() => {
     const entityBundles = editingEntity?.bundles || [];
 
+    // 🎯 导入IdTransform工具
+    const { IdTransform } = require('../../../utils/id-transform');
+
     return modules
-      .filter(
-        (module) =>
-          entityBundles.includes(module.id) || entityBundles.includes(module._indexId || '')
+      .filter((module) =>
+        // 🎯 使用统一的查找逻辑
+        entityBundles.some((bundleId) => bundleId === module.id || bundleId === module._indexId)
       )
       .map((module) => {
         const moduleKey = `module_${module._indexId || module.id}`;
@@ -1297,10 +1305,13 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
     );
     console.log('🔍 实体关联的模块ID:', editingEntity.bundles);
 
+    // 🎯 导入IdTransform工具
+    const { IdTransform } = require('../../../utils/id-transform');
+
     const matchedModules = modules.filter((module) => {
-      const isMatched =
-        editingEntity.bundles.includes(module._indexId || '') ||
-        editingEntity.bundles.includes(module.id);
+      const isMatched = editingEntity.bundles.some(
+        (bundleId) => bundleId === module.id || bundleId === module._indexId
+      );
       console.log('🔍 模块匹配检查:', {
         moduleId: module.id,
         moduleIndexId: module._indexId,

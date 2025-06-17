@@ -74,9 +74,10 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
           // 创建副本，避免修改外部对象
           const entityCopy = cloneDeep(entity);
 
-          // 确保实体有稳定的_indexId
+          // 🔑 实体应该在加载时就有_indexId，这里不应该重新生成
           if (!entityCopy._indexId) {
-            entityCopy._indexId = nanoid();
+            console.error('[CurrentEntity] 实体缺少_indexId，这不应该发生！', entityCopy);
+            entityCopy._indexId = nanoid(); // 仅作为后备方案
           }
 
           state.selectedEntityId = entityCopy._indexId;
@@ -242,7 +243,7 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
         });
       },
 
-      // 保存更改（这里只是示例，实际需要调用API）
+      // 保存更改（调用实际的API）
       saveChanges: async () => {
         const currentState = get();
         if (!currentState.editingEntity) return;
@@ -253,18 +254,19 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
         });
 
         try {
-          // TODO: 调用实际的保存API
-          console.log('Saving entity:', currentState.editingEntity);
-
-          // 模拟异步保存
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          // 🎯 使用EntityListStore的saveEntity方法，它会处理ID转换
+          const { useEntityListStore } = require('./entity-list');
+          await useEntityListStore.getState().saveEntity(currentState.editingEntity);
 
           set((state) => {
             state.originalEntity = cloneDeep(state.editingEntity);
             state.isDirty = false;
             state.isSaving = false;
           });
+
+          console.log('✅ 实体保存成功:', currentState.editingEntity.id);
         } catch (error) {
+          console.error('❌ 实体保存失败:', error);
           set((state) => {
             state.isSaving = false;
             state.error = error instanceof Error ? error.message : 'Save failed';

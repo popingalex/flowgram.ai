@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>变量路径调试工具</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      .input-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #333;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .result {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 12px;
+      }
+      .result.success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+      .result.error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+      .result.info {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+      }
+      .debug-section {
+        margin-top: 20px;
+      }
+      .path-list {
+        max-height: 300px;
+        overflow-y: auto;
+        background: #f8f9fa;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+      }
+      .path-item {
+        padding: 4px 0;
+        border-bottom: 1px solid #eee;
+      }
+      .path-item:last-child {
+        border-bottom: none;
+      }
+      .module-path {
+        color: #007bff;
+        font-weight: bold;
+      }
+      .entity-path {
+        color: #28a745;
+      }
+      .context-path {
+        color: #ffc107;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>变量路径调试工具</h1>
+      <p>
+        此工具用于测试变量选择器中的路径匹配逻辑，帮助调试"无法找到选中项"的问题。
+      </p>
+
+      <div class="input-group">
+        <label for="expectedPath"
+          >期望的变量路径（例如：$start.controlled/commands）:</label
+        >
+        <input
+          type="text"
+          id="expectedPath"
+          placeholder="输入期望的变量路径..."
+          value="$start.controlled/commands"
+        />
+      </div>
+
+      <div class="input-group">
+        <label for="availablePaths">可用的变量路径列表（每行一个）:</label>
+        <textarea
+          id="availablePaths"
+          rows="10"
+          style="
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+          "
+          placeholder="输入所有可用的变量路径..."
+        >
+$start.vehicle_yard_id
+$start.task_id
+$start.vehicle_name
+$start.controlled/commands
+$start.controlled/action
+$start.controlled/stance
+$start.vehicle/type
+$start.mobile/velocity
+$start.transform/position
+$start.$context.currentTime
+$start.$context.currentBranch</textarea
+        >
+      </div>
+
+      <button onclick="analyzeVariablePaths()">分析路径匹配</button>
+
+      <div id="result" class="result" style="display: none"></div>
+
+      <div class="debug-section">
+        <h3>常见问题模式</h3>
+        <div class="container" style="background: #f8f9fa">
+          <h4>1. 模块属性路径格式</h4>
+          <p>
+            <strong>错误格式:</strong>
+            <code>$start.module_group_controlled.commands</code>
+          </p>
+          <p>
+            <strong>正确格式:</strong> <code>$start.controlled/commands</code>
+          </p>
+
+          <h4>2. 分组节点与叶子节点</h4>
+          <p>
+            <strong>分组节点:</strong>
+            <code>$start.module_group_controlled</code> (不可选中)
+          </p>
+          <p>
+            <strong>叶子节点:</strong>
+            <code>$start.controlled/commands</code> (可选中)
+          </p>
+
+          <h4>3. keyPath vs value 格式</h4>
+          <p>
+            <strong>keyPath:</strong>
+            <code>['$start', 'controlled/commands']</code>
+          </p>
+          <p><strong>value:</strong> <code>$start.controlled/commands</code></p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function analyzeVariablePaths() {
+        const expectedPath = document
+          .getElementById("expectedPath")
+          .value.trim();
+        const availablePathsText = document
+          .getElementById("availablePaths")
+          .value.trim();
+        const availablePaths = availablePathsText
+          .split("\n")
+          .map((p) => p.trim())
+          .filter((p) => p);
+
+        const resultDiv = document.getElementById("result");
+        resultDiv.style.display = "block";
+
+        if (!expectedPath) {
+          resultDiv.className = "result error";
+          resultDiv.textContent = "请输入期望的变量路径";
+          return;
+        }
+
+        if (availablePaths.length === 0) {
+          resultDiv.className = "result error";
+          resultDiv.textContent = "请输入可用的变量路径列表";
+          return;
+        }
+
+        // 分析路径匹配
+        const analysis = {
+          expectedPath: expectedPath,
+          availablePathsCount: availablePaths.length,
+          exactMatch: null,
+          partialMatches: [],
+          moduleRelatedPaths: [],
+          entityPaths: [],
+          contextPaths: [],
+          suggestions: [],
+        };
+
+        // 检查精确匹配
+        if (availablePaths.includes(expectedPath)) {
+          analysis.exactMatch = expectedPath;
+        }
+
+        // 分类路径
+        availablePaths.forEach((path) => {
+          if (path.includes("/")) {
+            analysis.moduleRelatedPaths.push(path);
+          } else if (path.includes("$context")) {
+            analysis.contextPaths.push(path);
+          } else {
+            analysis.entityPaths.push(path);
+          }
+
+          // 检查部分匹配
+          const expectedParts = expectedPath.split(".");
+          const pathParts = path.split(".");
+
+          let matchScore = 0;
+          expectedParts.forEach((part, index) => {
+            if (pathParts[index] === part) {
+              matchScore++;
+            }
+          });
+
+          if (matchScore > 0 && matchScore < expectedParts.length) {
+            analysis.partialMatches.push({
+              path: path,
+              score: matchScore,
+              maxScore: expectedParts.length,
+            });
+          }
+        });
+
+        // 生成建议
+        if (!analysis.exactMatch) {
+          if (analysis.partialMatches.length > 0) {
+            analysis.partialMatches.sort((a, b) => b.score - a.score);
+            analysis.suggestions.push(
+              `最相似的路径: ${analysis.partialMatches[0].path}`
+            );
+          }
+
+          const expectedLastPart = expectedPath.split(".").pop();
+          const similarByLastPart = availablePaths.filter(
+            (path) => path.split(".").pop() === expectedLastPart
+          );
+
+          if (similarByLastPart.length > 0) {
+            analysis.suggestions.push(
+              `相同末尾部分的路径: ${similarByLastPart.join(", ")}`
+            );
+          }
+
+          // 检查是否是模块属性格式问题
+          if (expectedPath.includes("/")) {
+            const moduleAttrPattern = expectedPath.split("/");
+            if (moduleAttrPattern.length === 2) {
+              const [modulePart, attrPart] = moduleAttrPattern;
+              const alternativeFormats = [
+                `${modulePart}.${attrPart}`,
+                `${modulePart}_${attrPart}`,
+                `${modulePart}-${attrPart}`,
+              ];
+
+              alternativeFormats.forEach((alt) => {
+                if (availablePaths.some((p) => p.includes(alt))) {
+                  analysis.suggestions.push(`可能的替代格式: ${alt}`);
+                }
+              });
+            }
+          }
+        }
+
+        // 显示结果
+        let resultText = "";
+
+        if (analysis.exactMatch) {
+          resultDiv.className = "result success";
+          resultText = `✅ 找到精确匹配: ${analysis.exactMatch}\n\n`;
+        } else {
+          resultDiv.className = "result error";
+          resultText = `❌ 未找到精确匹配: ${expectedPath}\n\n`;
+        }
+
+        resultText += `📊 统计信息:\n`;
+        resultText += `- 总路径数量: ${analysis.availablePathsCount}\n`;
+        resultText += `- 模块属性路径: ${analysis.moduleRelatedPaths.length}\n`;
+        resultText += `- 实体属性路径: ${analysis.entityPaths.length}\n`;
+        resultText += `- 上下文路径: ${analysis.contextPaths.length}\n`;
+        resultText += `- 部分匹配: ${analysis.partialMatches.length}\n\n`;
+
+        if (analysis.moduleRelatedPaths.length > 0) {
+          resultText += `🔧 模块属性路径:\n`;
+          analysis.moduleRelatedPaths.forEach((path) => {
+            resultText += `  - ${path}\n`;
+          });
+          resultText += "\n";
+        }
+
+        if (analysis.partialMatches.length > 0) {
+          resultText += `🔍 部分匹配的路径:\n`;
+          analysis.partialMatches.forEach((match) => {
+            resultText += `  - ${match.path} (匹配度: ${match.score}/${match.maxScore})\n`;
+          });
+          resultText += "\n";
+        }
+
+        if (analysis.suggestions.length > 0) {
+          resultText += `💡 建议:\n`;
+          analysis.suggestions.forEach((suggestion) => {
+            resultText += `  - ${suggestion}\n`;
+          });
+          resultText += "\n";
+        }
+
+        if (!analysis.exactMatch && analysis.suggestions.length === 0) {
+          resultText += `🤔 可能的问题:\n`;
+          resultText += `  - 路径格式不正确\n`;
+          resultText += `  - 变量数据未正确加载\n`;
+          resultText += `  - 模块分组逻辑存在问题\n`;
+          resultText += `  - keyPath 与 value 格式不匹配\n`;
+        }
+
+        resultDiv.textContent = resultText;
+      }
+
+      // 自动运行一次分析
+      document.addEventListener("DOMContentLoaded", function () {
+        setTimeout(analyzeVariablePaths, 500);
+      });
+    </script>
+  </body>
+</html>

@@ -50,6 +50,11 @@ export const useCurrentGraphStore = create<CurrentGraphStore>()(
 
       // 设置当前图
       setGraph: (workflowData, entityId, graphId) => {
+        console.log('[CurrentGraphStore] setGraph调用:', {
+          entityId,
+          graphId,
+          nodeCount: workflowData?.nodes?.length,
+        });
         set((state) => {
           state.workflowData = workflowData;
           state.entityId = entityId;
@@ -61,6 +66,7 @@ export const useCurrentGraphStore = create<CurrentGraphStore>()(
 
       // 清除当前图
       clearGraph: () => {
+        console.log('[CurrentGraphStore] clearGraph调用');
         set((state) => {
           state.entityId = null;
           state.graphId = null;

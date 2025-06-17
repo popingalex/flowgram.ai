@@ -25,7 +25,7 @@ const EntitySelector: React.FC = () => {
       <Space>
         {entities.map((entity) => (
           <Button
-            key={entity.id}
+            key={entity._indexId || entity.id} // 🎯 使用稳定的_indexId作为key
             type={selectedEntityId === entity._indexId ? 'primary' : 'tertiary'}
             onClick={() => selectEntity(entity)}
             loading={loading}

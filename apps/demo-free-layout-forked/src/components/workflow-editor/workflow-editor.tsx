@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef } from 'react';
+import React, { useEffect, useCallback, useRef, useMemo } from 'react';
 
 import {
   EditorRenderer,
@@ -101,26 +101,19 @@ const EntityPropertySyncer: React.FC = () => {
                 const currentOutputs = (formModel as FormModelV2).getValueIn('data.outputs');
                 const newOutputs = properties.allProperties;
 
-                // 强制更新，因为我们知道编辑数据已经改变
-                const forceUpdate = !!editingEntityData;
+                // 🎯 深度比较，只有真正不同时才更新
+                const currentStr = JSON.stringify(currentOutputs);
+                const newStr = JSON.stringify(newOutputs);
 
-                // 检查是否需要更新
-                if (forceUpdate || JSON.stringify(currentOutputs) !== JSON.stringify(newOutputs)) {
+                if (currentStr !== newStr) {
+                  console.log('[EntityPropertySyncer] 检测到属性变化，更新节点数据');
+
                   // 更新节点数据
                   (formModel as FormModelV2).setValueIn('data.outputs', newOutputs);
 
-                  // 🎯 强制触发表单重新渲染
-                  const formModelAny = formModel as any;
-                  if (formModelAny.validateField) {
-                    formModelAny.validateField('data.outputs');
-                  }
-
-                  // 🎯 强制触发表单变化事件
-                  if (formModelAny.notifyFormChange) {
-                    formModelAny.notifyFormChange(['data.outputs'], newOutputs);
-                  }
-
                   updatedCount++;
+                } else {
+                  console.log('[EntityPropertySyncer] 属性无变化，跳过更新');
                 }
               }
             }
@@ -148,16 +141,14 @@ const EntityPropertySyncer: React.FC = () => {
       // 简化版本：直接使用editingEntity的attributes构建JSONSchema
       const properties: Record<string, any> = {};
 
-      // 🚫 移除重复的基础属性，这些已经在节点的基础信息区域显示了
-      // 不再添加 __entity_id、__entity_name、__entity_description
-
-      // 🎯 首先添加基础属性（系统属性）
+      // 🎯 将实体基础属性重命名为$前缀，避免与业务层面的id属性冲突
       properties['$id'] = {
         id: '$id',
         name: '实体ID',
-        description: '实体的唯一标识符',
         type: 'string',
-        _indexId: '$id',
+        title: editingEntity.id,
+        default: editingEntity.id,
+        _indexId: `${editingEntity._indexId}_$id`, // 使用实体的稳定索引+字段名
         isEntityProperty: true,
         isSystemProperty: true,
       };
@@ -165,33 +156,35 @@ const EntityPropertySyncer: React.FC = () => {
       properties['$name'] = {
         id: '$name',
         name: '实体名称',
-        description: '实体的显示名称',
         type: 'string',
-        _indexId: '$name',
+        title: editingEntity.name,
+        default: editingEntity.name,
+        _indexId: `${editingEntity._indexId}_$name`,
         isEntityProperty: true,
         isSystemProperty: true,
       };
 
-      properties['$desc'] = {
-        id: '$desc',
+      properties['$description'] = {
+        id: '$description',
         name: '实体描述',
-        description: '实体的详细描述',
         type: 'string',
-        _indexId: '$desc',
+        title: editingEntity.description || '',
+        default: editingEntity.description || '',
+        _indexId: `${editingEntity._indexId}_$description`,
         isEntityProperty: true,
         isSystemProperty: true,
       };
 
-      // 然后添加实体自身的扩展属性
+      // 然后添加实体自身的扩展属性（用户定义的业务属性）
       editingEntity.attributes.forEach((attr: any) => {
         if (!attr._indexId || !attr.id) {
           console.warn('编辑实体属性缺少必要字段:', attr);
           return;
         }
 
-        // 🎯 使用语义化的ID作为key，而不是nanoid
-        const propertyKey = attr.id;
-        properties[propertyKey] = {
+        // 🎯 使用业务ID作为变量key，nanoid存储在_indexId中用于内部引用
+        const businessId = (attr as any).$id || attr.id;
+        properties[businessId] = {
           ...attr, // 保留所有原始属性
           // 转换type格式
           type:
@@ -217,31 +210,42 @@ const EntityPropertySyncer: React.FC = () => {
         };
       });
 
-      // 🎯 添加模块属性处理 - 保持分组结构，同时支持路径兼容性
+      // 🎯 添加模块属性处理
       if (editingEntity.bundles && editingEntity.bundles.length > 0) {
-        // 遍历实体关联的模块，创建模块分组
+        console.log('[WorkflowEditor] 处理实体模块关联:', {
+          entityId: editingEntity.id,
+          bundles: editingEntity.bundles,
+          availableModules: modules.map((m: any) => ({
+            id: m.id,
+            _indexId: m._indexId,
+            name: m.name,
+          })),
+        });
+
+        // 遍历实体关联的模块
         editingEntity.bundles.forEach((bundleId: string) => {
-          // 通过ID或nanoid查找模块
-          const module = modules.find((m) => m.id === bundleId || m._indexId === bundleId);
+          // 先用业务ID查找，再用索引ID查找
+          const module = modules.find((m: any) => m.id === bundleId || m._indexId === bundleId);
 
           if (module) {
-            // 🎯 创建模块属性的嵌套结构
-            const moduleProperties: any = {};
+            console.log(`[WorkflowEditor] 找到模块 ${bundleId}:`, module.name);
+          } else {
+            console.warn(`[WorkflowEditor] 未找到模块 ${bundleId}`);
+          }
 
+          if (module && module.attributes) {
             module.attributes.forEach((attr: any) => {
-              // 🎯 检查属性ID是否已经包含模块前缀
-              const moduleAttrKey = attr.id.startsWith(`${module.id}/`)
-                ? attr.id // 如果已经包含模块前缀，直接使用
-                : `${module.id}/${attr.id}`; // 否则添加模块前缀
+              // 🎯 模块属性ID处理：attr.id已经是完整格式（如"container/strategy"），直接使用
+              const moduleBusinessId = attr.id; // 直接使用完整ID，不需要添加前缀
+              const moduleAttrIndexId = attr._indexId || `module_${module.id}_${attr.id}`;
 
-              // 🎯 在模块内部使用原始属性名作为key，但保留完整路径信息
-              const innerKey = attr.id.startsWith(`${module.id}/`)
-                ? attr.id.replace(`${module.id}/`, '') // 去掉模块前缀，只保留属性名
-                : attr.id; // 原始属性名
+              console.log(
+                `[WorkflowEditor] 模块属性处理: ${attr.id} (displayId: ${attr.displayId || 'N/A'})`
+              );
 
-              moduleProperties[innerKey] = {
+              properties[moduleBusinessId] = {
                 ...attr, // 保留所有原始属性
-                id: moduleAttrKey, // 使用"模块/属性"格式的ID（用于路径兼容性）
+                id: moduleBusinessId, // 使用业务ID
                 name: attr.name, // 保持原始名称
                 description: `${attr.description || attr.name} (来自模块: ${module.name})`,
                 // 转换type格式
@@ -263,29 +267,17 @@ const EntityPropertySyncer: React.FC = () => {
                         : 'string',
                   },
                 }),
-                _indexId: attr._indexId || nanoid(),
-                // 🎯 将模块属性分类信息设置到meta字段中
-                meta: {
-                  ...attr.meta, // 保留原有meta信息
-                  isModuleProperty: true,
-                  moduleId: module.id,
-                  moduleName: module.name,
-                  title: attr.name, // 显示名称
-                  fullPath: moduleAttrKey, // 完整路径信息，用于变量引擎查找
-                },
+                _indexId: moduleAttrIndexId, // 保留索引ID用于内部引用
+                isModuleProperty: true,
+                moduleId: module.id,
+                moduleName: module.name,
               };
-            });
-
-            // 🎯 直接将模块属性添加到properties中，不创建嵌套结构
-            Object.entries(moduleProperties).forEach(([innerKey, moduleProperty]) => {
-              const moduleAttrKey = (moduleProperty as any).id;
-              properties[moduleAttrKey] = moduleProperty;
             });
           }
         });
       }
 
-      // 🎯 添加Context作为object属性
+      // 🎯 添加Context作为object属性 - 使用固定的ID避免重新生成
       properties['$context'] = {
         id: '$context',
         name: '上下文',
@@ -297,24 +289,24 @@ const EntityPropertySyncer: React.FC = () => {
             name: '当前时刻',
             type: 'string',
             description: '当前执行时刻',
-            _indexId: nanoid(),
+            _indexId: 'context_currentTime', // 固定ID
           },
           currentBranch: {
             id: 'currentBranch',
             name: '当前分支',
             type: 'string',
             description: '当前执行分支',
-            _indexId: nanoid(),
+            _indexId: 'context_currentBranch', // 固定ID
           },
           currentScene: {
             id: 'currentScene',
             name: '当前场景',
             type: 'string',
             description: '当前场景信息',
-            _indexId: nanoid(),
+            _indexId: 'context_currentScene', // 固定ID
           },
         },
-        _indexId: nanoid(),
+        _indexId: 'context_root', // 固定ID
         isContextProperty: true,
         isObjectContainer: true, // 标记为对象容器，不可直接选中
       };
@@ -323,6 +315,14 @@ const EntityPropertySyncer: React.FC = () => {
         type: 'object',
         properties,
       };
+
+      // 🔍 添加调试信息
+      console.log('[WorkflowEditor] 生成的属性数据:', {
+        entityId: editingEntity.id,
+        propertiesCount: Object.keys(properties).length,
+        propertyKeys: Object.keys(properties),
+        sampleProperty: properties[Object.keys(properties)[0]],
+      });
 
       return {
         allProperties: jsonSchemaData,
@@ -366,6 +366,14 @@ const EntityPropertySyncer: React.FC = () => {
     [syncEntityToStartNodes, loading]
   );
 
+  // 🎯 稳定化的属性依赖计算
+  const attributesHash = useMemo(() => {
+    if (!editingEntity?.attributes) return '';
+    return JSON.stringify(
+      editingEntity.attributes.map((attr) => ({ id: attr.id, name: attr.name, type: attr.type }))
+    );
+  }, [editingEntity?.attributes]);
+
   // 🎯 统一的实体同步逻辑 - 处理初始加载和实时更新
   useEffect(() => {
     if (!editingEntity) {
@@ -393,11 +401,11 @@ const EntityPropertySyncer: React.FC = () => {
     };
   }, [
     editingEntity?.id,
-    JSON.stringify(editingEntity?.attributes || []), // 🎯 关键修复：使用序列化版本作为依赖
+    attributesHash, // 🎯 使用稳定的属性hash而不是JSON.stringify
     loading,
     entities.length,
     syncWithRetry,
-  ]); // 修复依赖数组，确保属性内容变化时也能触发
+  ]);
 
   return null;
 };
@@ -405,18 +413,42 @@ const EntityPropertySyncer: React.FC = () => {
 export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className }) => {
   const { loadModules } = useModuleStore();
   const { workflowData, entityId, loading } = useCurrentGraph();
+  const { editingEntity } = useCurrentEntity(); // 获取当前编辑的实体
+
+  // 🔍 添加调试信息
+  console.log('[WorkflowEditor] 渲染状态:', {
+    hasWorkflowData: !!workflowData,
+    workflowNodeCount: workflowData?.nodes?.length || 0,
+    entityId,
+    editingEntityId: editingEntity?.id,
+    editingEntityBusinessId: (editingEntity as any)?.$id,
+    loading,
+  });
 
   // 使用当前图的工作流数据，如果没有则使用初始数据
   const finalWorkflowData = workflowData || initialData;
+
+  // 🔍 添加最终数据调试
+  console.log('[WorkflowEditor] 最终工作流数据:', {
+    finalNodeCount: finalWorkflowData?.nodes?.length || 0,
+    isUsingWorkflowData: !!workflowData,
+    isUsingInitialData: !workflowData,
+  });
   const editorProps = useEditorProps(finalWorkflowData, nodeRegistries);
 
   useEffect(() => {
     loadModules();
   }, [loadModules]);
 
-  // 自动布局逻辑 - 当有新的工作流数据时触发
+  // 自动布局逻辑 - 仅在实体切换时触发，避免属性修改导致重置视角
+  const lastEntityIdRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!loading && workflowData && workflowData.nodes?.length > 0) {
+    // 只有在实体ID实际发生变化时才触发布局
+    const isEntityChanged = lastEntityIdRef.current !== entityId;
+    lastEntityIdRef.current = entityId;
+
+    if (!loading && workflowData && workflowData.nodes?.length > 0 && isEntityChanged) {
       // 延迟执行确保DOM已渲染
       setTimeout(() => {
         const autoLayoutButton = document.querySelector(
@@ -437,14 +469,18 @@ export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className
         }
       }, 1000);
     }
-  }, [loading, workflowData?.nodes?.length, entityId]); // 依赖entityId确保切换实体时重新布局
+  }, [loading, workflowData?.nodes?.length, entityId]); // 保持原有依赖，但通过ref控制实际执行
+
+  // 🎯 核心修复：使用实体的稳定索引ID和工作流状态
+  const stableEntityKey = editingEntity?._indexId || entityId || 'no-entity';
+  const workflowKey = workflowData ? `${stableEntityKey}-with-data` : `${stableEntityKey}-no-data`;
 
   return (
     <div style={style} className={className}>
       <EnumStoreProvider>
         <SidebarProvider>
           <FreeLayoutEditorProvider
-            key={`workflow-${entityId}-${workflowData?.nodes?.length || 0}`} // 使用entityId和节点数确保数据变化时重新渲染
+            key={`workflow-${workflowKey}`} // 🎯 关键修复：包含工作流数据状态，确保数据变化时重新创建编辑器
             nodeRegistries={nodeRegistries}
             initialData={finalWorkflowData}
             {...editorProps}

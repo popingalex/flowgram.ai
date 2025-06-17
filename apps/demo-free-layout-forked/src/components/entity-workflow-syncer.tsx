@@ -17,35 +17,53 @@ export const EntityWorkflowSyncer: React.FC = () => {
   const { setGraph, clearGraph, setLoading } = useCurrentGraphStore();
 
   useEffect(() => {
+    console.log('[EntityWorkflowSyncer] useEffect触发:', {
+      selectedEntityId,
+      hasEditingEntity: !!editingEntity,
+      graphsCount: graphs.length,
+    });
+
     if (!selectedEntityId) {
+      console.log('[EntityWorkflowSyncer] 清空图 - 无selectedEntityId');
       clearGraph();
       return;
     }
 
     // 等待graphs数据加载完成
     if (graphs.length === 0) {
+      console.log('[EntityWorkflowSyncer] 等待graphs加载...');
       return;
     }
 
     // 获取实体数据
     const entity = editingEntity || getEntityByStableId(selectedEntityId);
     if (!entity) {
-      console.warn(`[EntityWorkflowSyncer] 未找到实体数据: ${selectedEntityId}`);
+      console.warn(`[EntityWorkflowSyncer] 清空图 - 未找到实体数据: ${selectedEntityId}`);
       clearGraph();
       return;
     }
 
-    // 查找对应的工作流图 - 使用实体的真实ID
-    const entityRealId = entity.id;
-    let entityGraph = graphs.find((graph) => graph.id === entityRealId);
+    // 查找对应的工作流图 - 使用实体的原始业务ID ($id)
+    const entityBusinessId = (entity as any).$id || entity.id; // 优先使用$id，回退到id
+    let entityGraph = graphs.find((graph) => graph.id === entityBusinessId);
 
     // 如果还是没找到，尝试小写匹配
     if (!entityGraph) {
-      entityGraph = graphs.find((graph) => graph.id.toLowerCase() === entityRealId.toLowerCase());
+      entityGraph = graphs.find(
+        (graph) => graph.id.toLowerCase() === entityBusinessId.toLowerCase()
+      );
     }
 
+    console.log(`[EntityWorkflowSyncer] 查找工作流图:`, {
+      selectedEntityId,
+      entityNanoid: entity.id,
+      entityBusinessId,
+      foundGraph: !!entityGraph,
+      availableGraphs: graphs.map((g) => g.id),
+    });
+
     if (!entityGraph) {
-      console.warn(`[EntityWorkflowSyncer] 未找到实体${entityRealId}的工作流图`);
+      console.warn(`[EntityWorkflowSyncer] 未找到实体${entityBusinessId}的工作流图`);
 
       // 生成默认的实体节点
       const defaultWorkflowData = {
@@ -55,7 +73,7 @@ export const EntityWorkflowSyncer: React.FC = () => {
             type: 'start',
             position: { x: 100, y: 100 },
             data: {
-              entityId: entity.id,
+              entityId: entity.id, // 使用nanoid作为内部标识
               entityName: entity.name,
               outputs: {}, // 这里会由EntityPropertySyncer填充
             },
@@ -64,7 +82,8 @@ export const EntityWorkflowSyncer: React.FC = () => {
         edges: [],
       };
 
-      setGraph(defaultWorkflowData, selectedEntityId, `default-${entityRealId}`);
+      console.log('[EntityWorkflowSyncer] 设置默认工作流:', { selectedEntityId, entityBusinessId });
+      setGraph(defaultWorkflowData, selectedEntityId, `default-${entityBusinessId}`);
       return;
     }
 
@@ -78,6 +97,11 @@ export const EntityWorkflowSyncer: React.FC = () => {
         const convertedData = convertGraphToWorkflowData(entityGraph);
 
         // 设置到当前图存储
+        console.log('[EntityWorkflowSyncer] 设置工作流图:', {
+          selectedEntityId,
+          graphId: entityGraph.id,
+          nodeCount: convertedData?.nodes?.length,
+        });
         setGraph(convertedData, selectedEntityId, entityGraph.id);
       } catch (error) {
         console.error('[EntityWorkflowSyncer] 转换失败:', error);
