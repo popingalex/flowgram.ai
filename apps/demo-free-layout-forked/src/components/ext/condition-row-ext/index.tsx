@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 
 import { JsonSchemaBasicType } from '@flowgram.ai/form-materials';
 
-import { useCurrentEntity } from '../../../stores/current-entity.store';
+import { useCurrentEntity } from '../../../stores';
 import { Op, ConditionRowValueType } from './types';
 import { UIContainer, UILeft, UIOperator, UIRight, UIValues } from './styles';
 import { useRule } from './hooks/useRule';

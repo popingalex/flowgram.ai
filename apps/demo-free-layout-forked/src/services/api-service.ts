@@ -6,6 +6,19 @@ import { nanoid } from 'nanoid';
 import type { Module, Entity, EnumClass, BehaviorDef, BehaviorParameter } from './types';
 import { REAL_MODULES, REAL_ENTITIES, REAL_ENUMS, REAL_BEHAVIORS, REAL_GRAPHS } from '../mock-data';
 
+// 创建可变的 mock 数据副本用于 CRUD 操作
+let mockEntities: Entity[] = [...REAL_ENTITIES];
+let mockModules: Module[] = [...REAL_MODULES];
+let mockEnums: EnumClass[] = Array.isArray(REAL_ENUMS) ? [...REAL_ENUMS] : [];
+
+// 重置 mock 数据的函数（可用于测试或重新加载）
+export const resetMockData = () => {
+  mockEntities = [...REAL_ENTITIES];
+  mockModules = [...REAL_MODULES];
+  mockEnums = Array.isArray(REAL_ENUMS) ? [...REAL_ENUMS] : [];
+  console.log('🔄 Mock 数据已重置');
+};
+
 // 后台返回的Java行为数据格式
 interface BackendBehaviorDef {
   id: string;
@@ -124,10 +137,14 @@ const realApiRequest = async (url: string, options?: RequestInit) => {
 // Mock API请求处理
 const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> => {
   const method = options?.method || 'GET';
+  const body = options?.body ? JSON.parse(options.body as string) : null;
 
   // 模拟网络延迟
   await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 200));
 
+  console.log(`🔄 Mock API: ${method} ${url}`, body ? { body } : '');
+
+  // 行为数据 - 只读
   if (url.includes('/hub/behaviors/')) {
     return REAL_BEHAVIORS;
   }
@@ -136,16 +153,191 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
     return REAL_GRAPHS;
   }
 
+  // 实体数据 - 支持 CRUD
   if (url.includes('/cm/entity/')) {
-    return REAL_ENTITIES;
+    if (method === 'GET') {
+      return [...mockEntities]; // 返回副本
+    }
+
+    if (method === 'POST') {
+      const newEntity = {
+        ...body,
+        _indexId: body._indexId || nanoid(),
+        deprecated: false,
+        attributes: (body.attributes || []).map((attr: any) => ({
+          ...attr,
+          _indexId: attr._indexId || nanoid(),
+        })),
+      };
+      mockEntities.push(newEntity);
+      console.log('✅ Mock API: 创建实体', newEntity.id);
+      return newEntity;
+    }
+
+    if (method === 'PUT') {
+      const entityIdMatch = url.match(/\/cm\/entity\/([^\/]+)\//);
+      const entityId = entityIdMatch?.[1];
+
+      if (entityId) {
+        const index = mockEntities.findIndex((e) => e.id === entityId || e._indexId === entityId);
+        if (index !== -1) {
+          // 保持 _indexId 和其他索引字段
+          const updatedEntity = {
+            ...mockEntities[index],
+            ...body,
+            _indexId: mockEntities[index]._indexId, // 保持原有索引ID
+            attributes: (body.attributes || []).map((attr: any) => ({
+              ...attr,
+              _indexId: attr._indexId || nanoid(),
+            })),
+          };
+          mockEntities[index] = updatedEntity;
+          console.log('✅ Mock API: 更新实体', entityId, updatedEntity);
+          return updatedEntity;
+        }
+      }
+      throw new Error(`实体未找到: ${entityId}`);
+    }
+
+    if (method === 'DELETE') {
+      const entityIdMatch = url.match(/\/cm\/entity\/([^\/]+)\//);
+      const entityId = entityIdMatch?.[1];
+
+      if (entityId) {
+        const index = mockEntities.findIndex((e) => e.id === entityId || e._indexId === entityId);
+        if (index !== -1) {
+          mockEntities.splice(index, 1);
+          console.log('✅ Mock API: 删除实体', entityId);
+          return;
+        }
+      }
+      throw new Error(`实体未找到: ${entityId}`);
+    }
+
+    return mockEntities;
   }
 
+  // 模块数据 - 支持 CRUD
   if (url.includes('/cm/module/')) {
-    return REAL_MODULES;
+    if (method === 'GET') {
+      return [...mockModules]; // 返回副本
+    }
+
+    if (method === 'POST') {
+      const newModule = {
+        ...body,
+        _indexId: body._indexId || nanoid(),
+        deprecated: false,
+        attributes: (body.attributes || []).map((attr: any) => ({
+          ...attr,
+          _indexId: attr._indexId || nanoid(),
+          displayId: attr.displayId || attr.id?.split('/').pop() || attr.id,
+        })),
+      };
+      mockModules.push(newModule);
+      console.log('✅ Mock API: 创建模块', newModule.id);
+      return newModule;
+    }
+
+    if (method === 'PUT') {
+      const moduleIdMatch = url.match(/\/cm\/module\/([^\/]+)\//);
+      const moduleId = moduleIdMatch?.[1];
+
+      if (moduleId) {
+        const index = mockModules.findIndex((m) => m.id === moduleId || m._indexId === moduleId);
+        if (index !== -1) {
+          // 保持 _indexId 和其他索引字段
+          const updatedModule = {
+            ...mockModules[index],
+            ...body,
+            _indexId: mockModules[index]._indexId, // 保持原有索引ID
+            attributes: (body.attributes || []).map((attr: any) => ({
+              ...attr,
+              _indexId: attr._indexId || nanoid(),
+              displayId: attr.displayId || attr.id?.split('/').pop() || attr.id,
+            })),
+          };
+          mockModules[index] = updatedModule;
+          console.log('✅ Mock API: 更新模块', moduleId, updatedModule);
+          return updatedModule;
+        }
+      }
+      throw new Error(`模块未找到: ${moduleId}`);
+    }
+
+    if (method === 'DELETE') {
+      const moduleIdMatch = url.match(/\/cm\/module\/([^\/]+)\//);
+      const moduleId = moduleIdMatch?.[1];
+
+      if (moduleId) {
+        const index = mockModules.findIndex((m) => m.id === moduleId || m._indexId === moduleId);
+        if (index !== -1) {
+          mockModules.splice(index, 1);
+          console.log('✅ Mock API: 删除模块', moduleId);
+          return;
+        }
+      }
+      throw new Error(`模块未找到: ${moduleId}`);
+    }
+
+    return mockModules;
   }
 
+  // 枚举数据 - 支持 CRUD
   if (url.includes('/cm/enum/')) {
-    return REAL_ENUMS;
+    if (method === 'GET') {
+      return [...mockEnums]; // 返回副本
+    }
+
+    if (method === 'POST') {
+      const newEnum = {
+        ...body,
+        _indexId: body._indexId || nanoid(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      mockEnums.push(newEnum);
+      console.log('✅ Mock API: 创建枚举', newEnum.id);
+      return newEnum;
+    }
+
+    if (method === 'PUT') {
+      const enumIdMatch = url.match(/\/cm\/enum\/([^\/]+)\//);
+      const enumId = enumIdMatch?.[1];
+
+      if (enumId) {
+        const index = mockEnums.findIndex((e) => e.id === enumId || e._indexId === enumId);
+        if (index !== -1) {
+          const updatedEnum = {
+            ...mockEnums[index],
+            ...body,
+            _indexId: mockEnums[index]._indexId, // 保持原有索引ID
+            updatedAt: new Date().toISOString(),
+          };
+          mockEnums[index] = updatedEnum;
+          console.log('✅ Mock API: 更新枚举', enumId, updatedEnum);
+          return updatedEnum;
+        }
+      }
+      throw new Error(`枚举未找到: ${enumId}`);
+    }
+
+    if (method === 'DELETE') {
+      const enumIdMatch = url.match(/\/cm\/enum\/([^\/]+)\//);
+      const enumId = enumIdMatch?.[1];
+
+      if (enumId) {
+        const index = mockEnums.findIndex((e) => e.id === enumId || e._indexId === enumId);
+        if (index !== -1) {
+          mockEnums.splice(index, 1);
+          console.log('✅ Mock API: 删除枚举', enumId);
+          return;
+        }
+      }
+      throw new Error(`枚举未找到: ${enumId}`);
+    }
+
+    return mockEnums;
   }
 
   throw new Error(`Mock API: 未找到匹配的路由 ${method} ${url}`);

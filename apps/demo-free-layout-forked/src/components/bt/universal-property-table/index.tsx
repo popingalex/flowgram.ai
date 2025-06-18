@@ -31,8 +31,7 @@ import {
 // 移除外部组件引用，改为内联实现
 import { EntityPropertyTypeSelector } from '../../ext/type-selector-ext';
 import { TypedParser } from '../../../typings/mas/typed';
-import { useModuleStore } from '../../../stores/module.store';
-import { useCurrentEntityActions, useCurrentEntityStore } from '../../../stores';
+import { useModuleStore, useCurrentEntityActions, useCurrentEntityStore } from '../../../stores';
 import type { Attribute } from '../../../services/types';
 
 // 内联组件的类型定义

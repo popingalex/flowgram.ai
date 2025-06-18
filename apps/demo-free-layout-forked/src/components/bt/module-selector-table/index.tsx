@@ -4,8 +4,7 @@ import { Table, Modal, Button, Input, Space, Typography, Tag } from '@douyinfe/s
 import { IconSearch } from '@douyinfe/semi-icons';
 
 import { EntityPropertyTypeSelector } from '../../ext/type-selector-ext';
-import { useModuleStore, Module, ModuleAttribute } from '../../../stores/module.store';
-import { useEntityListStore } from '../../../stores/entity-list';
+import { useModuleStore, useEntityListStore, Module, ModuleAttribute } from '../../../stores';
 
 const { Text } = Typography;
 
@@ -199,7 +198,6 @@ export const ModuleSelectorTableModal: React.FC<ModuleSelectorTableModalProps> =
       ),
     },
     {
-      title: '类型',
       dataIndex: 'type',
       key: 'type',
       width: 80,
@@ -218,13 +216,12 @@ export const ModuleSelectorTableModal: React.FC<ModuleSelectorTableModalProps> =
       },
     },
     {
-      title: '描述',
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
       render: (text: string, record: ModuleTableData | ModuleAttributeTableData) => (
         <Text type="tertiary" style={{ fontSize: '12px' }} ellipsis={{ showTooltip: true }}>
-          {text || '暂无描述'}
+          {text}
         </Text>
       ),
     },
@@ -271,7 +268,7 @@ export const ModuleSelectorTableModal: React.FC<ModuleSelectorTableModalProps> =
         hideExpandedColumn={false}
         indentSize={20}
         size="small"
-        scroll={{ y: 500 }}
+        scroll={{ y: 400 }}
         rowSelection={rowSelection}
       />
     </Modal>

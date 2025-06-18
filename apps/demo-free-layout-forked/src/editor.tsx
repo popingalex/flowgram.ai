@@ -1,7 +1,6 @@
 import React from 'react';
 
-import { useCurrentGraph } from './stores/current-graph.store';
-import { useCurrentEntity } from './stores/current-entity.store';
+import { useCurrentGraph, useCurrentEntity } from './stores';
 import { WorkflowEditor } from './components/workflow-editor/workflow-editor';
 
 export const Editor: React.FC = () => {

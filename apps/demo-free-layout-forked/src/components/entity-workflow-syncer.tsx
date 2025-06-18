@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
 
 import { convertGraphToWorkflowData } from '../utils/graph-to-workflow';
-import { useGraphStore } from '../stores/graph.store';
-import { useEntityListActions } from '../stores/entity-list';
-import { useCurrentGraphStore } from '../stores/current-graph.store';
-import { useCurrentEntity } from '../stores/current-entity.store';
+import {
+  useGraphStore,
+  useEntityListActions,
+  useCurrentGraphStore,
+  useCurrentEntity,
+} from '../stores';
 
 /**
  * 实体工作流同步器

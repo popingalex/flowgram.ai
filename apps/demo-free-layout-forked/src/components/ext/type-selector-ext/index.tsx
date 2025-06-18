@@ -122,8 +122,8 @@ export const EntityPropertyTypeSelector = React.forwardRef<
         display: 'flex',
         alignItems: 'center',
         gap: 4,
-        width: '120px',
-        justifyContent: 'flex-start',
+        // width: '120px',
+        // justifyContent: 'flex-start',
       }}
     >
       {/* 类型选择器 - 只显示图标 */}

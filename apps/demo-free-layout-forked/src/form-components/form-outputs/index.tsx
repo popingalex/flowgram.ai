@@ -4,7 +4,7 @@ import { Field, FieldRenderProps } from '@flowgram.ai/free-layout-editor';
 import { IJsonSchema } from '@flowgram.ai/form-materials';
 
 import { PropertyData } from '../../utils/property-data-manager';
-import { useCurrentEntity } from '../../stores/current-entity.store';
+import { useCurrentEntity } from '../../stores';
 import { useNodeRenderContext } from '../../hooks';
 import { IsSidebarContext } from '../../context';
 import { UniversalPropertyTable } from '../../components/bt/universal-property-table';

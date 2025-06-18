@@ -54,6 +54,7 @@ export interface EnumClass {
   values: string[];
   createdAt?: string;
   updatedAt?: string;
+  _indexId?: string; // 稳定的索引ID，用作React key
 }
 
 // 函数参数接口

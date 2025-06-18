@@ -46,6 +46,16 @@ export {
 } from './current-graph.store';
 export type { CurrentGraphState, CurrentGraphActions } from './current-graph.store';
 
+// 模块管理
+export { useModuleStore, ModuleStoreProvider } from './module.store';
+export type {
+  ModuleStoreState,
+  ModuleActions,
+  ModuleStore,
+  Module,
+  ModuleAttribute,
+} from './module.store';
+
 // 兼容性导出 - 为了让现有代码能够正常工作
 // 将新的 hooks 映射到旧的命名
 export { useEntityList as useEntityStore } from './entity-list';

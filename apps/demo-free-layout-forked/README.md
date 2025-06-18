@@ -80,12 +80,26 @@ src/
 │   └── use-router.ts             # 路由管理hook
 ├── stores/                       # 数据存储
 └── app.tsx                       # 主应用组件
+
+docs/
+├── components/                   # 组件相关文档
+├── features/                     # 功能特性文档
+├── development/                  # 开发相关文档
+└── README.md                     # 详细技术文档
+
+debug/                           # 调试文件和测试页面
+cursor_works/                    # 开发任务管理
 ```
 
 ### 修改约束
 - ✅ 可以自由修改 `src/components/ext/` 下的扩展代码
 - ⚠️ 谨慎修改其他原有的工作流编辑器相关代码
 - ❌ 禁止修改 `packages/` 目录下的引擎代码
+
+### 代码组织原则
+- **统一Store导入**: 所有store相关导入统一使用 `from '../stores'`
+- **避免重复组件**: 删除了重复的选择器组件实现，统一使用 `ext/` 下的版本
+- **目录职责明确**: `bt/` 用于业务表格, `ext/` 用于扩展组件
 
 ### 调试功能
 - API模式切换：在页面右上角可以切换模拟/真实API模式

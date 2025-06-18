@@ -24,10 +24,9 @@ import {
   IconBranch,
 } from '@douyinfe/semi-icons';
 
-import { useModuleStore } from '../stores/module.store';
-import { useCurrentEntityStore } from '../stores/current-entity.store';
 import { EntityPropertyTypeSelector } from './ext/type-selector-ext';
 import { ModuleSelectorTableModal } from './bt/module-selector-table';
+import { useModuleStore, useCurrentEntityStore } from '../stores';
 import { useEntityList, useEntityListActions } from '../stores';
 
 const { Text } = Typography;
@@ -196,11 +195,11 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
     const data: any[] = [];
 
     entities.forEach((entity) => {
-      const entityRow = {
+      const entityRow: any = {
         key: entity._indexId,
         type: 'entity',
         entity: entity, // 直接保存实体对象
-        children: [],
+        children: [] as any[],
       };
 
       // 实体属性
@@ -218,12 +217,12 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
       entity.bundles?.forEach((bundleId: string) => {
         const module = modules.find((m) => m.id === bundleId || m._indexId === bundleId);
         if (module) {
-          const moduleRow = {
+          const moduleRow: any = {
             key: module._indexId,
             type: 'module',
             entity: entity,
             module: module, // 直接保存模块对象
-            children: [],
+            children: [] as any[],
           };
 
           // 模块属性
@@ -327,6 +326,13 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
 
   // 表格列定义
   const columns = [
+    // 第一列：展开按钮 40px
+    {
+      key: 'expand',
+      width: 20,
+      render: (_: any, record: any, index: number, { expandIcon }: any) => expandIcon,
+    },
+    // 第二列：链接按钮&行为树跳转按钮 60px
     {
       key: 'navigation',
       width: 60,
@@ -334,7 +340,7 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         if (record.type === 'entity') {
           const entity = record.entity;
           return entity ? (
-            <Space spacing={8}>
+            <Space spacing={4}>
               <Tooltip content="编辑工作流">
                 <Button
                   size="small"
@@ -362,9 +368,10 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         return null;
       },
     },
+    // 第三列：标签 60px
     {
       key: 'type',
-      width: 40,
+      width: 60,
       render: (_: any, record: any) => {
         if (record.type === 'entity') return <Tag color="blue">实体</Tag>;
         if (record.type === 'attribute') return <Tag color="green">属性</Tag>;
@@ -373,10 +380,11 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         return <Tag>{record.type}</Tag>;
       },
     },
+    // 第四列：ID 120px
     {
       title: 'ID',
       key: 'id',
-      width: 120,
+      width: 160,
       render: (_: any, record: any) => {
         if (record.type === 'entity') {
           const displayEntity = getDisplayEntity(record.entity);
@@ -418,10 +426,11 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         return null;
       },
     },
+    // 第五列：Name 160px
     {
       title: '名称',
       key: 'name',
-      width: 160,
+      width: 200,
       render: (_: any, record: any) => {
         if (record.type === 'entity') {
           const displayEntity = getDisplayEntity(record.entity);
@@ -454,6 +463,7 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         return null;
       },
     },
+    // 第六列：控件集合 80px
     {
       title: () => (
         <Button size="small" icon={<IconPlus />} type="primary" onClick={handleAddEntity}>
@@ -461,15 +471,15 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         </Button>
       ),
       key: 'actions',
-      width: 200,
+      width: 100,
       render: (_: any, record: any) => (
         <div
           style={{
             display: 'flex',
-            gap: '4px',
+            gap: '2px',
             justifyContent: 'flex-start',
-            minWidth: '180px',
-            flexWrap: 'wrap',
+            // minWidth: '60px',
+            // flexWrap: 'wrap',
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -734,11 +744,14 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
           pagination={false}
           childrenRecordName="children"
           defaultExpandAllRows={false}
-          hideExpandedColumn={false}
+          expandIcon={false}
           expandRowByClick={true}
+          hideExpandedColumn={true}
           indentSize={0}
           size="small"
-          scroll={{ y: 'calc(100vh - 200px)' }}
+          style={{ tableLayout: 'fixed' }}
+          className="entity-list-table"
+          scroll={{ x: 580 }}
           onRow={(record, index) => {
             // 实体行背景色
             if (record.type === 'entity') {
@@ -769,6 +782,15 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
           }}
         />
       </div>
+
+      <style>
+        {`
+          .entity-list-table .semi-table-tbody > .semi-table-row > .semi-table-row-cell {
+            padding-right: 12px;
+            padding-left: 8px;
+          }
+        `}
+      </style>
 
       {/* 添加实体弹窗 */}
       <Modal

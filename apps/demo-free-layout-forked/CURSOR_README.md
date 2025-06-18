@@ -68,3 +68,102 @@
 - 修复实体meta属性编辑问题
 - 修复属性增删后dirty状态问题
 - 重构数据转换逻辑，使用固定key格式
+
+## 📋 数据保存功能完成情况 (2024-12-19)
+
+### ✅ 完成的功能
+
+#### 1. Mock API 保存功能
+- **文件**: `src/services/api-service.ts`
+- **功能**: 实现了真正的内存数据保存，支持实体、模块、枚举的 CRUD 操作
+- **特点**:
+  - 创建可变的 mock 数据副本 (`mockEntities`, `mockModules`, `mockEnums`)
+  - 支持 POST、PUT、DELETE 操作
+  - 保持 `_indexId` 稳定性
+  - 模拟网络延迟
+  - 详细的控制台日志
+
+#### 2. 实体保存功能
+- **文件**: `src/components/entity-list-page.tsx`, `src/stores/current-entity.store.ts`, `src/stores/entity-list.ts`
+- **流程**:
+  1. 用户在界面修改实体属性 → `CurrentEntityStore.updateAttributeProperty`
+  2. 点击保存按钮 → `CurrentEntityStore.saveChanges`
+  3. 调用 `EntityListStore.saveEntity` → `entityApi.update`
+  4. Mock API 保存到内存并返回更新后的数据
+  5. 更新所有相关 store 状态
+
+#### 3. 模块保存功能
+- **文件**: `src/components/module-list-page.tsx`, `src/stores/module.store.tsx`
+- **流程**:
+  1. 用户修改模块属性 → 本地 `editingChanges` 状态
+  2. 点击保存按钮 → `handleSaveChanges` → `ModuleStore.updateModule`
+  3. 调用 `moduleApi.update` → Mock API 保存
+  4. 清除编辑状态，更新模块列表
+
+#### 4. 跨页面数据同步
+- **机制**: 所有修改都通过 API 保存到内存中的 mock 数据
+- **效果**: 在实体页面修改的数据，在模块页面、工作流编辑器等其他页面都能看到最新状态
+- **验证**: 可以在不同页面之间切换验证数据同步
+
+### 🔄 保存流程示例
+
+#### 实体保存流程:
+```
+用户修改实体名称
+→ EntityNameInput.onChange
+→ handleEntityFieldChange
+→ CurrentEntityStore.updateProperty
+→ 点击保存按钮
+→ CurrentEntityStore.saveChanges
+→ EntityListStore.saveEntity
+→ entityApi.update
+→ Mock API 更新 mockEntities 数组
+→ 返回更新后的实体
+→ 更新所有 store 状态
+```
+
+#### 模块保存流程:
+```
+用户修改模块属性
+→ AttributeIdInput.onChange
+→ handleAttributeFieldChange
+→ 本地 editingChanges 状态更新
+→ 点击保存按钮
+→ handleSaveChanges
+→ ModuleStore.updateModule
+→ moduleApi.update
+→ Mock API 更新 mockModules 数组
+→ 清除编辑状态
+```
+
+### 🎯 验证方法
+
+1. **单页面验证**:
+   - 修改实体/模块属性
+   - 点击保存按钮
+   - 刷新页面确认数据已保存
+
+2. **跨页面验证**:
+   - 在实体页面修改实体名称
+   - 切换到工作流编辑器
+   - 确认实体名称已更新
+
+3. **控制台日志**:
+   - 查看保存操作的详细日志
+   - 确认 API 调用和数据更新过程
+
+### 📝 注意事项
+
+- Mock 数据只在内存中保存，页面刷新后会重置
+- 实际部署时需要连接真实后台 API
+- 所有保存操作都有错误处理和加载状态显示
+- 保持了 `_indexId` 的稳定性，确保 React 组件不会重新创建
+
+### 🔗 相关文件
+
+- API 服务: `src/services/api-service.ts`
+- 实体相关: `src/stores/entity-list.ts`, `src/stores/current-entity.store.ts`
+- 模块相关: `src/stores/module.store.tsx`
+- 界面组件: `src/components/entity-list-page.tsx`, `src/components/module-list-page.tsx`
+
+---
