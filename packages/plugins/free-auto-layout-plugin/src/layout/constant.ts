@@ -1,6 +1,13 @@
-export const DagreLayoutOptions = {
+import { LayoutConfig } from './type';
+
+export const DefaultLayoutConfig: LayoutConfig = {
   rankdir: 'LR',
-  nodesep: 30,
-  ranksep: 150,
-  ranker: 'tight-tree',
+  align: undefined,
+  nodesep: 100,
+  edgesep: 10,
+  ranksep: 100,
+  marginx: 0,
+  marginy: 0,
+  acyclicer: undefined,
+  ranker: 'network-simplex',
 };

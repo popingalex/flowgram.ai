@@ -4,10 +4,20 @@ import { FlowNodeEntity } from '@flowgram.ai/document';
 import { type WorkflowPortEntity } from '../entities';
 
 export interface NodeRenderReturnType {
+  id: string;
+  type: string | number;
   /**
    * 当前节点
    */
   node: FlowNodeEntity;
+  /**
+   * 节点 data 数据
+   */
+  data: any;
+  /**
+   * 更新节点 data 数据
+   */
+  updateData: (newData: any) => void;
   /**
    * 节点选中
    */
