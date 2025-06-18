@@ -1,5 +1,5 @@
-import { clone, flatten, get } from 'lodash';
-import { shallowEqual } from 'fast-equals';
+import { flatten, get } from 'lodash';
+import { deepEqual } from 'fast-equals';
 import { Disposable, Emitter } from '@flowgram.ai/utils';
 import { ReactiveState } from '@flowgram.ai/reactive';
 
@@ -79,12 +79,12 @@ export class FormModel<TValues = any> implements Disposable {
   }
 
   get values() {
-    return clone(this.store.values) || clone(this.initialValues);
+    return this.store.values;
   }
 
   set values(v) {
     const prevValues = this.values;
-    if (shallowEqual(this.store.values || this.initialValues, v)) {
+    if (deepEqual(prevValues, v)) {
       return;
     }
     this.store.values = v;
@@ -133,7 +133,7 @@ export class FormModel<TValues = any> implements Disposable {
     this._options = options;
     if (options.initialValues) {
       const prevValues = this.store.values;
-      this.store.setInitialValues(options.initialValues);
+      this.store.values = options.initialValues;
       this.fireOnFormValuesInit({
         values: options.initialValues,
         prevValues,

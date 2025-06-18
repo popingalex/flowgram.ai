@@ -1,6 +1,6 @@
+import { type OperationMeta } from '@flowgram.ai/history';
 import { FlowDocument } from '@flowgram.ai/document';
 import { type PluginContext } from '@flowgram.ai/core';
-import { type OperationMeta } from '@flowgram.ai/history';
 
 import { getFormModelV2, shouldChangeFormValuesMerge } from '../utils';
 import { ChangeFormValuesOperationValue, NodeOperationType } from '../types';
@@ -14,7 +14,7 @@ export const changeFormValueOperationMeta: OperationMeta<
   void
 > = {
   type: NodeOperationType.changeFormValues,
-  inverse: op => ({
+  inverse: (op) => ({
     ...op,
     value: {
       ...op.value,
@@ -29,8 +29,11 @@ export const changeFormValueOperationMeta: OperationMeta<
     if (!formModel) {
       return;
     }
-
-    formModel.setValueIn(path, value);
+    if (!path) {
+      formModel.updateFormValues(value);
+    } else {
+      formModel.setValueIn(path, value);
+    }
   },
   shouldMerge: shouldChangeFormValuesMerge as OperationMeta['shouldMerge'],
 };
