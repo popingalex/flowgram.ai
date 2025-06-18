@@ -91,7 +91,7 @@ export const EntityWorkflowSyncer: React.FC = () => {
     setLoading(true);
 
     // 使用setTimeout确保loading状态能正确显示，并避免阻塞UI
-    setTimeout(() => {
+    setTimeout(async () => {
       try {
         // 转换为工作流数据
         const convertedData = convertGraphToWorkflowData(entityGraph);
@@ -106,6 +106,8 @@ export const EntityWorkflowSyncer: React.FC = () => {
       } catch (error) {
         console.error('[EntityWorkflowSyncer] 转换失败:', error);
         clearGraph();
+      } finally {
+        setLoading(false);
       }
     }, 100); // 100ms延迟，确保loading状态能显示
   }, [

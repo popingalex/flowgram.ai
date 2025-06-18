@@ -13,12 +13,21 @@ export interface EntityPropertyTypeSelectorProps {
   disabled?: boolean;
 }
 
+// 转换简化类型为标准类型
+const normalizeType = (type?: string): string => {
+  if (type === 's') return 'string';
+  if (type === 'n') return 'number';
+  if (type === 'b') return 'boolean';
+  return type || 'string';
+};
+
 // 解析类型选择值
 const getTypeSelectValue = (value?: Partial<IJsonSchema>): string[] | undefined => {
   if (value?.type === 'array' && value?.items) {
     return [value.type, ...(getTypeSelectValue(value.items) || [])];
   }
-  return value?.type ? [value.type] : undefined;
+  const normalizedType = normalizeType(value?.type);
+  return normalizedType ? [normalizedType] : undefined;
 };
 
 // 解析选择值为类型对象
@@ -37,7 +46,8 @@ export const EntityPropertyTypeSelector = React.forwardRef<
   EntityPropertyTypeSelectorProps
 >(({ value, onChange, onDataRestrictionClick, disabled = false }, ref) => {
   // 判断是否为字符串类型
-  const isStringType = value?.type === 'string';
+  const normalizedType = normalizeType(value?.type);
+  const isStringType = normalizedType === 'string';
 
   // 判断是否有数据限制（枚举值）
   const hasDataRestriction = value?.enum && Array.isArray(value.enum) && value.enum.length > 0;
@@ -68,6 +78,15 @@ export const EntityPropertyTypeSelector = React.forwardRef<
 
   const selectValue = useMemo(() => getTypeSelectValue(value), [value]);
 
+  // 创建标准化的value用于图标显示
+  const normalizedValue = useMemo(
+    () => ({
+      ...value,
+      type: normalizedType,
+    }),
+    [value, normalizedType]
+  );
+
   const handleTypeChange = (newValue: unknown) => {
     console.log('EntityPropertyTypeSelector handleTypeChange:', {
       newValue,
@@ -97,7 +116,16 @@ export const EntityPropertyTypeSelector = React.forwardRef<
   };
 
   return (
-    <div ref={ref} style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%' }}>
+    <div
+      ref={ref}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 4,
+        width: '120px',
+        justifyContent: 'flex-start',
+      }}
+    >
       {/* 类型选择器 - 只显示图标 */}
       <div style={{ width: 28, flexShrink: 0 }}>
         {disabled ? (
@@ -105,7 +133,7 @@ export const EntityPropertyTypeSelector = React.forwardRef<
           <Button
             size="small"
             style={{ width: '100%', minWidth: 28, height: 28 }}
-            icon={getSchemaIcon(value)}
+            icon={getSchemaIcon(normalizedValue)}
           />
         ) : (
           // 编辑模式：提供完整的Cascader功能
@@ -115,7 +143,7 @@ export const EntityPropertyTypeSelector = React.forwardRef<
               <Button
                 size="small"
                 style={{ width: '100%', minWidth: 28, height: 28 }}
-                icon={getSchemaIcon(value)}
+                icon={getSchemaIcon(normalizedValue)}
               />
             )}
             treeData={options}

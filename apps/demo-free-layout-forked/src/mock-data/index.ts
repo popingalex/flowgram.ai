@@ -1,28 +1,40 @@
-// Mock数据管理器 - 基于真实后台API数据
-// 用于离线开发，直接使用真实API数据作为mock
+// 统一数据管理器 - 唯一的数据源目录
+// 所有数据都从真实后端API获取，用于开发和测试
 
-import type { Module, Entity, EnumClass, BehaviorDef } from '../services/types';
+import type { Module, Entity, EnumClass } from '../services/types';
 
-// 直接导入真实API数据
+// 导入所有数据文件
 import modulesData from './modules.json';
 import graphsData from './graphs.json';
 import enumsData from './enums.json';
 import entitiesData from './entities.json';
 import behaviorsData from './behaviors.json';
 
-// 导出真实数据
+// 导出统一的数据接口
 export const REAL_MODULES = modulesData as Module[];
 export const REAL_ENTITIES = entitiesData as Entity[];
-export const REAL_ENUMS = enumsData; // 可能是错误对象，保持原样
-export const REAL_BEHAVIORS = behaviorsData as any[]; // 后台格式，需要转换
-export const REAL_GRAPHS = graphsData as any[];
+export const REAL_ENUMS = enumsData; // 原始格式保持不变
+export const REAL_BEHAVIORS = behaviorsData; // Expression格式，直接使用
+export const REAL_GRAPHS = graphsData;
 
-// 获取真实数据统计信息
-export const getRealDataStats = () => ({
+// 数据统计和元信息
+export const getDataStats = () => ({
   modules: REAL_MODULES.length,
   entities: REAL_ENTITIES.length,
   enums: Array.isArray(REAL_ENUMS) ? REAL_ENUMS.length : 0,
   behaviors: REAL_BEHAVIORS.length,
   graphs: REAL_GRAPHS.length,
   lastUpdated: new Date().toISOString(),
+  dataSource: 'unified-mock-data',
 });
+
+// 便捷查询函数
+export const findBehavior = (id: string) =>
+  REAL_BEHAVIORS.find((behavior: any) => behavior.id === id);
+
+export const findGraph = (entityId: string) =>
+  REAL_GRAPHS.find((graph: any) => graph.id === entityId);
+
+export const findEntity = (id: string) => REAL_ENTITIES.find((entity) => entity.id === id);
+
+export const findModule = (id: string) => REAL_MODULES.find((module) => module.id === id);

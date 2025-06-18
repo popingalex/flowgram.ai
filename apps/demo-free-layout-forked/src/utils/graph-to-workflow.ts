@@ -86,28 +86,14 @@ function convertGraphNodeToWorkflowNode(
 
     case 'action':
     case 'invoke':
-      // 🔧 添加调试日志
-      // console.log(`[GraphConverter] 转换action节点: ${graphNode.id}`, {
-      //   name: graphNode.name,
-      //   type: graphNode.type,
-      //   exp: graphNode.exp,
-      //   expId: graphNode.exp?.id,
-      //   fallbackId: graphNode.id,
-      // });
-
       return {
         ...baseNode,
         data: {
           ...baseNode.data,
-          title: graphNode.name || `调用${graphNode.id}`, // 显示具体的函数名
-          functionMeta: {
-            id: graphNode.exp?.id || graphNode.id, // 🔧 修复：使用exp.id作为函数ID，这样能正确匹配behavior数据
-            name: graphNode.name,
-            description: `Action: ${graphNode.name}`,
-            functionType: 'backend-action',
-          },
+          title: graphNode.name || `调用${graphNode.id}`,
+          exp: graphNode.exp, // 保留后台的exp字段
           inputs: convertGraphInputsToInvokeInputs(graphNode.inputs || []),
-          outputs: convertGraphOutputsToInvokeOutputs(graphNode.outputs || [], true), // 添加默认输出
+          outputs: convertGraphOutputsToInvokeOutputs(graphNode.outputs || [], true),
         },
       };
 
@@ -503,13 +489,14 @@ function analyzePhaseStructure(graph: WorkflowGraph) {
     }
   });
 
-  // 添加调试日志
-  Object.keys(phaseChildren).forEach((phaseId) => {
-    console.log(
-      `[GraphConverter] Phase ${phaseId} 包含子节点:`,
-      phaseChildren[phaseId].map((n) => n.id)
-    );
-  });
+  // 聚合打印Phase结构信息
+  if (Object.keys(phaseChildren).length > 0) {
+    const phaseStructure = Object.keys(phaseChildren).reduce((acc, phaseId) => {
+      acc[phaseId] = phaseChildren[phaseId].map((n) => n.id);
+      return acc;
+    }, {} as Record<string, string[]>);
+    console.log('[GraphConverter] Phase结构分析完成:', phaseStructure);
+  }
 
   return { phaseNodes, otherNodes, phaseChildren };
 }
@@ -535,6 +522,9 @@ function convertGraphEdgesToWorkflowEdges(edges: WorkflowGraphEdge[], nodes?: an
     });
   }
 
+  // 收集端口修复信息，避免逐条打印
+  const portFixLog: string[] = [];
+
   const convertedEdges = edges.map((edge, index) => {
     let sourcePortID = edge.input.socket;
     let targetPortID = edge.output.socket === '$in' ? undefined : edge.output.socket;
@@ -544,9 +534,7 @@ function convertGraphEdgesToWorkflowEdges(edges: WorkflowGraphEdge[], nodes?: an
       const conditionKey = nodeToConditionKeyMap.get(edge.input.node);
       if (conditionKey) {
         sourcePortID = conditionKey;
-        console.log(
-          `[GraphConverter] 修复条件节点端口: ${edge.input.node} $out -> ${conditionKey}`
-        );
+        portFixLog.push(`${edge.input.node}: $out -> ${conditionKey}`);
       }
     }
 
@@ -559,6 +547,11 @@ function convertGraphEdgesToWorkflowEdges(edges: WorkflowGraphEdge[], nodes?: an
 
     return edgeData;
   });
+
+  // 聚合打印端口修复信息
+  if (portFixLog.length > 0) {
+    console.log(`[GraphConverter] 修复了${portFixLog.length}个条件节点端口:`, portFixLog);
+  }
 
   console.log('[GraphConverter] 转换完成edges:', {
     outputEdgesCount: convertedEdges.length,

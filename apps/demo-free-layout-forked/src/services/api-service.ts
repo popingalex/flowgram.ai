@@ -4,7 +4,6 @@
 import { nanoid } from 'nanoid';
 
 import type { Module, Entity, EnumClass, BehaviorDef, BehaviorParameter } from './types';
-import { MOCK_MODULES, MOCK_ENTITIES, MOCK_ENUM_CLASSES, MOCK_BEHAVIORS } from './mock-data';
 import { REAL_MODULES, REAL_ENTITIES, REAL_ENUMS, REAL_BEHAVIORS, REAL_GRAPHS } from '../mock-data';
 
 // 后台返回的Java行为数据格式
@@ -283,8 +282,8 @@ export const enumApi = {
 
 // 函数行为相关API
 export const behaviorApi = {
-  // 获取所有函数行为
-  getAll: async (): Promise<BehaviorDef[]> => {
+  // 获取所有函数行为 - 直接返回后台原始数据，不做转换
+  getAll: async () => {
     const rawData = await apiRequest('http://localhost:9999/hub/behaviors/');
     console.log('🔍 [behaviorApi] 原始API数据:', {
       isArray: Array.isArray(rawData),
@@ -292,71 +291,14 @@ export const behaviorApi = {
       firstItem: rawData?.[0],
     });
 
-    // 检查数据格式并转换
-    if (Array.isArray(rawData) && rawData.length > 0) {
-      const firstItem = rawData[0];
-
-      // 检查是否是后台数据格式（有fullClassName字段）或者Mock数据格式（有id和params字段）
-      if (firstItem.fullClassName) {
-        // 后台数据格式，需要转换
-        return rawData.map((item: any) => ({
-          id: item.id,
-          name: item.name || item.methodName || 'Unknown',
-          description: item.description || `Action: ${item.methodName || item.name}`,
-          functionType: item.functionType || 'backend-action',
-          category: item.className || 'Unknown',
-          fullClassName: item.fullClassName,
-          methodName: item.methodName,
-          parameters: item.parameters || [],
-          returns: item.returns || { id: 'result', type: 'void', name: 'result' },
-          returnType: item.returnType || 'void',
-          tags: item.tags || [],
-          _indexId: item._indexId || nanoid(),
-        }));
-      } else if (firstItem.id && firstItem.params) {
-        // Mock数据格式（behaviors.json），需要转换为标准格式
-        console.log('🔍 [behaviorApi] 检测到Mock数据格式，开始转换...');
-        return rawData.map((item: any) => {
-          // 从完整的Java类名中提取类名和方法名
-          const fullId = item.id || '';
-          const parts = fullId.split('.');
-          const methodName = parts[parts.length - 1] || 'unknown';
-          const className = parts[parts.length - 2] || 'Unknown';
-
-          return {
-            id: item.id,
-            name: methodName,
-            description: item.javadoc || `${className}.${methodName}`,
-            functionType: item.type === 'contract' ? 'contract' : 'backend-action',
-            category: className,
-            fullClassName: fullId,
-            methodName: methodName,
-            parameters: (item.params || []).map((param: any) => ({
-              id: param.id,
-              name: param.id,
-              type: param.type,
-              description: param.desc || '',
-              required: true,
-            })),
-            returns: {
-              id: item.returns?.id || 'result',
-              type: item.returns?.type || 'void',
-              name: item.returns?.name || 'result',
-              description: '函数返回值',
-            },
-            returnType: item.returns?.type || 'void',
-            tags: [],
-            _indexId: nanoid(),
-          };
-        });
-      } else {
-        // 已经是标准格式，直接使用
-        console.log('🔍 [behaviorApi] 检测到标准格式，直接使用');
-        return rawData;
-      }
+    // 直接返回后台数据，只添加_indexId用作React key
+    if (Array.isArray(rawData)) {
+      return rawData.map((item: any) => ({
+        ...item,
+        _indexId: nanoid(), // 只添加React key，其他数据保持原样
+      }));
     }
 
-    console.log('🔍 [behaviorApi] 没有数据或数据格式不正确，返回空数组');
     return [];
   },
 

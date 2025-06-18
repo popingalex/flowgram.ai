@@ -72,32 +72,23 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
         throw new Error('Invalid entities data received');
       }
 
-      // 🎯 实现完整的$id转换系统
+      // 🎯 nanoid索引设计：为React组件稳定性使用nanoid，同时保留原始业务ID用于业务逻辑
       const entitiesWithIndex = fetchedEntities.map((entity) => {
-        // 🔑 生成统一的索引ID，确保id和_indexId一致
+        // 🔑 使用nanoid作为React key，确保组件在编辑时不会重新创建
         const indexId = entity._indexId || nanoid();
 
         return {
-          // 🔑 将原始业务ID存储到$id，生成nanoid作为界面索引ID
-          ...entity, // 保留所有原始字段
-          $id: entity.id, // 保存原始业务ID
-          id: indexId, // 使用统一的nanoid作为界面索引
-          $name: entity.name, // 保存原始名称
-          $description: entity.description, // 保存原始描述
+          ...entity, // 保留所有原始字段，包括业务ID
+          _indexId: indexId, // 只添加nanoid索引，不替换业务字段
 
-          // 转换属性
+          // 转换属性，只添加nanoid索引
           attributes: (entity.attributes || []).map((attr) => {
             const attrIndexId = attr._indexId || nanoid();
             return {
-              ...attr, // 保留所有原始字段
-              $id: attr.id, // 保存原始业务ID
-              id: attrIndexId, // 使用统一的nanoid作为界面索引
-              _indexId: attrIndexId, // 确保一致性
+              ...attr, // 保留所有原始字段，包括业务ID
+              _indexId: attrIndexId, // 只添加nanoid索引
             };
           }),
-
-          // 确保_indexId存在且与id一致
-          _indexId: indexId, // 与id保持一致
         };
       }) as Entity[];
 

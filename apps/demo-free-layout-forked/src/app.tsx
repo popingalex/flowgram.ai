@@ -18,19 +18,12 @@ import {
   Form,
 } from '@douyinfe/semi-ui';
 import {
-  IconCode,
-  IconUser,
-  IconFolder,
-  IconSetting,
-  IconBell,
-  IconHelpCircle,
-  IconSemiLogo,
   IconMore,
   IconGlobe,
   IconSave,
   IconUndo,
-  IconArticle,
   IconBranch,
+  IconHelpCircle,
 } from '@douyinfe/semi-icons';
 
 // 现有的组件
@@ -50,17 +43,20 @@ import {
   useGraphList,
 } from './stores';
 import { toggleMockMode, getApiMode } from './services/api-service';
+import { useRouter } from './hooks/use-router';
 import { Editor } from './editor';
 import { TestNewArchitecture } from './components/test-new-architecture';
 // import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
+import { ModuleListPage } from './components/module-list-page';
 import { EnumStoreProvider } from './components/ext/type-selector-ext/enum-store';
 // import { BehaviorTestPage } from './components/ext/behavior-test'; // 已删除
 import { EntityWorkflowSyncer } from './components/entity-workflow-syncer';
 import { EntitySelector } from './components/entity-selector';
+import { EntityListPage } from './components/entity-list-page';
 // import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
 
 const { Header, Content } = Layout;
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 // 实体数据初始化组件 - 直接使用EntityListStore加载数据
 const EntityStoreInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -146,50 +142,65 @@ const EntityEditActions: React.FC = () => {
 };
 
 type PageType =
-  | 'workflow'
   | 'entities'
   | 'modules'
-  | 'settings'
+  | 'entity-workflow'
   | 'test-properties'
   // | 'test-module-entity' // 已删除
   | 'test-new-architecture'
   | 'test-behavior'
   | 'test-variable-selector';
 
-// 简单的页面组件
-const EntityManagementPage: React.FC = () => (
-  <div style={{ padding: '24px' }}>
-    <Title heading={3} style={{ marginBottom: '24px' }}>
-      实体管理
-    </Title>
-    <Text type="secondary">实体管理功能正在开发中...</Text>
-  </div>
-);
+// 工作流编辑页面组件
+const WorkflowEditPage: React.FC = () => {
+  const { selectedEntityId } = useCurrentEntity();
+  const { getEntityByStableId } = useEntityListActions();
 
-const ModuleManagementPage: React.FC = () => (
-  <div style={{ padding: '24px' }}>
-    <Title heading={3} style={{ marginBottom: '24px' }}>
-      模块管理
-    </Title>
-    <Text type="secondary">模块管理功能正在开发中...</Text>
-  </div>
-);
+  const selectedEntity = selectedEntityId ? getEntityByStableId(selectedEntityId) : null;
 
-const SystemSettingsPage: React.FC = () => (
-  <div style={{ padding: '24px' }}>
-    <Title heading={3} style={{ marginBottom: '24px' }}>
-      系统设置
-    </Title>
-    <Text type="secondary">系统配置和设置选项</Text>
-  </div>
-);
+  return selectedEntity ? (
+    <EntityEditProvider entity={selectedEntity}>
+      <Editor />
+    </EntityEditProvider>
+  ) : (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+        fontSize: '18px',
+        color: '#666',
+      }}
+    >
+      请选择一个实体进行工作流编辑
+    </div>
+  );
+};
 
 // 主应用内容组件
 const AppContent: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<PageType>('workflow');
+  const { routeState, navigate } = useRouter();
+  const [currentPage, setCurrentPage] = useState<PageType>(routeState.route);
+
   const { entities, loading } = useEntityList();
   const { selectedEntityId } = useCurrentEntity();
   const { selectEntity } = useCurrentEntityActions();
+
+  // 同步路由状态和页面状态
+  React.useEffect(() => {
+    setCurrentPage(routeState.route);
+
+    // 如果是实体工作流页面，确保选中正确的实体
+    if (routeState.route === 'entity-workflow' && routeState.entityId) {
+      const entity = entities.find(
+        (e) => e._indexId === routeState.entityId || e.id === routeState.entityId
+      );
+      if (entity && selectedEntityId !== entity._indexId) {
+        selectEntity(entity);
+      }
+    }
+  }, [routeState.route, routeState.entityId, entities, selectedEntityId, selectEntity]);
   const { getEntity, getEntityByStableId } = useEntityListActions();
   const [apiMode, setApiMode] = useState(getApiMode());
   const autoSelectedRef = React.useRef(false);
@@ -250,19 +261,28 @@ const AppContent: React.FC = () => {
   }, []);
 
   // 处理导航选择
-  const handleNavSelect = React.useCallback((data: any) => {
-    if (data.selectedKeys && data.selectedKeys.length > 0) {
-      setCurrentPage(data.selectedKeys[0] as PageType);
-    }
-  }, []);
+  const handleNavSelect = React.useCallback(
+    (data: any) => {
+      if (data.selectedKeys && data.selectedKeys.length > 0) {
+        const selectedKey = data.selectedKeys[0] as string;
+        if (selectedKey === 'entities') {
+          navigate({ route: 'entities' });
+        } else if (selectedKey === 'modules') {
+          navigate({ route: 'modules' });
+        } else {
+          // 测试页面仍使用旧的方式
+          setCurrentPage(selectedKey as PageType);
+        }
+      }
+    },
+    [navigate]
+  );
 
   // 主要导航项
   const mainNavItems = React.useMemo(
     () => [
-      { itemKey: 'workflow', text: '流程设计' },
-      { itemKey: 'entities', text: '实体管理' },
-      { itemKey: 'modules', text: '模块管理' },
-      { itemKey: 'settings', text: '系统设置' },
+      { itemKey: 'entities', text: '实体列表' },
+      { itemKey: 'modules', text: '模块列表' },
     ],
     []
   );
@@ -281,7 +301,7 @@ const AppContent: React.FC = () => {
 
   // 根据当前页面和选中实体生成编辑器内容
   const editorContent = useMemo(() => {
-    if (currentPage === 'workflow') {
+    if (currentPage === 'entity-workflow') {
       const selectedEntity = selectedEntityId ? getEntityByStableId(selectedEntityId) : null;
       return selectedEntity ? (
         <EntityEditProvider entity={selectedEntity}>
@@ -294,37 +314,25 @@ const AppContent: React.FC = () => {
     return <div>未知页面</div>;
   }, [currentPage, selectedEntityId]); // 移除getEntity依赖
 
+  // 处理查看工作流
+  const handleViewWorkflow = (entityId: string) => {
+    // 设置选中的实体
+    const entity = entities.find((e) => e._indexId === entityId || e.id === entityId);
+    if (entity) {
+      selectEntity(entity);
+      navigate({ route: 'entity-workflow', entityId });
+    }
+  };
+
   // 渲染主要内容区域
   const renderMainContent = () => {
     switch (currentPage) {
-      case 'workflow': {
-        const selectedEntity = selectedEntityId ? getEntityByStableId(selectedEntityId) : null;
-
-        return selectedEntity ? (
-          <EntityEditProvider entity={selectedEntity}>
-            <Editor />
-          </EntityEditProvider>
-        ) : (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              height: '100%',
-              fontSize: '18px',
-              color: '#666',
-            }}
-          >
-            请选择一个实体 (selectedEntityId: {selectedEntityId})
-          </div>
-        );
-      }
       case 'entities':
-        return <EntityManagementPage />;
+        return <EntityListPage onViewWorkflow={handleViewWorkflow} />;
       case 'modules':
-        return <ModuleManagementPage />;
-      case 'settings':
-        return <SystemSettingsPage />;
+        return <ModuleListPage />;
+      case 'entity-workflow':
+        return <WorkflowEditPage />;
       case 'test-new-architecture':
         return <TestNewArchitecture />;
       case 'test-behavior':
@@ -349,25 +357,30 @@ const AppContent: React.FC = () => {
           }}
           footer={
             <Space>
-              <EntitySelector />
-              <Button
-                size="small"
-                type="tertiary"
-                onClick={testEntitySwitch}
-                style={{ backgroundColor: '#ff6b6b', color: 'white' }}
-              >
-                测试切换
-              </Button>
-              {(() => {
-                const selectedEntity = selectedEntityId
-                  ? getEntityByStableId(selectedEntityId)
-                  : null;
-                return selectedEntity ? (
-                  <EntityEditProvider entity={selectedEntity}>
-                    <EntityEditActions />
-                  </EntityEditProvider>
-                ) : null;
-              })()}
+              {/* 只在实体工作流页面显示实体相关控件 */}
+              {currentPage === 'entity-workflow' && (
+                <>
+                  <EntitySelector />
+                  <Button
+                    size="small"
+                    type="tertiary"
+                    onClick={testEntitySwitch}
+                    style={{ backgroundColor: '#ff6b6b', color: 'white' }}
+                  >
+                    测试切换
+                  </Button>
+                  {(() => {
+                    const selectedEntity = selectedEntityId
+                      ? getEntityByStableId(selectedEntityId)
+                      : null;
+                    return selectedEntity ? (
+                      <EntityEditProvider entity={selectedEntity}>
+                        <EntityEditActions />
+                      </EntityEditProvider>
+                    ) : null;
+                  })()}
+                </>
+              )}
               <Dropdown
                 trigger="click"
                 position="bottomRight"

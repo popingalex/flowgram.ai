@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 
 import { useCurrentEntity, useCurrentEntityActions } from '../../stores';
 import { useIsSidebar } from '../../hooks';
-import { ModuleSelectorModal } from '../../components/ext/module-selector';
 import { UniversalPropertyTable } from '../../components/bt/universal-property-table';
+import { ModuleSelectorTableModal } from '../../components/bt/module-selector-table';
 
 interface FormModuleOutputsProps {
   isSidebar?: boolean;
@@ -60,12 +60,12 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
       />
 
       {isModalVisible && currentEntity && (
-        <ModuleSelectorModal
+        <ModuleSelectorTableModal
           visible={isModalVisible}
           onConfirm={handleModalConfirm}
           onCancel={handleModalCancel}
           selectedModuleIds={currentEntity.bundles}
-          focusModuleId={focusModuleId}
+          entityId={currentEntity.id}
         />
       )}
     </>

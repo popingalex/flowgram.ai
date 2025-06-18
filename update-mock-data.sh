@@ -1,55 +1,68 @@
 #!/bin/bash
 
-# Mock数据更新脚本
-# 从后台API获取最新数据并保存为mock文件
+# 统一数据同步脚本 - 更新唯一的数据源目录
+# 支持Expression格式，已完成数据整合
 
-echo "🔄 开始更新Mock数据..."
+set -e
 
-# 检查后台服务是否可用
-if ! curl -s http://localhost:9999/cm/module/ > /dev/null; then
-    echo "❌ 后台服务不可用 (http://localhost:9999)"
-    echo "请确保后台服务正在运行"
+echo "🔄 开始同步统一数据源..."
+
+# 检查后端服务状态
+BACKEND_URL="http://localhost:9999"
+if ! curl -s "$BACKEND_URL/hub/behaviors/" > /dev/null; then
+    echo "❌ 后端服务未启动，请先启动：mvn spring-boot:run"
     exit 1
 fi
 
-# 创建mock数据目录
-mkdir -p apps/demo-free-layout-forked/src/mock-data
+# 唯一的数据目录
+MOCK_DIR="apps/demo-free-layout-forked/src/mock-data"
 
-echo "📥 获取模块数据..."
-curl -s http://localhost:9999/cm/module/ > apps/demo-free-layout-forked/src/mock-data/modules.json
+echo "📁 统一数据目录: $MOCK_DIR"
 
-echo "📥 获取实体数据..."
-curl -s http://localhost:9999/cm/entity/ > apps/demo-free-layout-forked/src/mock-data/entities.json
+# 1. 更新behaviors数据 (Expression格式)
+echo "🔄 同步behaviors数据..."
+curl -s "$BACKEND_URL/hub/behaviors/" | jq '.' > "$MOCK_DIR/behaviors.json"
+BEHAVIOR_COUNT=$(jq length "$MOCK_DIR/behaviors.json")
+echo "✅ behaviors.json: $BEHAVIOR_COUNT 个函数"
 
-echo "📥 获取枚举数据..."
-curl -s http://localhost:9999/cm/enum/ > apps/demo-free-layout-forked/src/mock-data/enums.json
+# 2. 更新graphs数据
+echo "🔄 同步graphs数据..."
+curl -s "$BACKEND_URL/hub/graphs/" | jq '.' > "$MOCK_DIR/graphs.json"
+GRAPH_COUNT=$(jq length "$MOCK_DIR/graphs.json")
+echo "✅ graphs.json: $GRAPH_COUNT 个图"
 
-echo "📥 获取函数行为数据..."
-curl -s http://localhost:9999/hub/behaviors/ > apps/demo-free-layout-forked/src/mock-data/behaviors.json
+# 3. 验证数据格式
+echo "🔍 验证数据格式..."
 
-echo "📥 获取工作流图数据..."
-curl -s http://localhost:9999/hub/graphs/ > apps/demo-free-layout-forked/src/mock-data/graphs.json
-
-# 显示文件大小统计
-echo ""
-echo "📊 Mock数据文件统计:"
-ls -lh apps/demo-free-layout-forked/src/mock-data/*.json
-
-# 显示数据条目统计
-echo ""
-echo "📈 数据条目统计:"
-echo "模块数量: $(jq length apps/demo-free-layout-forked/src/mock-data/modules.json 2>/dev/null || echo "解析失败")"
-echo "实体数量: $(jq length apps/demo-free-layout-forked/src/mock-data/entities.json 2>/dev/null || echo "解析失败")"
-echo "函数行为数量: $(jq length apps/demo-free-layout-forked/src/mock-data/behaviors.json 2>/dev/null || echo "解析失败")"
-echo "工作流图数量: $(jq length apps/demo-free-layout-forked/src/mock-data/graphs.json 2>/dev/null || echo "解析失败")"
-
-# 检查枚举数据是否为错误对象
-if jq -e '.reason' apps/demo-free-layout-forked/src/mock-data/enums.json > /dev/null 2>&1; then
-    echo "枚举数据: ❌ 错误对象 (后台接口问题)"
+# 检查behaviors是否为Expression格式
+FIRST_BEHAVIOR=$(jq '.[0]' "$MOCK_DIR/behaviors.json")
+if echo "$FIRST_BEHAVIOR" | jq -e '.inputs and .output and (.params | not) and (.returns | not)' > /dev/null; then
+    echo "✅ behaviors.json: Expression格式正确"
 else
-    echo "枚举数量: $(jq length apps/demo-free-layout-forked/src/mock-data/enums.json 2>/dev/null || echo "解析失败")"
+    echo "❌ behaviors.json: 格式错误，应为Expression格式"
+    exit 1
 fi
 
+# 4. 更新统计信息
+echo "📊 数据统计:"
+echo "  - Functions: $BEHAVIOR_COUNT (Expression格式)"
+echo "  - Graphs: $GRAPH_COUNT"
+echo "  - 数据目录: 1个 (已整合)"
+echo "  - 最后更新: $(date)"
+
+echo "🎉 统一数据源同步完成！"
+
+# 5. 显示示例数据
 echo ""
-echo "✅ Mock数据更新完成!"
-echo "�� 现在可以在离线环境下继续开发了"
+echo "📋 示例函数数据:"
+jq '.[0] | {id, name, desc, inputs: .inputs | length, output: .output.desc}' "$MOCK_DIR/behaviors.json"
+
+echo ""
+echo "📋 可用的实体图:"
+jq '.[].id' "$MOCK_DIR/graphs.json" | head -10
+
+echo ""
+echo "✨ 数据整合优势:"
+echo "  - 单一数据源，避免重复"
+echo "  - 自动同步，保持一致"
+echo "  - 便捷查询，简化使用"

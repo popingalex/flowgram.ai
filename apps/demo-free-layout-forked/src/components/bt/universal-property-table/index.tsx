@@ -30,7 +30,7 @@ import {
 
 // 移除外部组件引用，改为内联实现
 import { EntityPropertyTypeSelector } from '../../ext/type-selector-ext';
-import { TypedParser, Primitive } from '../../../typings/mas/typed';
+import { TypedParser } from '../../../typings/mas/typed';
 import { useModuleStore } from '../../../stores/module.store';
 import { useCurrentEntityActions, useCurrentEntityStore } from '../../../stores';
 import type { Attribute } from '../../../services/types';
@@ -427,7 +427,7 @@ interface ModuleTreeData {
   isSelected?: boolean;
 }
 
-const ModulePropertyTreeTable: React.FC = () => {
+export const ModulePropertyTreeTable: React.FC = () => {
   const [configModalVisible, setConfigModalVisible] = useState(false);
   const [focusModuleId, setFocusModuleId] = useState<string | undefined>();
 
@@ -754,36 +754,7 @@ const ModulePropertyTreeTable: React.FC = () => {
           if (record.isAttribute) {
             // 属性行：显示类型选择器（只读）
             const propertyData = record as ModulePropertyData;
-            const typedInfo = TypedParser.fromString(propertyData.type);
-
-            let value;
-            if (typedInfo.dimensions.length > 0) {
-              const itemType =
-                typedInfo.attributes.length > 0
-                  ? 'object'
-                  : typedInfo.primitive === Primitive.STRING
-                  ? 'string'
-                  : typedInfo.primitive === Primitive.NUMBER
-                  ? 'number'
-                  : typedInfo.primitive === Primitive.BOOLEAN
-                  ? 'boolean'
-                  : 'unknown';
-              value = { type: 'array', items: { type: itemType } };
-            } else if (typedInfo.attributes.length > 0) {
-              value = { type: 'object' };
-            } else {
-              const primitiveType =
-                typedInfo.primitive === Primitive.STRING
-                  ? 'string'
-                  : typedInfo.primitive === Primitive.NUMBER
-                  ? 'number'
-                  : typedInfo.primitive === Primitive.BOOLEAN
-                  ? 'boolean'
-                  : 'unknown';
-              value = { type: primitiveType };
-            }
-
-            return <EntityPropertyTypeSelector value={value} disabled />;
+            return <EntityPropertyTypeSelector value={{ type: propertyData.type }} disabled />;
           } else {
             // 模块行：显示属性数量和跳转按钮
             const moduleData = record as ModuleTreeData;
@@ -951,38 +922,12 @@ const ModulePropertyTreeTable: React.FC = () => {
             const typedInfo = TypedParser.fromString(propertyData.type);
             const module = modules.find((m) => m.id === propertyData.moduleId);
 
-            // 转换为JSON Schema格式
-            let value;
-            if (typedInfo.dimensions.length > 0) {
-              const itemType =
-                typedInfo.attributes.length > 0
-                  ? 'object'
-                  : typedInfo.primitive === Primitive.STRING
-                  ? 'string'
-                  : typedInfo.primitive === Primitive.NUMBER
-                  ? 'number'
-                  : typedInfo.primitive === Primitive.BOOLEAN
-                  ? 'boolean'
-                  : 'unknown';
-              value = { type: 'array', items: { type: itemType } };
-            } else if (typedInfo.attributes.length > 0) {
-              value = { type: 'object' };
-            } else {
-              const primitiveType =
-                typedInfo.primitive === Primitive.STRING
-                  ? 'string'
-                  : typedInfo.primitive === Primitive.NUMBER
-                  ? 'number'
-                  : typedInfo.primitive === Primitive.BOOLEAN
-                  ? 'boolean'
-                  : 'unknown';
-              value = { type: primitiveType };
-            }
-
             return (
               <Space>
                 <EntityPropertyTypeSelector
-                  value={value}
+                  value={{
+                    type: propertyData.type,
+                  }}
                   disabled={false} // 模块配置页面允许编辑所有属性
                   onChange={(typeInfo) => {
                     console.log('修改模块属性类型:', { record, typeInfo });
@@ -1456,57 +1401,10 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
         render: (_: any, record: Attribute) => (
           <Space>
             <EntityPropertyTypeSelector
-              value={(() => {
-                const typedInfo = TypedParser.fromString(record.type);
-                if (typedInfo.dimensions.length > 0) {
-                  const itemType = (() => {
-                    if (typedInfo.attributes.length > 0) {
-                      return 'object';
-                    }
-                    switch (typedInfo.primitive) {
-                      case Primitive.STRING:
-                        return 'string';
-                      case Primitive.NUMBER:
-                        return 'number';
-                      case Primitive.BOOLEAN:
-                        return 'boolean';
-                      case Primitive.UNKNOWN:
-                        return 'unknown';
-                      default:
-                        return 'unknown';
-                    }
-                  })();
-                  return {
-                    type: 'array',
-                    items: { type: itemType },
-                    ...(record.enumClassId && { enumClassId: record.enumClassId }),
-                  };
-                } else if (typedInfo.attributes.length > 0) {
-                  return {
-                    type: 'object',
-                    ...(record.enumClassId && { enumClassId: record.enumClassId }),
-                  };
-                } else {
-                  const primitiveType = (() => {
-                    switch (typedInfo.primitive) {
-                      case Primitive.STRING:
-                        return 'string';
-                      case Primitive.NUMBER:
-                        return 'number';
-                      case Primitive.BOOLEAN:
-                        return 'boolean';
-                      case Primitive.UNKNOWN:
-                        return 'unknown';
-                      default:
-                        return 'unknown';
-                    }
-                  })();
-                  return {
-                    type: primitiveType,
-                    ...(record.enumClassId && { enumClassId: record.enumClassId }),
-                  };
-                }
-              })()}
+              value={{
+                type: record.type,
+                ...(record.enumClassId && { enumClassId: record.enumClassId }),
+              }}
               onChange={(typeInfo: any) => handleTypeChange(record._indexId, typeInfo)}
               disabled={isReadonly || record.isModuleProperty}
               onDataRestrictionClick={() => {

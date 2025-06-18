@@ -1,91 +1,93 @@
-# Mock数据管理
+# 统一数据管理 - 唯一数据源
 
-## 概述
+## 🎯 数据整合完成
 
-本目录包含从真实后台API获取的数据，用于离线开发和测试。所有数据都是从运行中的后台服务实时获取的快照。
+**✅ 已整合完成**：所有数据现在统一存放在此目录中，`/datas` 目录已删除。
 
-## 数据文件
+## 📁 数据文件 (唯一数据源)
 
-- `modules.json` - 模块数据 (来自 `/cm/module/`)
-- `entities.json` - 实体数据 (来自 `/cm/entity/`)
-- `enums.json` - 枚举数据 (来自 `/cm/enum/`)
-- `behaviors.json` - 函数行为数据 (来自 `/hub/behaviors/`)
-- `graphs.json` - 工作流图数据 (来自 `/hub/graphs/`)
-
-## 使用方式
-
-### 1. 自动降级模式（推荐）
-
-系统会自动尝试真实API，失败时降级到mock数据：
-
-```typescript
-// API服务会自动处理降级
-import { moduleApi, entityApi, behaviorApi } from '../services/api-service';
-
-// 这些调用会自动降级到mock数据（如果真实API不可用）
-const modules = await moduleApi.getAll();
-const entities = await entityApi.getAll();
-const behaviors = await behaviorApi.getAll();
+### 1. behaviors.json (70个函数)
+**Expression格式** - 直接从后端API获取
+```json
+{
+  "id": "vehicle.before",
+  "name": "before",
+  "desc": "函数: before",
+  "output": {
+    "id": "return",
+    "type": "u",
+    "desc": "void"
+  },
+  "inputs": [
+    {
+      "id": "context",
+      "type": "u",
+      "desc": "Context"
+    }
+  ]
+}
 ```
 
-### 2. 直接使用mock数据
+### 2. graphs.json (20个图)
+实体行为树图结构，使用条件树模式
 
-```typescript
-import { REAL_MODULES, REAL_ENTITIES, REAL_BEHAVIORS, REAL_GRAPHS } from './mock-data';
+### 3. workflow-example.json
+工作流转换示例，展示从后端图到前端工作流的转换结果
 
-// 直接使用mock数据
-console.log('模块数量:', REAL_MODULES.length);
-console.log('实体数量:', REAL_ENTITIES.length);
-```
+### 4. entities.json
+实体定义数据
 
-### 3. 强制mock模式
+### 5. modules.json
+模块定义数据
 
-```typescript
-import { toggleMockMode } from '../services/api-service';
+### 6. enums.json
+枚举类型定义数据
 
-// 强制使用mock模式
-toggleMockMode(); // 切换到mock模式
-```
+## 🔄 数据同步
 
-## 数据更新
-
-当后台数据发生变化时，可以重新获取最新数据：
-
+### 一键更新脚本
 ```bash
-# 在项目根目录执行
-curl -s http://localhost:9999/cm/module/ > apps/demo-free-layout-forked/src/mock-data/modules.json
-curl -s http://localhost:9999/cm/entity/ > apps/demo-free-layout-forked/src/mock-data/entities.json
-curl -s http://localhost:9999/cm/enum/ > apps/demo-free-layout-forked/src/mock-data/enums.json
-curl -s http://localhost:9999/hub/behaviors/ > apps/demo-free-layout-forked/src/mock-data/behaviors.json
-curl -s http://localhost:9999/hub/graphs/ > apps/demo-free-layout-forked/src/mock-data/graphs.json
+./update-mock-data.sh
 ```
 
-## 数据统计
+### API数据源
+- **Behaviors**: `http://localhost:9999/hub/behaviors/`
+- **Graphs**: `http://localhost:9999/hub/graphs/`
 
-当前数据快照统计：
-
-- **模块**: 6个
-- **实体**: 多个（包含载具、直升机等）
-- **枚举**: 可能为错误对象（后台接口问题）
-- **函数行为**: 100+个Java函数
-- **工作流图**: 多个实体的工作流
-
-## 注意事项
-
-1. **枚举数据异常**: `/cm/enum/` 接口返回错误信息，系统会自动处理
-2. **类型兼容**: 使用系统现有的类型定义，无需额外转换
-3. **自动降级**: 优先使用真实API，失败时自动使用mock数据
-4. **数据新鲜度**: mock数据是实时快照，定期更新以保持同步
-
-## 测试
-
-运行测试脚本验证mock数据：
+## 📊 使用方式
 
 ```typescript
-// 在浏览器控制台或Node.js中运行
-import './test-mock';
+import {
+  REAL_BEHAVIORS,
+  REAL_GRAPHS,
+  WORKFLOW_EXAMPLE,
+  findBehavior,
+  findGraph,
+  getDataStats
+} from './mock-data';
+
+// 查找函数
+const vehicleBefore = findBehavior('vehicle.before');
+
+// 获取图数据
+const vehicleGraph = findGraph('vehicle');
+
+// 数据统计
+console.log(getDataStats());
 ```
 
-## 离线开发
+## ✨ 整合优势
 
-有了这些mock数据，即使后台服务不可用，前端也能正常开发和测试所有功能。
+1. **单一数据源**：所有数据集中管理，避免重复
+2. **自动同步**：脚本化更新，保持与后端一致
+3. **类型安全**：TypeScript支持，便于开发
+4. **便捷查询**：提供查找函数，简化使用
+
+## 🎉 数据统计
+
+- **Functions**: 70个 (Expression格式)
+- **Graphs**: 20个实体图
+- **Workflow Example**: 1个转换示例
+- **数据目录**: 1个 (已整合)
+
+**不再有多个数据目录的混乱！**

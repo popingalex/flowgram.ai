@@ -33,13 +33,13 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
   //   });
   // }, [behaviors, loading]);
 
-  // 计算实际显示的value - 支持从后台functionMeta.id转换为_indexId
+  // 计算实际显示的value - 支持从后台functionId转换为_indexId
   const displayValue = React.useMemo(() => {
     if (value) {
       return value; // 如果已经有_indexId，直接使用
     }
 
-    // 尝试从节点的functionMeta中获取函数ID
+    // 尝试从节点的exp.id中获取函数ID
     if (playgroundEntity) {
       try {
         const formData = playgroundEntity.getData(FlowNodeFormData);
@@ -47,35 +47,17 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
         if (formData) {
           const formModel = formData.getFormModel();
 
-          if (formModel && formModel.values) {
-            if (formModel.values.data) {
-              const functionMeta = formModel.values.data.functionMeta;
-              const functionId = functionMeta?.id;
+          if (formModel && formModel.values && formModel.values.data) {
+            const functionId = formModel.values.data.exp?.id;
 
-              if (functionId) {
-                // 🔧 修复：直接使用functionMeta.id查找对应的behavior，然后返回其_indexId
-                const matchedBehavior = behaviors.find((b) => b.id === functionId);
-                if (matchedBehavior) {
-                  return matchedBehavior._indexId;
-                }
-              }
-            } else {
-              // 🔧 尝试直接从formModel.values中获取functionMeta
-              const functionMeta = formModel.values.functionMeta;
-
-              if (functionMeta && functionMeta.id) {
-                const functionId = functionMeta.id;
-
-                const matchedBehavior = behaviors.find((b) => b.id === functionId);
-                if (matchedBehavior) {
-                  return matchedBehavior._indexId;
-                }
-              }
+            if (functionId) {
+              // 直接返回原始ID，不做转换
+              return functionId;
             }
           }
         }
       } catch (error) {
-        console.error('[InvokeFunctionSelector] 获取functionMeta失败:', error);
+        console.error('[InvokeFunctionSelector] 获取exp.id失败:', error);
       }
     }
 
@@ -86,32 +68,28 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
   const treeData = React.useMemo(() => {
     const grouped: Record<string, any[]> = {};
 
-    // 🔧 找到当前选中函数所属的类别
-    const selectedBehavior = behaviors.find((b) => b._indexId === displayValue);
-    const selectedCategory = selectedBehavior?.category;
+    // 找到当前选中函数所属的类别
+    const selectedBehavior = behaviors.find((b) => b.id === displayValue);
+    const selectedClassName = selectedBehavior
+      ? selectedBehavior.id.split('.').slice(-2, -1)[0]
+      : null;
 
     behaviors.forEach((behavior) => {
-      // 🔧 修复：使用category字段进行分组，而不是className
-      const categoryName = behavior.category || '其他';
+      // 从完整ID中提取类名和方法名
+      const fullId = behavior.id || '';
+      const parts = fullId.split('.');
+      const methodName = parts[parts.length - 1] || 'unknown';
+      const className = parts[parts.length - 2] || '其他';
 
-      if (!grouped[categoryName]) {
-        grouped[categoryName] = [];
+      if (!grouped[className]) {
+        grouped[className] = [];
       }
 
-      grouped[categoryName].push({
-        label: (
-          <div
-            style={{ width: '100%', paddingRight: '12px' }}
-            title={behavior.fullClassName || behavior.id} // 在tooltip中显示完整类名
-          >
-            {/* 只显示方法名，简洁明了 */}
-            <span style={{ fontWeight: 500, fontSize: '14px' }}>
-              {behavior.methodName || behavior.name}
-            </span>
-          </div>
-        ),
-        value: behavior._indexId,
-        key: behavior._indexId,
+      grouped[className].push({
+        label: methodName, // 使用纯文本作为label，支持高亮
+        value: behavior.id,
+        key: behavior.id,
+        title: behavior.id, // 在tooltip中显示完整ID
       });
     });
 
@@ -119,38 +97,10 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
       .sort()
       .map((categoryName) => {
         // 🔧 判断当前类别是否包含选中的函数
-        const isSelectedCategory = categoryName === selectedCategory;
+        const isSelectedCategory = categoryName === selectedClassName;
 
         return {
-          label: (
-            <div
-              style={{
-                cursor: 'pointer',
-                width: '100%',
-                padding: '4px 0',
-                // 🔧 添加选中高亮效果
-                backgroundColor: isSelectedCategory ? '#e6f7ff' : 'transparent',
-                borderRadius: '4px',
-                fontWeight: isSelectedCategory ? 600 : 400,
-                color: isSelectedCategory ? '#1890ff' : 'inherit',
-                transition: 'all 0.2s ease',
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-                const nodeKey = categoryName;
-
-                if (expandedKeys.includes(nodeKey)) {
-                  // 如果已展开，则收缩
-                  setExpandedKeys(expandedKeys.filter((key) => key !== nodeKey));
-                } else {
-                  // 如果未展开，则展开
-                  setExpandedKeys([...expandedKeys, nodeKey]);
-                }
-              }}
-            >
-              {categoryName}
-            </div>
-          ),
+          label: categoryName, // 使用纯文本，支持高亮
           value: categoryName,
           key: categoryName,
           disabled: true, // 保持禁用，防止选择分类节点
@@ -170,7 +120,7 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
 
   // 处理函数选择，动态更新inputs和outputs
   const handleFunctionSelect = (selectedValue: string) => {
-    const selectedBehavior = behaviors.find((b) => b._indexId === selectedValue);
+    const selectedBehavior = behaviors.find((b) => b.id === selectedValue);
     if (!selectedBehavior) {
       return;
     }
@@ -198,16 +148,12 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
       };
 
       // 只添加函数特定的参数，不添加基础API参数
-      selectedBehavior.parameters.forEach((param) => {
-        newInputs.properties[param.name] = {
+      (selectedBehavior as any).inputs?.forEach((param: any) => {
+        newInputs.properties[param.id] = {
           type: param.type,
-          title: param.name,
-          description: param.description,
+          title: param.id,
+          description: param.desc,
         };
-
-        if (param.required) {
-          newInputs.required.push(param.name);
-        }
       });
 
       // 构建新的outputs schema
@@ -235,29 +181,20 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
             description: '调用失败时的错误信息',
           },
           result: {
-            type: selectedBehavior.returns.type,
+            type: (selectedBehavior as any).output?.type || 'object',
             title: '调用结果',
-            description: selectedBehavior.returns.description || '函数返回的结果数据',
+            description: (selectedBehavior as any).output?.desc || '函数返回的结果数据',
           },
         },
       };
 
-      // 更新节点数据，保留其他现有数据，同时设置title
+      // 更新节点数据，保留其他现有数据，同时设置title和exp
       const updatedData = {
         ...currentValues.data,
         title: selectedBehavior.methodName || selectedBehavior.name, // 使用函数名作为标题
+        exp: { id: selectedBehavior.id }, // 保留后台的exp数据结构
         inputs: newInputs,
         outputs: newOutputs,
-        functionMeta: {
-          id: selectedBehavior.id,
-          name: selectedBehavior.name,
-          description: selectedBehavior.description,
-          category: selectedBehavior.category,
-          // Java函数没有HTTP端点和方法概念
-          functionType: 'java-function',
-          parameters: selectedBehavior.parameters,
-          returns: selectedBehavior.returns,
-        },
       };
 
       // 使用正确的更新方法 - 只传入data部分
@@ -276,7 +213,7 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
     const selectedValue = value as string;
 
     // 只有当选择的是叶子节点（实际的函数）时，才执行相关逻辑
-    const selectedBehavior = behaviors.find((b) => b._indexId === selectedValue);
+    const selectedBehavior = behaviors.find((b) => b.id === selectedValue);
     if (selectedBehavior) {
       onChange?.(selectedValue);
       handleFunctionSelect(selectedValue);
@@ -286,15 +223,18 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
   return (
     <div onClick={(e) => e.stopPropagation()}>
       <TreeSelect
+        searchPosition="trigger"
         placeholder="选择要调用的函数"
         style={{ width: '100%' }}
         value={displayValue}
         onChange={handleChange}
         showClear
         filterTreeNode
+        showFilteredOnly // 只显示过滤后的结果
         treeData={treeData}
         expandedKeys={expandedKeys}
         onExpand={handleExpand}
+        expandAction="click"
         dropdownStyle={{
           maxHeight: '400px',
           overflow: 'auto',
@@ -302,6 +242,18 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
         disabled={loading}
         treeNodeFilterProp="label"
         expandAll={false} // 默认不展开
+        onSearch={(inputValue, filteredExpandedKeys, filteredNodes) => {
+          // 搜索时自动展开包含匹配项的父节点
+          if (inputValue && filteredExpandedKeys) {
+            setExpandedKeys(filteredExpandedKeys);
+            console.log('🔍 搜索关键词:', inputValue);
+            console.log('🔍 自动展开的节点:', filteredExpandedKeys);
+            console.log('🔍 过滤后的节点数量:', filteredNodes?.length || 0);
+          } else if (!inputValue) {
+            // 清空搜索时，恢复原来的展开状态
+            setExpandedKeys([]);
+          }
+        }}
       />
     </div>
   );
