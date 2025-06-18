@@ -36,6 +36,12 @@ In free layout scenarios, node definition is used to declare node's initial posi
 
 Get node-related methods through [useNodeRender](api/hooks/use-node-render.html)
 
+```tsx pure
+function BaseNode() {
+  const { id, type, data, updateData, node } = useNodeRender()
+}
+```
+
 ## Create Node
 
 - Through [WorkflowDocument](/api/core/workflow-document.html)
@@ -96,23 +102,19 @@ function BaseNode({ node }) {
 
 ```tsx pure
 function BaseNode() {
-  const { form } = useNodeRender();
+  const { data, updateData } = useNodeRender();
   // Corresponds to node's data
-  console.log(form.values)
-
-  // Listen to node data changes
-  useEffect(() => {
-    const toDispose = form.onFormValuesChange(() => {
-      // changed
-    })
-    return () => toDispose.dispose()
-  }, [form])
+  console.log(data)
 
   function onChange(e) {
-    form.setValueIn('title', e.target.value)
+    updateData({
+      ...data,
+      title: e.target.value
+    })
   }
-  return <input value={form.getValueIn('title')} onChange={onChange}/>
+  return <input value={data.title} onChange={onChange}/>
 }
+
 ```
 - Update form data through Field, see details in [Form Usage](/guide/advanced/form.html)
 

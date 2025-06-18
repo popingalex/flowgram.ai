@@ -25,6 +25,7 @@ function checkTargetDraggable(el: any): boolean {
     !el.closest('.flow-canvas-not-draggable')
   );
 }
+
 export function useNodeRender(nodeFromProps?: WorkflowNodeEntity): NodeRenderReturnType {
   const node = nodeFromProps || useContext<WorkflowNodeEntity>(PlaygroundEntityContext);
   const renderData = node.getData(FlowNodeRenderData)!;
@@ -33,6 +34,9 @@ export function useNodeRender(nodeFromProps?: WorkflowNodeEntity): NodeRenderRet
   const dragService = useService<WorkflowDragService>(WorkflowDragService);
   const selectionService = useService<WorkflowSelectService>(WorkflowSelectService);
   const isDragging = useRef(false);
+  const [formValueVersion, updateFormValueVersion] = useState<number>(0);
+  const formValueDependRef = useRef(false);
+  formValueDependRef.current = false;
   const nodeRef = useRef<HTMLDivElement | null>(null);
   const [linkingNodeId, setLinkingNodeId] = useState('');
 
@@ -126,35 +130,85 @@ export function useNodeRender(nodeFromProps?: WorkflowNodeEntity): NodeRenderRet
   const toggleExpand = useCallback(() => {
     renderData.toggleExpand();
   }, [renderData]);
+  const selected = selectionService.isSelected(node.id);
+  const activated = selectionService.isActivated(node.id);
+  const expanded = renderData.expanded;
+  useEffect(() => {
+    const toDispose = form?.onFormValuesChange(() => {
+      if (formValueDependRef.current) {
+        updateFormValueVersion((v) => v + 1);
+      }
+    });
+    return () => toDispose?.dispose();
+  }, [form]);
 
-  return {
-    node,
-    selected: selectionService.isSelected(node.id),
-    activated: selectionService.isActivated(node.id),
-    expanded: renderData.expanded,
-    startDrag,
-    ports: portsData.allPorts,
-    deleteNode,
-    selectNode,
-    readonly,
-    linkingNodeId,
-    nodeRef,
-    onFocus,
-    onBlur,
-    getExtInfo,
-    updateExtInfo,
-    toggleExpand,
-    get form() {
-      if (!form) return undefined;
-      return {
-        ...form,
-        get values() {
-          return form.values!;
-        },
-        get state() {
-          return formState;
-        },
-      };
-    },
-  };
+  return useMemo(
+    () => ({
+      id: node.id,
+      type: node.flowNodeType,
+      get data() {
+        if (form) {
+          formValueDependRef.current = true;
+          return form.values;
+        }
+        return getExtInfo();
+      },
+      updateData(values: any) {
+        if (form) {
+          form.updateFormValues(values);
+        } else {
+          updateExtInfo(values);
+        }
+      },
+      node,
+      selected,
+      activated,
+      expanded,
+      startDrag,
+      get ports() {
+        return portsData.allPorts;
+      },
+      deleteNode,
+      selectNode,
+      readonly,
+      linkingNodeId,
+      nodeRef,
+      onFocus,
+      onBlur,
+      getExtInfo,
+      updateExtInfo,
+      toggleExpand,
+      get form() {
+        if (!form) return undefined;
+        return {
+          ...form,
+          get values() {
+            formValueDependRef.current = true;
+            return form.values!;
+          },
+          get state() {
+            return formState;
+          },
+        };
+      },
+    }),
+    [
+      node,
+      selected,
+      activated,
+      expanded,
+      startDrag,
+      deleteNode,
+      selectNode,
+      readonly,
+      linkingNodeId,
+      nodeRef,
+      onFocus,
+      onBlur,
+      getExtInfo,
+      updateExtInfo,
+      toggleExpand,
+      formValueVersion,
+    ]
+  );
 }

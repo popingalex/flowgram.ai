@@ -15,6 +15,13 @@ export const nodeRegistries: WorkflowNodeRegistry[] = [
     },
   },
   {
+    type: 'condition',
+    meta: {
+      defaultPorts: [{ type: 'input' }],
+      useDynamicPort: true,
+    },
+  },
+  {
     type: 'end',
     meta: {
       deleteDisable: true,

@@ -84,6 +84,12 @@ export const MinimapRender: React.FC<MinimapProps> = (props) => {
         onMouseLeave={() => {
           service.setActivate(false);
         }}
+        onTouchStartCapture={() => {
+          service.setActivate(true);
+        }}
+        onTouchEndCapture={() => {
+          service.setActivate(false);
+        }}
       ></div>
     </div>
   );

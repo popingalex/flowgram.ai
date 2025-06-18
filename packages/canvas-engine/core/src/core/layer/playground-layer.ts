@@ -145,6 +145,12 @@ export class PlaygroundLayer extends Layer<PlaygroundLayerOptions> {
         // 这里必须监听 NORMAL_LAYER，该图层最先触发
         PipelineLayerPriority.NORMAL_LAYER
       ),
+      this.listenPlaygroundEvent('touchend', (e: TouchEvent) => {
+        this.options.hoverService?.clearHovered();
+      }),
+      this.listenPlaygroundEvent('touchcancel', (e: TouchEvent) => {
+        this.options.hoverService?.clearHovered();
+      }),
       this.listenPlaygroundEvent(
         'mousedown',
         (e: MouseEvent) => {
