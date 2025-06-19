@@ -1,5 +1,12 @@
 // 核心数据结构类型定义
 
+// 通用数据项状态枚举 - 适用于实体、模块、属性、行为树等所有数据项
+export type ItemStatus = 'saved' | 'new' | 'dirty' | 'saving';
+
+// 类型别名 - 便于理解和向后兼容
+export type EntityStatus = ItemStatus;
+export type ModuleStatus = ItemStatus;
+
 // 模块属性接口
 export interface ModuleAttribute {
   _indexId?: string; // Add stable index for UI
@@ -19,7 +26,10 @@ export interface Module {
   description?: string;
   attributes: ModuleAttribute[];
   deprecated?: boolean;
+  _status?: ModuleStatus; // 模块状态：saved(已保存) | new(新增) | dirty(已修改) | saving(保存中)
 }
+
+export type AttributeStatus = ItemStatus;
 
 // 实体属性接口
 export interface Attribute {
@@ -29,6 +39,7 @@ export interface Attribute {
   description?: string;
   enumClassId?: string;
   _indexId: string; // 改为必须，确保所有属性都有稳定的索引ID
+  _status?: AttributeStatus; // 属性状态：saved(已保存) | new(新增) | dirty(已修改) | saving(保存中)
   // 属性分类信息（运行时添加）
   isEntityProperty?: boolean;
   isModuleProperty?: boolean;
@@ -44,6 +55,8 @@ export interface Entity {
   attributes: Attribute[];
   bundles: string[];
   _indexId?: string; // 稳定的索引ID，用作React key
+  _status?: EntityStatus; // 实体状态：saved(已保存) | new(新增) | dirty(已修改) | saving(保存中)
+  _editStatus?: 'editing' | 'saving'; // 编辑状态：编辑中 | 保存中
 }
 
 // 枚举类接口
@@ -55,6 +68,7 @@ export interface EnumClass {
   createdAt?: string;
   updatedAt?: string;
   _indexId?: string; // 稳定的索引ID，用作React key
+  _status?: ItemStatus; // 状态：saved(已保存) | new(新增) | dirty(已修改) | saving(保存中)
 }
 
 // 函数参数接口
@@ -100,4 +114,5 @@ export interface BehaviorDef {
     output: any;
   }>;
   _indexId?: string; // 稳定的索引ID，用作React key
+  _status?: ItemStatus; // 状态：saved(已保存) | new(新增) | dirty(已修改) | saving(保存中)
 }

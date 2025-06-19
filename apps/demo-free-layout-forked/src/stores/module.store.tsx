@@ -104,7 +104,11 @@ export const useModuleStore = create<ModuleStore>()(
               displayId: a.displayId || a.id.split('/').pop() || a.id,
             })),
           }));
-          set({ modules: modulesWithIndex, loading: false });
+
+          // 🎯 按id排序模块
+          const sortedModules = modulesWithIndex.sort((a, b) => a.id.localeCompare(b.id));
+
+          set({ modules: sortedModules, loading: false });
         } catch (error) {
           set({ error: (error as Error).message, loading: false });
         }
@@ -150,7 +154,17 @@ export const useModuleStore = create<ModuleStore>()(
         if (!editState || !editState.isDirty) return;
 
         try {
-          await moduleApi.update(moduleId, editState.editingModule);
+          // 🎯 关键修复：使用原始ID调用API，支持ID变更
+          const originalId = editState.originalModule.id;
+          const newId = editState.editingModule.id;
+
+          console.log('📝 ModuleStore: 保存模块', {
+            originalId,
+            newId,
+            isIdChanged: originalId !== newId,
+          });
+
+          await moduleApi.update(originalId, editState.editingModule);
 
           set((state) => {
             // 更新原始模块列表
@@ -224,13 +238,27 @@ export const useModuleStore = create<ModuleStore>()(
       // 🎯 更新模块（直接更新，非编辑模式）
       updateModule: async (moduleId, updates) => {
         try {
-          const moduleIndex = get().modules.findIndex((m) => m.id === moduleId);
+          const moduleIndex = get().modules.findIndex(
+            (m) => m.id === moduleId || m._indexId === moduleId
+          );
           if (moduleIndex === -1) {
             throw new Error(`模块 ${moduleId} 不存在`);
           }
 
-          const updatedModule = { ...get().modules[moduleIndex], ...updates };
-          await moduleApi.update(moduleId, updatedModule);
+          const originalModule = get().modules[moduleIndex];
+          const updatedModule = { ...originalModule, ...updates };
+
+          // 🎯 关键修复：使用原始ID调用API，支持ID变更
+          const originalId = originalModule.id;
+          const newId = updatedModule.id;
+
+          console.log('📝 ModuleStore: 直接更新模块', {
+            originalId,
+            newId,
+            isIdChanged: originalId !== newId,
+          });
+
+          await moduleApi.update(originalId, updatedModule);
 
           set((state) => {
             state.modules[moduleIndex] = updatedModule;
@@ -244,13 +272,25 @@ export const useModuleStore = create<ModuleStore>()(
       // 🎯 删除模块
       deleteModule: async (moduleId) => {
         try {
+          // 调用删除API
           await moduleApi.delete(moduleId);
+
+          console.log('✅ ModuleStore: 删除API调用成功，重新查询后台数据同步状态');
+
+          // 🎯 关键修复：删除后重新查询后台数据，确保前端状态与后台一致
+          // 这样可以处理两种情况：
+          // 1. Mock模式：真正删除，查询结果不包含该模块
+          // 2. 真实后台：标记deprecated，查询结果可能仍包含但状态已变
+          await get().loadModules();
+
+          // 清除编辑状态
           set((state) => {
-            state.modules = state.modules.filter((m) => m.id !== moduleId);
             state.editingModules.delete(moduleId);
           });
+
+          console.log('✅ ModuleStore: 删除操作完成，数据已同步');
         } catch (error) {
-          console.error('🗑️ 删除模块失败:', error);
+          console.error('❌ ModuleStore: 删除失败:', error);
           throw error;
         }
       },
@@ -269,12 +309,13 @@ export const useModuleStore = create<ModuleStore>()(
             displayId: attribute.displayId || attribute.id.split('/').pop() || attribute.id,
           };
 
+          const originalModule = get().modules[moduleIndex];
           const updatedModule = {
-            ...get().modules[moduleIndex],
-            attributes: [...get().modules[moduleIndex].attributes, newAttribute],
+            ...originalModule,
+            attributes: [...originalModule.attributes, newAttribute],
           };
 
-          await moduleApi.update(moduleId, updatedModule);
+          await moduleApi.update(originalModule.id, updatedModule);
 
           set((state) => {
             state.modules[moduleIndex] = updatedModule;
@@ -293,21 +334,21 @@ export const useModuleStore = create<ModuleStore>()(
             throw new Error(`模块 ${moduleId} 不存在`);
           }
 
-          const module = get().modules[moduleIndex];
-          const updatedAttributes = module.attributes.filter(
+          const originalModule = get().modules[moduleIndex];
+          const updatedAttributes = originalModule.attributes.filter(
             (a) => a.id !== attributeId && a._indexId !== attributeId
           );
 
-          if (updatedAttributes.length === module.attributes.length) {
+          if (updatedAttributes.length === originalModule.attributes.length) {
             throw new Error(`属性 ${attributeId} 不存在于模块 ${moduleId} 中`);
           }
 
           const updatedModule = {
-            ...module,
+            ...originalModule,
             attributes: updatedAttributes,
           };
 
-          await moduleApi.update(moduleId, updatedModule);
+          await moduleApi.update(originalModule.id, updatedModule);
 
           set((state) => {
             state.modules[moduleIndex] = updatedModule;

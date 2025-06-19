@@ -4,6 +4,7 @@ import { devtools } from 'zustand/middleware';
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
 
+import { graphApi } from '../services/api-service';
 import { REAL_GRAPHS } from '../mock-data';
 
 // 工作流图数据类型
@@ -87,6 +88,7 @@ export interface WorkflowGraph {
   type: string;
   nodes: WorkflowGraphNode[];
   edges: WorkflowGraphEdge[];
+  _indexId?: string; // nanoid索引，用作React key
 }
 
 // Store状态
@@ -104,6 +106,11 @@ export interface GraphActions {
   getGraphsByType: (type: string) => WorkflowGraph[];
   refreshGraphs: () => Promise<void>;
   clearError: () => void;
+
+  // 行为树图编辑操作
+  saveGraph: (graph: WorkflowGraph) => Promise<void>;
+  createGraph: (graph: Omit<WorkflowGraph, 'id'> & { id?: string }) => Promise<void>;
+  deleteGraph: (id: string) => Promise<void>;
 }
 
 export type GraphStore = GraphStoreState & GraphActions;
@@ -133,22 +140,32 @@ const useGraphStoreBase = create<GraphStore>()(
         });
 
         try {
-          const response = await fetch('http://localhost:9999/hub/graphs/');
+          const data = await graphApi.getAll();
 
-          if (response.ok) {
-            const data = await response.json();
-            set((state) => {
-              state.graphs = data;
-              state.lastLoaded = Date.now();
-            });
-          } else {
-            throw new Error(`HTTP ${response.status}`);
-          }
-        } catch (error) {
-          // 使用mock数据作为备选
+          // 确保数据是数组且每个图都有必要的属性
+          const validGraphs = Array.isArray(data)
+            ? data.filter(
+                (graph) =>
+                  graph &&
+                  typeof graph.id === 'string' &&
+                  typeof graph.name === 'string' &&
+                  Array.isArray(graph.nodes) &&
+                  Array.isArray(graph.edges)
+              )
+            : [];
+
           set((state) => {
-            state.graphs = REAL_GRAPHS;
+            state.graphs = validGraphs;
             state.lastLoaded = Date.now();
+          });
+        } catch (error) {
+          console.error('Failed to load graphs from API, using mock data:', error);
+          // 使用mock数据作为备选
+          set({
+            graphs: REAL_GRAPHS as WorkflowGraph[],
+            lastLoaded: Date.now(),
+            error: 'API请求失败，使用本地数据',
+            loading: false,
           });
         } finally {
           set((state) => {
@@ -192,6 +209,119 @@ const useGraphStoreBase = create<GraphStore>()(
           state.error = null;
         });
       },
+
+      // 保存行为树图
+      saveGraph: async (graph: WorkflowGraph) => {
+        set((state) => {
+          state.loading = true;
+          state.error = null;
+        });
+
+        try {
+          // 🎯 关键修复：查找原始图的ID，支持ID变更
+          const currentState = get();
+          const originalGraph = currentState.graphs.find(
+            (g) =>
+              g.id === graph.id || (g._indexId && graph._indexId && g._indexId === graph._indexId)
+          );
+
+          let savedGraph;
+          if (originalGraph) {
+            // 更新现有图：使用原始ID调用API
+            const originalId = originalGraph.id;
+            console.log('📝 GraphStore: 更新行为树图', {
+              originalId,
+              newId: graph.id,
+              isIdChanged: originalId !== graph.id,
+            });
+            savedGraph = await graphApi.update(originalId, graph);
+          } else {
+            // 新图：使用create API
+            console.log('📝 GraphStore: 创建新行为树图', { newId: graph.id });
+            savedGraph = await graphApi.create(graph);
+          }
+
+          set((state) => {
+            const index = state.graphs.findIndex(
+              (g) =>
+                g.id === (originalGraph?.id || graph.id) ||
+                (g._indexId && graph._indexId && g._indexId === graph._indexId)
+            );
+            if (index >= 0) {
+              state.graphs[index] = savedGraph;
+            } else {
+              state.graphs.push(savedGraph);
+            }
+          });
+        } catch (error) {
+          set((state) => {
+            state.error = error instanceof Error ? error.message : '保存行为树图失败';
+          });
+          throw error;
+        } finally {
+          set((state) => {
+            state.loading = false;
+          });
+        }
+      },
+
+      // 创建行为树图
+      createGraph: async (graph) => {
+        set((state) => {
+          state.loading = true;
+          state.error = null;
+        });
+
+        try {
+          const newGraph = await graphApi.create(graph);
+
+          set((state) => {
+            state.graphs.push(newGraph);
+          });
+        } catch (error) {
+          set((state) => {
+            state.error = error instanceof Error ? error.message : '创建行为树图失败';
+          });
+          throw error;
+        } finally {
+          set((state) => {
+            state.loading = false;
+          });
+        }
+      },
+
+      // 删除行为树图
+      deleteGraph: async (id: string) => {
+        set((state) => {
+          state.loading = true;
+          state.error = null;
+        });
+
+        try {
+          // 调用删除API
+          await graphApi.delete(id);
+
+          console.log('✅ GraphStore: 删除API调用成功，重新查询后台数据同步状态');
+
+          // 🎯 关键修复：删除后重新查询后台数据，确保前端状态与后台一致
+          // 这样可以处理两种情况：
+          // 1. Mock模式：真正删除，查询结果不包含该图
+          // 2. 真实后台：标记deprecated，查询结果可能仍包含但状态已变
+          await get().loadGraphs();
+
+          console.log('✅ GraphStore: 删除操作完成，数据已同步');
+        } catch (error) {
+          console.error('❌ GraphStore: 删除失败:', error);
+          set((state) => {
+            state.error = error instanceof Error ? error.message : '删除行为树图失败';
+          });
+          throw error;
+        } finally {
+          set((state) => {
+            state.loading = false;
+          });
+        }
+      },
     })),
     {
       name: 'graph-store',
@@ -222,6 +352,9 @@ export const useGraphActions = () =>
       getGraphsByType: state.getGraphsByType,
       refreshGraphs: state.refreshGraphs,
       clearError: state.clearError,
+      saveGraph: state.saveGraph,
+      createGraph: state.createGraph,
+      deleteGraph: state.deleteGraph,
     }))
   );
 

@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 
-export type RouteType = 'entities' | 'modules' | 'entity-workflow';
+export type RouteType =
+  | 'entities'
+  | 'modules'
+  | 'entity-workflow'
+  | 'api-test'
+  | 'test-new-architecture'
+  | 'test-behavior'
+  | 'test-variable-selector'
+  | 'test-properties';
 
 export interface RouteState {
   route: RouteType;
@@ -21,6 +29,27 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
       return { route: 'modules' };
     }
 
+    // 测试页面路由
+    if (hashPath === 'api-test') {
+      return { route: 'api-test' };
+    }
+
+    if (hashPath === 'test-new-architecture') {
+      return { route: 'test-new-architecture' };
+    }
+
+    if (hashPath === 'test-behavior') {
+      return { route: 'test-behavior' };
+    }
+
+    if (hashPath === 'test-variable-selector') {
+      return { route: 'test-variable-selector' };
+    }
+
+    if (hashPath === 'test-properties') {
+      return { route: 'test-properties' };
+    }
+
     // 匹配 entity-workflow/{entityId}
     const entityWorkflowMatch = hashPath.match(/^entity-workflow\/([^/]+)\/?$/);
     if (entityWorkflowMatch) {
@@ -32,7 +61,7 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
   }
 
   // 解析正常路径
-  const path = pathname.replace(/^\//, '');
+  const path = pathname.replace(/^\//, '').replace(/\/$/, ''); // 移除前后斜杠
 
   if (path === '' || path === 'entities') {
     return { route: 'entities' };
@@ -40,6 +69,27 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
 
   if (path === 'modules') {
     return { route: 'modules' };
+  }
+
+  // 测试页面路由
+  if (path === 'api-test') {
+    return { route: 'api-test' };
+  }
+
+  if (path === 'test-new-architecture') {
+    return { route: 'test-new-architecture' };
+  }
+
+  if (path === 'test-behavior') {
+    return { route: 'test-behavior' };
+  }
+
+  if (path === 'test-variable-selector') {
+    return { route: 'test-variable-selector' };
+  }
+
+  if (path === 'test-properties') {
+    return { route: 'test-properties' };
   }
 
   // 匹配 entities/{entityId}
@@ -64,6 +114,16 @@ const generateUrl = (routeState: RouteState): string => {
       return '/modules/';
     case 'entity-workflow':
       return `/entities/${routeState.entityId}/`;
+    case 'api-test':
+      return '/api-test/';
+    case 'test-new-architecture':
+      return '/test-new-architecture/';
+    case 'test-behavior':
+      return '/test-behavior/';
+    case 'test-variable-selector':
+      return '/test-variable-selector/';
+    case 'test-properties':
+      return '/test-properties/';
     default:
       return '/entities/';
   }

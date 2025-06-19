@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import { nanoid } from 'nanoid';
 import { cloneDeep } from 'lodash-es';
 
-import type { Entity } from '../services/types';
+import type { Entity, ItemStatus } from '../services/types';
 
 // 当前实体编辑状态
 export interface CurrentEntityState {
@@ -140,6 +140,11 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
             // 🎯 使用Immer，可以安全地直接修改
             (targetAttribute as any)[field] = value;
 
+            // 状态管理：如果不是新增状态，标记为已修改
+            if (targetAttribute._status !== 'new') {
+              targetAttribute._status = 'dirty';
+            }
+
             // 检查是否有变化
             state.isDirty =
               JSON.stringify(state.editingEntity!) !== JSON.stringify(state.originalEntity!);
@@ -149,6 +154,7 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
               属性ID: attributeIndexId,
               字段: field,
               新值: value,
+              状态: targetAttribute._status,
               isDirty: state.isDirty,
             });
           }
@@ -164,7 +170,14 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
             state.editingEntity.attributes = [];
           }
 
-          state.editingEntity.attributes.push(attribute);
+          // 确保新属性有正确的状态
+          const newAttribute = {
+            ...attribute,
+            _status: attribute._status || 'new', // 默认为新增状态
+          };
+
+          // 🎯 修复1：新属性添加到顶部，保持新增在前的排序
+          state.editingEntity.attributes.unshift(newAttribute);
           state.isDirty = true;
           state.error = null;
         });

@@ -12,8 +12,6 @@ import {
   Typography,
   Tag,
   Tooltip,
-  Notification,
-  Badge,
 } from '@douyinfe/semi-ui';
 import {
   IconPlus,
@@ -29,8 +27,8 @@ import {
 
 import { EntityPropertyTypeSelector, DataRestrictionButton } from './ext/type-selector-ext';
 import { ModuleSelectorTableModal } from './bt/module-selector-table';
-import { useEntityList, useEntityListActions } from '../stores/entity-list';
-import { useModuleStore, useGraphList } from '../stores';
+import { useModuleStore } from '../stores';
+import { useEntityList, useEntityListActions } from '../stores';
 
 const { Text } = Typography;
 
@@ -38,7 +36,7 @@ interface EntityListPageProps {
   onViewWorkflow?: (entityId: string) => void;
 }
 
-// 通用字段输入组件 - 简化版本，只显示错误状态
+// 通用字段输入组件 - 替换所有重复的输入组件
 const FieldInput = React.memo(
   ({
     value,
@@ -48,7 +46,6 @@ const FieldInput = React.memo(
     isIdField = false, // ID字段使用等宽字体
     required = false, // 是否必填
     isDuplicate = false, // 是否重复
-    errorMessage = '', // 校验错误信息
   }: {
     value: string;
     onChange: (newValue: string) => void;
@@ -57,7 +54,6 @@ const FieldInput = React.memo(
     isIdField?: boolean;
     required?: boolean;
     isDuplicate?: boolean;
-    errorMessage?: string;
   }) => {
     if (readonly) {
       const displayValue = isIdField && value ? value.split('/').pop() : value;
@@ -77,13 +73,14 @@ const FieldInput = React.memo(
 
     // 检查是否为空（用于必填校验）
     const isEmpty = !value || value.trim() === '';
-    const hasError = (required && isEmpty) || isDuplicate || !!errorMessage;
+    const hasError = (required && isEmpty) || isDuplicate;
 
     return (
       <Input
         value={value}
         onChange={onChange}
         onClick={(e) => e.stopPropagation()}
+        onFocus={(e) => e.stopPropagation()}
         size="small"
         placeholder={placeholder}
         validateStatus={hasError ? 'error' : 'default'}
@@ -109,30 +106,19 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
     addAttributeToEntity,
     removeAttributeFromEntity,
     deleteEntity,
-    saveEntity,
+    removeEntity,
     loadEntities,
+    saveEntity,
   } = useEntityListActions();
   const { modules } = useModuleStore();
-  const { graphs } = useGraphList();
 
   const [searchText, setSearchText] = useState('');
   const [showModuleLinkModal, setShowModuleLinkModal] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<any>(null);
 
-  // 🐛 调试：监控组件重新渲染
-  console.log(
-    '🔄 EntityListPage重新渲染，实体数量:',
-    entities.length,
-    '第一个实体状态:',
-    entities[0]?._status
-  );
+  // 🎯 简化：直接使用实体数据，无需工作副本
 
-  // 初始化加载
-  React.useEffect(() => {
-    loadEntities();
-  }, [loadEntities]);
-
-  // 转换为表格数据 - 带排序逻辑
+  // 转换为表格数据 - 简化版本，直接使用实体数据
   const tableData = useMemo(() => {
     console.log('🔄 重新计算表格数据，实体数量:', entities.length);
     const data: any[] = [];
@@ -145,16 +131,8 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         children: [] as any[],
       };
 
-      // 实体属性 - 排序：新增的在前，然后按ID排序
-      const sortedAttributes = [...(entity.attributes || [])].sort((a, b) => {
-        // 新增状态的属性排在前面
-        if (a._status === 'new' && b._status !== 'new') return -1;
-        if (a._status !== 'new' && b._status === 'new') return 1;
-        // 同样状态的按ID排序
-        return (a.id || '').localeCompare(b.id || '');
-      });
-
-      sortedAttributes.forEach((attr: any) => {
+      // 实体属性
+      entity.attributes?.forEach((attr: any) => {
         entityRow.children.push({
           key: attr._indexId,
           type: 'attribute',
@@ -164,14 +142,8 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         });
       });
 
-      // 关联模块 - 按模块名排序
-      const sortedBundles = [...(entity.bundles || [])].sort((a, b) => {
-        const moduleA = modules.find((m) => m._indexId === a);
-        const moduleB = modules.find((m) => m._indexId === b);
-        return (moduleA?.name || '').localeCompare(moduleB?.name || '');
-      });
-
-      sortedBundles.forEach((bundleId: string) => {
+      // 关联模块
+      entity.bundles?.forEach((bundleId: string) => {
         const module = modules.find((m) => m._indexId === bundleId);
         if (module) {
           const moduleRow: any = {
@@ -182,12 +154,8 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
             children: [] as any[],
           };
 
-          // 模块属性 - 按ID排序
-          const sortedModuleAttributes = [...(module.attributes || [])].sort((a, b) =>
-            (a.id || '').localeCompare(b.id || '')
-          );
-
-          sortedModuleAttributes.forEach((attr: any) => {
+          // 模块属性
+          module.attributes?.forEach((attr: any) => {
             moduleRow.children.push({
               key: attr._indexId,
               type: 'module-attribute',
@@ -269,8 +237,8 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
   // 🎯 检查实体是否有修改 - 直接检查实体状态
   const isEntityDirty = useCallback((entity: any) => {
     const status = entity._status;
-    // console.log('🔍 检查实体状态:', entity._indexId, '状态:', status);
-    return status === 'dirty' || status === 'new';
+    console.log('🔍 检查实体状态:', entity._indexId, '状态:', status);
+    return status === 'dirty';
   }, []);
 
   // 检查实体是否可以保存（必填项都已填写且无重复）
@@ -305,73 +273,58 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
     return true;
   };
 
-  // 检查字段校验错误信息
-  const getFieldValidationError = useCallback(
-    (
-      entityIndexId: string,
-      field: 'id' | 'attribute-id',
-      value: string,
-      attributeIndexId?: string
-    ): string => {
-      if (!value || value.trim() === '') {
-        return field === 'id' ? '实体ID不能为空' : '属性ID不能为空';
-      }
-
-      if (field === 'id') {
-        // 检查实体ID重复
-        const isDuplicate = entities.some((e) => e._indexId !== entityIndexId && e.id === value);
-        if (isDuplicate) {
-          return `实体ID "${value}" 已存在`;
-        }
-      } else if (field === 'attribute-id' && attributeIndexId) {
-        // 检查属性ID重复（在同一实体内）
-        const entity = entities.find((e) => e._indexId === entityIndexId);
-        if (entity) {
-          const isDuplicate = entity.attributes?.some(
-            (attr) => attr._indexId !== attributeIndexId && attr.id === value
-          );
-          if (isDuplicate) {
-            return `属性ID "${value}" 在此实体中已存在`;
-          }
-        }
-      }
-
-      return '';
-    },
-    [entities]
-  );
-
-  // 检查字段是否重复（保持向后兼容）
+  // 检查字段是否重复
   const checkFieldDuplication = useCallback(
     (
       entityIndexId: string,
       field: 'id' | 'attribute-id',
       value: string,
       attributeIndexId?: string
-    ): boolean => !!getFieldValidationError(entityIndexId, field, value, attributeIndexId),
-    [getFieldValidationError]
+    ): boolean => {
+      if (!value || value.trim() === '') return false;
+
+      if (field === 'id') {
+        // 检查实体ID重复
+        return entities.some((e) => e._indexId !== entityIndexId && e.id === value);
+      } else if (field === 'attribute-id' && attributeIndexId) {
+        // 检查属性ID重复（在同一实体内）
+        const entity = entities.find((e) => e._indexId === entityIndexId);
+        if (!entity) return false;
+
+        return (
+          entity.attributes?.some(
+            (attr) => attr._indexId !== attributeIndexId && attr.id === value
+          ) || false
+        );
+      }
+
+      return false;
+    },
+    [entities]
   );
 
   // 获取保存错误提示
   const getSaveErrorMessage = (entity: any): string => {
-    // 检查实体ID
-    const entityIdError = getFieldValidationError(entity._indexId, 'id', entity.id);
-    if (entityIdError) {
-      return entityIdError;
+    if (!entity.id || entity.id.trim() === '') {
+      return '请填写实体ID';
     }
 
-    // 检查所有属性ID
+    // 检查实体ID是否与其他实体重复
+    const otherEntities = entities.filter((e) => e._indexId !== entity._indexId);
+    if (otherEntities.some((e) => e.id === entity.id)) {
+      return `实体ID "${entity.id}" 已存在，请使用不同的ID`;
+    }
+
     if (entity.attributes && entity.attributes.length > 0) {
+      const attributeIds = new Set();
       for (const attr of entity.attributes) {
-        const attrIdError = getFieldValidationError(
-          entity._indexId,
-          'attribute-id',
-          attr.id,
-          attr._indexId
-        );
-        if (attrIdError) {
-          return attrIdError;
+        if (!attr.id || attr.id.trim() === '') {
+          return '请填写所有属性ID';
         }
+        if (attributeIds.has(attr.id)) {
+          return `属性ID "${attr.id}" 重复，请使用不同的ID`;
+        }
+        attributeIds.add(attr.id);
       }
     }
 
@@ -396,47 +349,25 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
           return entity ? (
             <Space spacing={4}>
               <Tooltip content="编辑工作流">
-                <Badge
-                  count={(() => {
-                    const graph = graphs.find(
-                      (g) => g.id.toLowerCase() === entity.id.toLowerCase()
-                    );
-                    const nodeCount = graph?.nodes?.length || 0;
-                    return nodeCount > 0 ? nodeCount : undefined;
-                  })()}
-                  overflowCount={99}
-                  type="primary"
-                  theme="inverted"
-                  data-badge-type="primary"
-                >
-                  <Button
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // 在新窗口打开工作流编辑页面，使用hash格式确保兼容性
-                      window.open(`/#entity-workflow/${entity.id}`, '_blank');
-                    }}
-                    icon={<IconBranch />}
-                  />
-                </Badge>
+                <Button
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // 在新窗口打开工作流编辑页面，使用hash格式确保兼容性
+                    window.open(`/#entity-workflow/${entity.id}`, '_blank');
+                  }}
+                  icon={<IconBranch />}
+                />
               </Tooltip>
               <Tooltip content="关联模块">
-                <Badge
-                  count={entity.bundles?.length > 0 ? entity.bundles.length : undefined}
-                  overflowCount={99}
-                  type="success"
-                  theme="inverted"
-                  data-badge-type="success"
-                >
-                  <Button
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleLinkModule(entity);
-                    }}
-                    icon={<IconLink />}
-                  />
-                </Badge>
+                <Button
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLinkModule(entity);
+                  }}
+                  icon={<IconLink />}
+                />
               </Tooltip>
             </Space>
           ) : null;
@@ -497,31 +428,21 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
       width: 160,
       render: (_: any, record: any) => {
         if (record.type === 'entity') {
-          const errorMessage = getFieldValidationError(
-            record.entity._indexId,
-            'id',
-            record.entity.id
-          );
+          const displayEntity = getEntityWorkingCopy(record.entity);
           return (
             <FieldInput
               key={`entity-id-${record.entity._indexId}`}
-              value={record.entity.id}
+              value={displayEntity.id}
               onChange={(newValue) =>
                 handleEntityFieldChange(record.entity._indexId, 'id', newValue)
               }
               placeholder="实体ID（必填）"
               isIdField={true}
               required={true}
-              errorMessage={errorMessage}
+              isDuplicate={checkFieldDuplication(record.entity._indexId, 'id', displayEntity.id)}
             />
           );
         } else if (record.type === 'attribute') {
-          const errorMessage = getFieldValidationError(
-            record.entity._indexId,
-            'attribute-id',
-            record.attribute.id,
-            record.attribute._indexId
-          );
           return (
             <FieldInput
               key={`attr-id-${record.attribute._indexId}`}
@@ -537,7 +458,12 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
               placeholder="属性ID（必填）"
               isIdField={true}
               required={true}
-              errorMessage={errorMessage}
+              isDuplicate={checkFieldDuplication(
+                record.entity._indexId,
+                'attribute-id',
+                record.attribute.id,
+                record.attribute._indexId
+              )}
             />
           );
         } else if (record.type === 'module-attribute') {
@@ -573,10 +499,11 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
       width: 200,
       render: (_: any, record: any) => {
         if (record.type === 'entity') {
+          const displayEntity = getEntityWorkingCopy(record.entity);
           return (
             <FieldInput
               key={`entity-name-${record.entity._indexId}`}
-              value={record.entity.name}
+              value={displayEntity.name}
               onChange={(newValue) =>
                 handleEntityFieldChange(record.entity._indexId, 'name', newValue)
               }
@@ -632,6 +559,8 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
             gap: '2px',
             justifyContent: 'flex-start',
             alignItems: 'center',
+            // minWidth: '60px',
+            // flexWrap: 'wrap',
           }}
           onClick={(e) => e.stopPropagation()}
         >
@@ -699,9 +628,19 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
           {record.type === 'entity' &&
             record.entity &&
             (() => {
-              const entity = record.entity; // 直接使用实体数据
-              const entityIsDirty = isEntityDirty(entity);
+              const entity = getEntityWorkingCopy(record.entity); // 使用最新的编辑数据
+              const entityIsDirty = isEntityDirty(record.entity._indexId);
               const canSave = canSaveEntity(entity);
+
+              // 调试：保存按钮状态
+              if (!entityIsDirty || !canSave) {
+                console.log('🔍 保存按钮禁用原因:', {
+                  entityId: record.entity._indexId,
+                  isDirty: entityIsDirty,
+                  canSave: canSave,
+                  errorMessage: getSaveErrorMessage(entity),
+                });
+              }
 
               return (
                 <>
@@ -712,20 +651,13 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
                       onConfirm={async (e) => {
                         e?.stopPropagation?.();
                         try {
-                          await saveEntity(entity);
-                          console.log('✅ 实体保存成功');
-                          Notification.success({
-                            title: '保存成功',
-                            content: `实体 "${entity.name || entity.id}" 已保存`,
-                            duration: 3,
-                          });
+                          const editingId = entityEditingIds[record.entity._indexId];
+                          if (editingId) {
+                            await saveWorkingCopy(editingId);
+                            console.log('✅ 实体保存成功');
+                          }
                         } catch (error) {
                           console.error('❌ 实体保存失败:', error);
-                          Notification.error({
-                            title: '保存失败',
-                            content: `实体 "${entity.name || entity.id}" 保存失败`,
-                            duration: 5,
-                          });
                         }
                       }}
                     >
@@ -735,7 +667,7 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
                         onClick={(e) => e.stopPropagation()}
                         icon={<IconSave />}
                         disabled={!entityIsDirty || !canSave}
-                        loading={entity._editStatus === 'saving'}
+                        loading={entity._editing?.isSaving === true}
                       />
                     </Popconfirm>
                   </Tooltip>
@@ -745,8 +677,10 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
                         size="small"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // TODO: 实现撤销修改
-                          console.log('撤销修改:', entity._indexId);
+                          const editingId = entityEditingIds[record.entity._indexId];
+                          if (editingId) {
+                            resetWorkingCopy(editingId);
+                          }
                         }}
                         icon={<IconUndo />}
                         disabled={!entityIsDirty}
@@ -791,25 +725,22 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
 
           {/* 属性删除按钮 */}
           {record.type === 'attribute' && record.entity && record.attribute && (
-            <>
-              <Button size="small" disabled style={{ opacity: 0.3 }} />
-              <Tooltip content="删除属性">
-                <Popconfirm
-                  title="确定删除这个属性吗？"
-                  onConfirm={async (e) => {
-                    e?.stopPropagation?.();
-                    await handleDeleteAttribute(record.entity, record.attribute);
-                  }}
-                >
-                  <Button
-                    size="small"
-                    type="danger"
-                    icon={<IconDelete />}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </Popconfirm>
-              </Tooltip>
-            </>
+            <Tooltip content="删除属性">
+              <Popconfirm
+                title="确定删除这个属性吗？"
+                onConfirm={(e) => {
+                  e?.stopPropagation?.();
+                  handleDeleteAttribute(record.entity, record.attribute);
+                }}
+              >
+                <Button
+                  size="small"
+                  type="danger"
+                  icon={<IconDelete />}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </Popconfirm>
+            </Tooltip>
           )}
 
           {/* 模块解绑按钮 */}
@@ -817,9 +748,9 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
             <Tooltip content="解绑模块">
               <Popconfirm
                 title="确定移除这个模块吗？"
-                onConfirm={async (e) => {
+                onConfirm={(e) => {
                   e?.stopPropagation?.();
-                  await handleUnlinkModule(record.entity, record.module);
+                  handleUnlinkModule(record.entity, record.module);
                 }}
               >
                 <Button
@@ -837,100 +768,57 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
   ];
 
   // 事件处理
+  const handleViewWorkflow = (entity: any) => {
+    if (onViewWorkflow) {
+      onViewWorkflow(entity.id);
+    }
+  };
+
+  const handleSaveEntityChanges = (entity: any) => {
+    // 实际上数据已经实时保存到store了，这里可以显示保存成功提示
+    console.log('保存实体:', entity);
+    // TODO: 可以调用后台API保存
+  };
+
+  const handleResetEntityChanges = (entity: any) => {
+    // 重新加载实体数据，撤销本地修改
+    console.log('撤销实体修改:', entity);
+    // TODO: 重新从后台加载数据
+  };
+
   const handleDeleteEntity = async (entity: any) => {
     try {
       console.log('🗑️ 开始删除实体:', entity.id);
-      await deleteEntity(entity._indexId);
-      console.log('✅ 实体删除成功:', entity.id);
-      Notification.success({
-        title: '删除成功',
-        content: `实体 "${entity.name || entity.id}" 已删除`,
-        duration: 3,
-      });
-    } catch (error) {
-      console.error('❌ 实体删除失败:', error);
-      Notification.error({
-        title: '删除失败',
-        content: `实体 "${entity.name || entity.id}" 删除失败`,
-        duration: 5,
-      });
-    }
-  };
 
-  const handleDeleteAttribute = async (entity: any, attribute: any) => {
-    try {
-      console.log('🗑️ 删除属性:', attribute.id, '从实体:', entity.id);
-
-      // 如果属性是新增状态，直接从本地删除
-      if (attribute._status === 'new') {
-        console.log('🗑️ 删除新增属性（仅本地）:', attribute.id);
-        removeAttributeFromEntity(entity._indexId, attribute._indexId);
+      // 如果是新增状态的实体，只需要从本地状态删除
+      if (entity._status === 'new') {
+        console.log('🗑️ 删除新增实体（仅本地）:', entity.id);
+        deleteEntity(entity._indexId);
         return;
       }
 
-      // 先删除属性，然后保存整个实体到后台
-      removeAttributeFromEntity(entity._indexId, attribute._indexId);
-
-      // 保存更新后的实体
-      const updatedEntity = {
-        ...entity,
-        attributes: (entity.attributes || []).filter(
-          (attr: any) => attr._indexId !== attribute._indexId
-        ),
-      };
-      await saveEntity(updatedEntity);
-      console.log('✅ 属性删除并保存成功');
-      Notification.success({
-        title: '删除成功',
-        content: `属性 "${attribute.name || attribute.id}" 已删除`,
-        duration: 3,
-      });
+      // 已保存的实体需要调用后台API删除
+      console.log('🗑️ 删除已保存实体（调用API）:', entity.id);
+      await removeEntity(entity.id); // 使用业务ID调用API
+      console.log('✅ 实体删除成功:', entity.id);
     } catch (error) {
-      console.error('❌ 属性删除失败:', error);
-      Notification.error({
-        title: '删除失败',
-        content: `属性 "${attribute.name || attribute.id}" 删除失败`,
-        duration: 5,
-      });
-      // TODO: 可以考虑在这里恢复状态或者重新加载数据
+      console.error('❌ 实体删除失败:', error);
     }
   };
 
-  const handleUnlinkModule = async (entity: any, module: any) => {
-    try {
-      console.log('🔗 解绑模块:', module.id, '从实体:', entity.id);
-
-      // 更新本地状态（移除模块）
-      const updatedEntity = { ...entity };
-      updatedEntity.bundles = updatedEntity.bundles?.filter(
-        (bundleId: string) => bundleId !== module._indexId
-      );
-      updateEntity(entity._indexId, updatedEntity);
-
-      // 如果实体不是新增状态，保存到后台
-      if (entity._status !== 'new') {
-        const currentEntity = entities.find((e) => e._indexId === entity._indexId);
-        if (currentEntity) {
-          await saveEntity(currentEntity);
-          console.log('✅ 模块解绑并保存成功');
-          Notification.success({
-            title: '解绑成功',
-            content: `模块 "${module.name || module.id}" 已从实体解绑`,
-            duration: 3,
-          });
-        }
-      } else {
-        console.log('✅ 新增实体模块解绑（仅本地）');
-      }
-    } catch (error) {
-      console.error('❌ 模块解绑失败:', error);
-      Notification.error({
-        title: '解绑失败',
-        content: `模块 "${module.name || module.id}" 解绑失败`,
-        duration: 5,
-      });
-      // TODO: 可以考虑在这里恢复状态
+  const handleDeleteAttribute = (entity: any, attribute: any) => {
+    const editingId = entityEditingIds[entity._indexId];
+    if (editingId) {
+      removeAttributeFromWorkingCopy(editingId, attribute._indexId);
     }
+  };
+
+  const handleUnlinkModule = (entity: any, module: any) => {
+    const updatedEntity = { ...entity };
+    updatedEntity.bundles = updatedEntity.bundles?.filter(
+      (bundleId: string) => bundleId !== module._indexId
+    );
+    updateEntity(entity._indexId, updatedEntity);
   };
 
   const handleLinkModule = (entity: any) => {
@@ -950,48 +838,28 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
     };
 
     addEntity(newEntity);
-    console.log('✅ 添加新实体:', newEntity._indexId);
+    // 🎯 自动开始编辑新添加的实体
+    const editingId = startEditing(newEntity._indexId);
+    setEntityEditingIds((prev) => ({
+      ...prev,
+      [newEntity._indexId]: editingId,
+    }));
+    console.log('✅ 添加新实体并开始编辑:', newEntity._indexId, '编辑ID:', editingId);
   };
 
   const handleAddAttribute = (entityIndexId: string) => {
-    addAttributeToEntity(entityIndexId);
-    console.log('✅ 为实体添加属性:', entityIndexId);
+    const editingId = entityEditingIds[entityIndexId];
+    if (editingId) {
+      addAttributeToWorkingCopy(editingId);
+      console.log('✅ 为实体添加属性:', entityIndexId);
+    }
   };
 
-  const handleSaveModuleLink = async (selectedModuleIds: string[]) => {
+  const handleSaveModuleLink = (selectedModuleIds: string[]) => {
     if (selectedEntity) {
-      try {
-        console.log('🔗 关联模块到实体:', selectedEntity.id, '模块:', selectedModuleIds);
-
-        // 更新本地状态
-        const updatedEntity = { ...selectedEntity };
-        updatedEntity.bundles = selectedModuleIds;
-        updateEntity(selectedEntity._indexId, updatedEntity);
-
-        // 如果实体不是新增状态，保存到后台
-        if (selectedEntity._status !== 'new') {
-          const currentEntity = entities.find((e) => e._indexId === selectedEntity._indexId);
-          if (currentEntity) {
-            await saveEntity(currentEntity);
-            console.log('✅ 模块关联并保存成功');
-            Notification.success({
-              title: '关联成功',
-              content: `已成功关联 ${selectedModuleIds.length} 个模块到实体`,
-              duration: 3,
-            });
-          }
-        } else {
-          console.log('✅ 新增实体模块关联（仅本地）');
-        }
-      } catch (error) {
-        console.error('❌ 模块关联失败:', error);
-        Notification.error({
-          title: '关联失败',
-          content: '模块关联失败，请重试',
-          duration: 5,
-        });
-        // TODO: 可以考虑在这里恢复状态
-      }
+      const updatedEntity = { ...selectedEntity };
+      updatedEntity.bundles = selectedModuleIds;
+      updateEntity(selectedEntity._indexId, updatedEntity);
     }
     setShowModuleLinkModal(false);
     setSelectedEntity(null);
@@ -1071,44 +939,6 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
             0% { opacity: 1; }
             50% { opacity: 0.7; }
             100% { opacity: 1; }
-          }
-
-          /* Badge深色边框样式 - 通用样式 */
-          .entity-list-table .semi-badge .semi-badge-count,
-          .entity-list-table .semi-badge-count {
-            border: 1px solid var(--semi-color-text-1) !important;
-            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15) !important;
-            min-width: 16px !important;
-            height: 16px !important;
-            font-size: 10px !important;
-            line-height: 14px !important;
-            padding: 0 4px !important;
-            transform: scale(0.8) !important;
-            transform-origin: center !important;
-          }
-
-          /* 调整Badge位置，避免完全覆盖按钮图标 */
-          .entity-list-table .semi-badge {
-            position: relative !important;
-          }
-
-          .entity-list-table .semi-badge .semi-badge-count {
-            top: -8px !important;
-            right: -8px !important;
-          }
-
-          /* primary类型Badge的边框颜色 */
-          .entity-list-table .semi-badge-primary .semi-badge-count,
-          .entity-list-table [data-badge-type="primary"] .semi-badge-count {
-            border-color: var(--semi-color-primary) !important;
-            box-shadow: 0 0 0 1px var(--semi-color-primary) !important;
-          }
-
-          /* success类型Badge的边框颜色 */
-          .entity-list-table .semi-badge-success .semi-badge-count,
-          .entity-list-table [data-badge-type="success"] .semi-badge-count {
-            border-color: var(--semi-color-success) !important;
-            box-shadow: 0 0 0 1px var(--semi-color-success) !important;
           }
         `}
       </style>

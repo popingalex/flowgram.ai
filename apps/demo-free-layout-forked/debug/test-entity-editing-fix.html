@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>实体编辑修复测试</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+
+      .test-section {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .test-step {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 15px;
+        margin: 10px 0;
+      }
+
+      .success {
+        border-left: 4px solid #28a745;
+        background: #d4edda;
+      }
+
+      .error {
+        border-left: 4px solid #dc3545;
+        background: #f8d7da;
+      }
+
+      .warning {
+        border-left: 4px solid #ffc107;
+        background: #fff3cd;
+      }
+
+      code {
+        background: #f1f3f4;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: "SFMono-Regular", Consolas, monospace;
+      }
+
+      .console-output {
+        background: #2d3748;
+        color: #e2e8f0;
+        padding: 15px;
+        border-radius: 4px;
+        font-family: "SFMono-Regular", Consolas, monospace;
+        font-size: 14px;
+        white-space: pre-wrap;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔧 实体编辑修复测试</h1>
+
+    <div class="test-section">
+      <h2>🎯 修复内容</h2>
+      <div class="test-step success">
+        <h3>✅ 工作副本状态计算</h3>
+        <p>
+          添加了
+          <code>calculateWorkingCopyStatus</code> 函数，自动计算工作副本的状态：
+        </p>
+        <ul>
+          <li><strong>new</strong>：新增的实体</li>
+          <li><strong>dirty</strong>：有修改的实体</li>
+          <li><strong>saved</strong>：未修改的实体</li>
+        </ul>
+      </div>
+
+      <div class="test-step success">
+        <h3>✅ 实时状态更新</h3>
+        <p>所有工作副本更新函数现在都会：</p>
+        <ul>
+          <li>自动重新计算状态</li>
+          <li>输出详细的调试日志</li>
+          <li>确保界面实时响应</li>
+        </ul>
+      </div>
+
+      <div class="test-step success">
+        <h3>✅ 重置逻辑修复</h3>
+        <p><code>resetWorkingCopy</code> 现在会：</p>
+        <ul>
+          <li>真正重置数据到原始状态</li>
+          <li>正确计算重置后的状态</li>
+          <li>保持新增实体的 'new' 状态</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>🧪 测试步骤</h2>
+
+      <div class="test-step">
+        <h3>1. 测试新增实体</h3>
+        <ol>
+          <li>打开实体列表页面</li>
+          <li>点击"添加实体"按钮</li>
+          <li>观察控制台日志</li>
+          <li>尝试编辑实体ID和名称</li>
+        </ol>
+        <p><strong>预期效果：</strong></p>
+        <ul>
+          <li>输入框保持焦点</li>
+          <li>状态显示为 'new'</li>
+          <li>实时响应输入</li>
+        </ul>
+      </div>
+
+      <div class="test-step">
+        <h3>2. 测试添加属性</h3>
+        <ol>
+          <li>在实体行点击"+"按钮添加属性</li>
+          <li>观察控制台日志</li>
+          <li>编辑属性ID和名称</li>
+          <li>修改属性类型</li>
+        </ol>
+        <p><strong>预期效果：</strong></p>
+        <ul>
+          <li>属性立即出现在表格中</li>
+          <li>输入框可以正常编辑</li>
+          <li>状态自动变为 'dirty'</li>
+        </ul>
+      </div>
+
+      <div class="test-step">
+        <h3>3. 测试现有实体编辑</h3>
+        <ol>
+          <li>编辑现有实体的ID或名称</li>
+          <li>观察状态变化</li>
+          <li>点击重置按钮</li>
+          <li>确认数据恢复原状</li>
+        </ol>
+        <p><strong>预期效果：</strong></p>
+        <ul>
+          <li>修改时状态变为 'dirty'</li>
+          <li>重置后状态变为 'saved'</li>
+          <li>数据正确恢复</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>🔍 查看控制台日志</h2>
+      <div class="test-step warning">
+        <h3>⚠️ 重要提示</h3>
+        <p>
+          在测试过程中，请打开浏览器开发者工具的控制台标签页，观察以下日志：
+        </p>
+        <div class="console-output">
+          🎯 开始编辑实体: xxx 编辑ID: yyy 初始状态: new/saved 📝
+          更新工作副本字段: editingId field value 新状态: dirty ➕
+          添加属性到工作副本: editingId 新属性ID: attrId 新状态: dirty 🔄
+          重置工作副本: editingId
+        </div>
+      </div>
+
+      <div class="test-step">
+        <h3>🚨 如果仍有问题</h3>
+        <p>如果测试中发现问题，请检查：</p>
+        <ul>
+          <li>控制台是否有错误信息</li>
+          <li>工作副本状态是否正确计算</li>
+          <li>React组件是否重新渲染</li>
+          <li>输入框焦点是否丢失</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>🔗 快速链接</h2>
+      <p>
+        <a
+          href="http://localhost:3000/#entity-list"
+          target="_blank"
+          style="
+            display: inline-block;
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+          "
+        >
+          📝 打开实体列表页面
+        </a>
+      </p>
+      <p style="color: #6c757d; font-size: 14px">
+        确保开发服务器在 localhost:3000 运行
+      </p>
+    </div>
+  </body>
+</html>

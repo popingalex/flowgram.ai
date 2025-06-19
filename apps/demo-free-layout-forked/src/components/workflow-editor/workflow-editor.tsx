@@ -382,15 +382,12 @@ const EntityPropertySyncer: React.FC = () => {
       return;
     }
 
-    // 使用编辑中的实体数据进行同步，添加防抖避免频繁更新
-    const debounceTimer = setTimeout(() => {
-      // 对于编辑中的实体，使用编辑数据；对于初始加载，使用原始数据
-      const hasChanges = JSON.stringify(editingEntity) !== JSON.stringify(originalEntity);
-      syncWithRetry(editingEntity.id, hasChanges ? editingEntity : undefined);
-    }, 100); // 100ms防抖
+    // 🎯 立即同步，避免防抖延迟影响用户输入体验
+    const hasChanges = JSON.stringify(editingEntity) !== JSON.stringify(originalEntity);
+    syncWithRetry(editingEntity.id, hasChanges ? editingEntity : undefined);
 
+    // 清理函数
     return () => {
-      clearTimeout(debounceTimer);
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
       }

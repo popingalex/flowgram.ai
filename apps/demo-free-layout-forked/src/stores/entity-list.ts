@@ -1,29 +1,47 @@
-import { useShallow } from 'zustand/react/shallow';
+import { useMemo } from 'react';
+
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
 
-import { Entity } from '../services/types';
+import type { Entity, ItemStatus } from '../services/types';
 import { entityApi } from '../services/api-service';
 
-// 实体列表状态管理
+// 深拷贝函数 - 简化为JSON转换
+function deepClone<T>(obj: T): T {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+// 实体列表状态管理 - 简化版
 export interface EntityListState {
   entities: Entity[];
   selectedEntityId: string | null;
   loading: boolean;
   error: string | null;
 
-  // 状态操作
+  // 基本操作
   setEntities: (entities: Entity[]) => void;
   setSelectedEntityId: (id: string | null) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 
-  // 实体操作
+  // 实体操作 - 直接操作实体，自动管理状态
   addEntity: (entity: Entity) => void;
-  updateEntity: (id: string, entity: Partial<Entity>) => void;
-  deleteEntity: (id: string) => void;
-  getEntity: (id: string) => Entity | undefined;
+  updateEntity: (indexId: string, updates: Partial<Entity>) => void;
+  updateEntityField: (indexId: string, field: string, value: any) => void;
+  deleteEntity: (indexId: string) => Promise<void>;
+  getEntity: (indexId: string) => Entity | undefined;
   getEntityByStableId: (stableId: string) => Entity | undefined;
+  clearNewEntities: () => void;
+
+  // 属性操作
+  updateEntityAttribute: (
+    entityIndexId: string,
+    attributeId: string,
+    field: string,
+    value: any
+  ) => void;
+  addAttributeToEntity: (entityIndexId: string) => void;
+  removeAttributeFromEntity: (entityIndexId: string, attributeId: string) => void;
 
   // 异步操作
   loadEntities: () => Promise<void>;
@@ -43,25 +61,151 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
   setError: (error) => set({ error }),
 
   addEntity: (entity) =>
-    set((state) => ({
-      entities: [...state.entities, entity],
-    })),
+    set((state) => {
+      const newEntity = {
+        ...entity,
+        _status: 'new' as const,
+        _indexId: entity._indexId || nanoid(),
+      };
 
-  updateEntity: (id, updates) =>
+      // 新增实体添加到顶部
+      const otherEntities = state.entities.filter((e) => e._status !== 'new');
+      const newEntities = state.entities.filter((e) => e._status === 'new');
+
+      return {
+        entities: [...newEntities, newEntity, ...otherEntities],
+      };
+    }),
+
+  updateEntity: (indexId, updates) =>
     set((state) => ({
       entities: state.entities.map((entity) =>
-        entity.id === id || entity._indexId === id ? { ...entity, ...updates } : entity
+        entity._indexId === indexId
+          ? {
+              ...entity,
+              ...updates,
+              // 🎯 如果更新中明确指定了_status，则使用指定的状态；否则自动管理状态
+              _status:
+                updates._status !== undefined
+                  ? updates._status
+                  : entity._status === 'new'
+                  ? 'new'
+                  : 'dirty',
+            }
+          : entity
       ),
     })),
 
-  deleteEntity: (id) =>
+  // 🎯 简化的字段更新 - 直接更新实体字段并标记为dirty
+  updateEntityField: (indexId, field, value) =>
     set((state) => ({
-      entities: state.entities.filter((entity) => entity.id !== id && entity._indexId !== id),
-      selectedEntityId: state.selectedEntityId === id ? null : state.selectedEntityId,
+      entities: state.entities.map((entity) =>
+        entity._indexId === indexId
+          ? {
+              ...entity,
+              [field]: value,
+              _status: entity._status === 'new' ? 'new' : 'dirty', // 🎯 自动管理状态
+            }
+          : entity
+      ),
     })),
 
-  getEntity: (id) => get().entities.find((entity) => entity.id === id),
+  // 🎯 属性更新
+  updateEntityAttribute: (entityIndexId, attributeId, field, value) =>
+    set((state) => ({
+      entities: state.entities.map((entity) =>
+        entity._indexId === entityIndexId
+          ? {
+              ...entity,
+              attributes: (entity.attributes || []).map((attr) =>
+                attr._indexId === attributeId ? { ...attr, [field]: value } : attr
+              ),
+              _status: entity._status === 'new' ? 'new' : 'dirty', // 🎯 修改属性也标记实体为dirty
+            }
+          : entity
+      ),
+    })),
+
+  // 🎯 添加属性
+  addAttributeToEntity: (entityIndexId) =>
+    set((state) => ({
+      entities: state.entities.map((entity) =>
+        entity._indexId === entityIndexId
+          ? {
+              ...entity,
+              attributes: [
+                ...(entity.attributes || []),
+                {
+                  _indexId: nanoid(),
+                  id: '',
+                  name: '',
+                  type: 's',
+                  _status: 'new' as const,
+                },
+              ],
+              _status: entity._status === 'new' ? 'new' : 'dirty',
+            }
+          : entity
+      ),
+    })),
+
+  // 🎯 删除属性
+  removeAttributeFromEntity: (entityIndexId, attributeId) =>
+    set((state) => ({
+      entities: state.entities.map((entity) =>
+        entity._indexId === entityIndexId
+          ? {
+              ...entity,
+              attributes: (entity.attributes || []).filter((attr) => attr._indexId !== attributeId),
+              _status: entity._status === 'new' ? 'new' : 'dirty',
+            }
+          : entity
+      ),
+    })),
+
+  deleteEntity: async (indexId) => {
+    const entity = get().entities.find((e) => e._indexId === indexId);
+    if (!entity) {
+      console.warn('⚠️ 删除失败：找不到实体', indexId);
+      return;
+    }
+
+    try {
+      // 如果是新增状态的实体，直接从本地删除
+      if (entity._status === 'new') {
+        console.log('🗑️ 删除新增实体（仅本地）:', entity.id || '无ID');
+        set((state) => ({
+          entities: state.entities.filter((e) => e._indexId !== indexId),
+          selectedEntityId: state.selectedEntityId === indexId ? null : state.selectedEntityId,
+        }));
+        return;
+      }
+
+      // 已保存的实体需要调用API删除
+      console.log('🗑️ 调用API删除实体:', entity.id);
+      await entityApi.delete(entity.id);
+
+      // API调用成功后，从本地状态删除
+      set((state) => ({
+        entities: state.entities.filter((e) => e._indexId !== indexId),
+        selectedEntityId: state.selectedEntityId === indexId ? null : state.selectedEntityId,
+      }));
+
+      console.log('✅ 实体删除成功:', entity.id);
+    } catch (error) {
+      console.error('❌ 实体删除失败:', error);
+      throw error;
+    }
+  },
+
+  getEntity: (indexId) => get().entities.find((entity) => entity._indexId === indexId),
+
   getEntityByStableId: (stableId) => get().entities.find((entity) => entity._indexId === stableId),
+
+  clearNewEntities: () =>
+    set((state) => ({
+      entities: state.entities.filter((entity) => entity._status !== 'new'),
+    })),
 
   loadEntities: async () => {
     set({ loading: true, error: null });
@@ -72,126 +216,172 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
         throw new Error('Invalid entities data received');
       }
 
-      // 🎯 nanoid索引设计：为React组件稳定性使用nanoid，同时保留原始业务ID用于业务逻辑
-      const entitiesWithIndex = fetchedEntities.map((entity) => {
-        // 🔑 使用nanoid作为React key，确保组件在编辑时不会重新创建
-        const indexId = entity._indexId || nanoid();
+      // 为实体添加索引和状态
+      const entitiesWithIndex = fetchedEntities.map((entity) => ({
+        ...entity,
+        _indexId: entity._indexId || nanoid(),
+        _status: 'saved' as const, // 🎯 从后台加载的实体都是已保存状态
+        attributes: (entity.attributes || []).map((attr) => ({
+          ...attr,
+          _indexId: attr._indexId || nanoid(),
+          _status: 'saved' as const,
+        })),
+      })) as Entity[];
 
-        return {
-          ...entity, // 保留所有原始字段，包括业务ID
-          _indexId: indexId, // 只添加nanoid索引，不替换业务字段
-
-          // 转换属性，只添加nanoid索引
-          attributes: (entity.attributes || []).map((attr) => {
-            const attrIndexId = attr._indexId || nanoid();
-            return {
-              ...attr, // 保留所有原始字段，包括业务ID
-              _indexId: attrIndexId, // 只添加nanoid索引
-            };
-          }),
-        };
-      }) as Entity[];
+      // 保留当前新增的实体，合并到加载的实体中
+      const currentNewEntities = get().entities.filter((e) => e._status === 'new');
+      const sortedLoadedEntities = entitiesWithIndex.sort((a, b) => a.id.localeCompare(b.id));
 
       set({
-        entities: entitiesWithIndex,
+        entities: [...currentNewEntities, ...sortedLoadedEntities],
         loading: false,
       });
 
       console.log(
-        `[EntityStore] 加载完成，共 ${entitiesWithIndex.length} 个实体:`,
-        entitiesWithIndex
+        `✅ 加载完成，共 ${currentNewEntities.length + sortedLoadedEntities.length} 个实体`
       );
     } catch (error) {
-      console.error('Failed to load entities:', error);
+      console.error('❌ 加载实体失败:', error);
       set({
         error: error instanceof Error ? error.message : 'Failed to load entities',
         loading: false,
-        entities: [],
       });
     }
   },
 
   saveEntity: async (entity) => {
-    set({ loading: true, error: null });
+    const { updateEntity } = get();
+
+    // 确保实体有_indexId
+    if (!entity._indexId) {
+      entity._indexId = nanoid();
+    }
+
+    // 设置为保存中状态
+    updateEntity(entity._indexId, { _editStatus: 'saving' });
+
     try {
-      // 确保实体有稳定的_indexId
-      if (!entity._indexId) {
-        entity._indexId = nanoid();
+      let savedEntity;
+      if (entity._status === 'new') {
+        console.log('📝 创建新实体:', entity.id);
+        savedEntity = await entityApi.create(entity);
+      } else {
+        console.log('📝 更新实体:', entity.id);
+        savedEntity = await entityApi.update(entity.id, entity);
       }
 
-      // 直接保存实体，bundles字段保持原样（业务ID）
-      const savedEntity = await entityApi.update(entity.id, entity);
-
-      set((state) => {
-        const existingIndex = state.entities.findIndex(
-          (e) => e.id === savedEntity.id || e._indexId === savedEntity._indexId
-        );
-
-        if (existingIndex >= 0) {
-          // 更新现有实体
-          const newEntities = [...state.entities];
-          newEntities[existingIndex] = savedEntity;
-          return { entities: newEntities, loading: false };
-        } else {
-          // 添加新实体
-          return {
-            entities: [...state.entities, savedEntity],
-            loading: false,
-          };
-        }
+      // 更新为已保存状态，同时更新所有属性的状态
+      updateEntity(entity._indexId, {
+        ...savedEntity,
+        _status: 'saved',
+        _editStatus: undefined,
+        attributes: (entity.attributes || []).map((attr) => ({
+          ...attr,
+          _status: 'saved' as const,
+        })),
       });
+
+      console.log('✅ 实体保存成功:', entity.id);
     } catch (error) {
-      console.error('Failed to save entity:', error);
-      set({
-        error: error instanceof Error ? error.message : 'Failed to save entity',
-        loading: false,
-      });
+      console.error('❌ 实体保存失败:', error);
+      // 恢复原状态
+      updateEntity(entity._indexId, { _editStatus: undefined });
+      throw error;
     }
   },
 
-  removeEntity: async (entityId) => {
-    set({ loading: true, error: null });
+  removeEntity: async (id) => {
+    set({ loading: true });
     try {
-      await entityApi.delete(entityId);
-
+      await entityApi.delete(id);
       set((state) => ({
-        entities: state.entities.filter(
-          (entity) => entity.id !== entityId && entity._indexId !== entityId
-        ),
-        selectedEntityId: state.selectedEntityId === entityId ? null : state.selectedEntityId,
+        entities: state.entities.filter((entity) => entity.id !== id),
         loading: false,
       }));
+      console.log('✅ 实体删除成功:', id);
     } catch (error) {
-      console.error('Failed to delete entity:', error);
-      set({
-        error: error instanceof Error ? error.message : 'Failed to delete entity',
-        loading: false,
-      });
+      console.error('❌ 实体删除失败:', error);
+      set({ loading: false });
+      throw error;
     }
   },
 }));
 
-// 便捷的选择器hooks
-export const useEntityList = () =>
-  useEntityListStore(
-    useShallow((state) => ({
-      entities: state.entities,
-      loading: state.loading,
-      error: state.error,
-    }))
-  );
+// Hook导出 - 使用 useMemo 缓存返回对象
+export const useEntityList = () => {
+  const entities = useEntityListStore((state) => state.entities);
+  const selectedEntityId = useEntityListStore((state) => state.selectedEntityId);
+  const loading = useEntityListStore((state) => state.loading);
+  const error = useEntityListStore((state) => state.error);
 
-export const useEntityListActions = () =>
-  useEntityListStore(
-    useShallow((state) => ({
-      loadEntities: state.loadEntities,
-      getEntity: state.getEntity,
-      getEntityByStableId: state.getEntityByStableId,
-      addEntity: state.addEntity,
-      updateEntity: state.updateEntity,
-      deleteEntity: state.deleteEntity,
-      setEntities: state.setEntities,
-      setLoading: state.setLoading,
-      setError: state.setError,
-    }))
+  return useMemo(
+    () => ({
+      entities,
+      selectedEntityId,
+      loading,
+      error,
+    }),
+    [entities, selectedEntityId, loading, error]
   );
+};
+
+export const useEntityListActions = () => {
+  const setEntities = useEntityListStore((state) => state.setEntities);
+  const setSelectedEntityId = useEntityListStore((state) => state.setSelectedEntityId);
+  const setLoading = useEntityListStore((state) => state.setLoading);
+  const setError = useEntityListStore((state) => state.setError);
+  const addEntity = useEntityListStore((state) => state.addEntity);
+  const updateEntity = useEntityListStore((state) => state.updateEntity);
+  const updateEntityField = useEntityListStore((state) => state.updateEntityField);
+  const updateEntityAttribute = useEntityListStore((state) => state.updateEntityAttribute);
+  const addAttributeToEntity = useEntityListStore((state) => state.addAttributeToEntity);
+  const removeAttributeFromEntity = useEntityListStore((state) => state.removeAttributeFromEntity);
+  const deleteEntity = useEntityListStore((state) => state.deleteEntity);
+  const getEntity = useEntityListStore((state) => state.getEntity);
+  const getEntityByStableId = useEntityListStore((state) => state.getEntityByStableId);
+  const clearNewEntities = useEntityListStore((state) => state.clearNewEntities);
+  const loadEntities = useEntityListStore((state) => state.loadEntities);
+  const saveEntity = useEntityListStore((state) => state.saveEntity);
+  const removeEntity = useEntityListStore((state) => state.removeEntity);
+
+  return useMemo(
+    () => ({
+      setEntities,
+      setSelectedEntityId,
+      setLoading,
+      setError,
+      addEntity,
+      updateEntity,
+      updateEntityField,
+      updateEntityAttribute,
+      addAttributeToEntity,
+      removeAttributeFromEntity,
+      deleteEntity,
+      getEntity,
+      getEntityByStableId,
+      clearNewEntities,
+      loadEntities,
+      saveEntity,
+      removeEntity,
+    }),
+    [
+      setEntities,
+      setSelectedEntityId,
+      setLoading,
+      setError,
+      addEntity,
+      updateEntity,
+      updateEntityField,
+      updateEntityAttribute,
+      addAttributeToEntity,
+      removeAttributeFromEntity,
+      deleteEntity,
+      getEntity,
+      getEntityByStableId,
+      clearNewEntities,
+      loadEntities,
+      saveEntity,
+      removeEntity,
+    ]
+  );
+};

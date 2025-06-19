@@ -78,6 +78,7 @@ const API_CONFIG = {
     ENTITY: '/cm/entity/',
     ENUM: '/cm/enum/',
     FUNCTION: '/hub/behaviors/',
+    GRAPH: '/hub/graphs/',
   },
   TIMEOUT: 5000, // 5秒超时
 };
@@ -131,7 +132,26 @@ const realApiRequest = async (url: string, options?: RequestInit) => {
     throw new Error(`API request failed: ${response.status} ${response.statusText}`);
   }
 
-  return response.json();
+  // 检查响应内容，如果为空则返回null（适用于DELETE等操作）
+  const contentLength = response.headers.get('Content-Length');
+  const contentType = response.headers.get('Content-Type');
+
+  // 对于DELETE操作或明确标明无内容的响应，直接返回null
+  if (contentLength === '0' || response.status === 204) {
+    return null;
+  }
+
+  // 尝试解析JSON，如果失败则返回null
+  try {
+    const text = await response.text();
+    if (!text || text.trim() === '') {
+      return null; // 空响应
+    }
+    return JSON.parse(text);
+  } catch (error) {
+    console.warn('解析响应JSON失败，返回null:', error);
+    return null;
+  }
 };
 
 // Mock API请求处理
@@ -149,7 +169,52 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
     return REAL_BEHAVIORS;
   }
 
+  // 行为树图数据 - 支持 CRUD
   if (url.includes('/hub/graphs/')) {
+    if (method === 'GET') {
+      return REAL_GRAPHS;
+    }
+
+    if (method === 'POST') {
+      const newGraph = {
+        ...body,
+        _indexId: body._indexId || nanoid(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      // 注意：REAL_GRAPHS是只读的，这里模拟创建操作
+      console.log('✅ Mock API: 创建行为树图', newGraph.id);
+      return newGraph;
+    }
+
+    if (method === 'PUT') {
+      const graphIdMatch = url.match(/\/hub\/graphs\/([^\/]+)\//);
+      const graphId = graphIdMatch?.[1];
+
+      if (graphId) {
+        // 模拟更新操作
+        const updatedGraph = {
+          ...body,
+          id: graphId,
+          updatedAt: new Date().toISOString(),
+        };
+        console.log('✅ Mock API: 更新行为树图', graphId, updatedGraph);
+        return updatedGraph;
+      }
+      throw new Error(`行为树图未找到: ${graphId}`);
+    }
+
+    if (method === 'DELETE') {
+      const graphIdMatch = url.match(/\/hub\/graphs\/([^\/]+)\//);
+      const graphId = graphIdMatch?.[1];
+
+      if (graphId) {
+        console.log('✅ Mock API: 删除行为树图', graphId);
+        return;
+      }
+      throw new Error(`行为树图未找到: ${graphId}`);
+    }
+
     return REAL_GRAPHS;
   }
 
@@ -345,11 +410,15 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
 
 // 统一的API请求函数
 const apiRequest = async (url: string, options?: RequestInit): Promise<any> => {
+  const method = options?.method || 'GET';
+
   try {
     // 尝试真实API请求
     const response = await realApiRequest(url, options);
+    console.log(`✅ 真实API成功: ${method} ${url}`);
     return response;
   } catch (error) {
+    console.log(`❌ 真实API失败，切换到Mock: ${method} ${url}`, error);
     // 真实API失败，切换到Mock模式
     return await mockApiRequest(url, options);
   }
@@ -521,6 +590,45 @@ export const behaviorApi = {
   // 删除函数行为
   delete: (id: string): Promise<void> => {
     const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.FUNCTION}${id}/`);
+    return apiRequest(url, { method: 'DELETE' });
+  },
+};
+
+// 行为树图相关API
+export const graphApi = {
+  // 获取所有行为树图
+  getAll: () => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.GRAPH);
+    return apiRequest(url);
+  },
+
+  // 获取单个行为树图
+  getById: (id: string) => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.GRAPH}${id}/`);
+    return apiRequest(url);
+  },
+
+  // 创建行为树图
+  create: (graph: any) => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.GRAPH);
+    return apiRequest(url, {
+      method: 'POST',
+      body: JSON.stringify(graph),
+    });
+  },
+
+  // 更新行为树图
+  update: (id: string, updates: any) => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.GRAPH}${id}/`);
+    return apiRequest(url, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  // 删除行为树图
+  delete: (id: string): Promise<void> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.GRAPH}${id}/`);
     return apiRequest(url, { method: 'DELETE' });
   },
 };

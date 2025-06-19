@@ -43,7 +43,7 @@ import {
   useGraphList,
 } from './stores';
 import { toggleMockMode, getApiMode } from './services/api-service';
-import { useRouter } from './hooks/use-router';
+import { useRouter, RouteType } from './hooks/use-router';
 import { Editor } from './editor';
 import { TestNewArchitecture } from './components/test-new-architecture';
 // import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
@@ -53,6 +53,7 @@ import { EnumStoreProvider } from './components/ext/type-selector-ext/enum-store
 import { EntityWorkflowSyncer } from './components/entity-workflow-syncer';
 import { EntitySelector } from './components/entity-selector';
 import { EntityListPage } from './components/entity-list-page';
+import { ApiTestPanel } from './components/api-test-panel';
 // import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
 
 const { Header, Content } = Layout;
@@ -61,16 +62,18 @@ const { Title } = Typography;
 // 实体数据初始化组件 - 直接使用EntityListStore加载数据
 const EntityStoreInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { entities } = useEntityList();
-  const { loadEntities } = useEntityListActions();
+  const { loadEntities, clearNewEntities } = useEntityListActions();
   const initializedRef = React.useRef(false);
 
   // 只在第一次加载时获取实体数据
   React.useEffect(() => {
     if (!initializedRef.current) {
+      // 页面刷新时清除未保存的新增实体
+      clearNewEntities();
       loadEntities();
       initializedRef.current = true;
     }
-  }, [loadEntities]);
+  }, [loadEntities, clearNewEntities]);
 
   return <>{children}</>;
 };
@@ -141,15 +144,8 @@ const EntityEditActions: React.FC = () => {
   );
 };
 
-type PageType =
-  | 'entities'
-  | 'modules'
-  | 'entity-workflow'
-  | 'test-properties'
-  // | 'test-module-entity' // 已删除
-  | 'test-new-architecture'
-  | 'test-behavior'
-  | 'test-variable-selector';
+// 现在直接使用RouteType，不需要单独的PageType
+// type PageType = RouteType;
 
 // 工作流编辑页面组件
 const WorkflowEditPage: React.FC = () => {
@@ -181,16 +177,15 @@ const WorkflowEditPage: React.FC = () => {
 // 主应用内容组件
 const AppContent: React.FC = () => {
   const { routeState, navigate } = useRouter();
-  const [currentPage, setCurrentPage] = useState<PageType>(routeState.route);
+  // 移除独立的currentPage状态，直接使用routeState.route
+  const currentPage: RouteType = routeState.route;
 
   const { entities, loading } = useEntityList();
   const { selectedEntityId } = useCurrentEntity();
   const { selectEntity } = useCurrentEntityActions();
 
-  // 同步路由状态和页面状态
+  // 处理实体工作流页面的实体选择
   React.useEffect(() => {
-    setCurrentPage(routeState.route);
-
     // 如果是实体工作流页面，确保选中正确的实体
     if (routeState.route === 'entity-workflow' && routeState.entityId) {
       const entity = entities.find(
@@ -265,14 +260,8 @@ const AppContent: React.FC = () => {
     (data: any) => {
       if (data.selectedKeys && data.selectedKeys.length > 0) {
         const selectedKey = data.selectedKeys[0] as string;
-        if (selectedKey === 'entities') {
-          navigate({ route: 'entities' });
-        } else if (selectedKey === 'modules') {
-          navigate({ route: 'modules' });
-        } else {
-          // 测试页面仍使用旧的方式
-          setCurrentPage(selectedKey as PageType);
-        }
+        // 所有页面都使用路由系统
+        navigate({ route: selectedKey as RouteType });
       }
     },
     [navigate]
@@ -290,6 +279,7 @@ const AppContent: React.FC = () => {
   // 测试页面导航项
   const testNavItems = React.useMemo(
     () => [
+      { itemKey: 'api-test', text: 'API连通性测试' },
       { itemKey: 'test-new-architecture', text: '新架构测试' },
       { itemKey: 'test-properties', text: '属性编辑器测试' },
       { itemKey: 'test-behavior', text: '函数行为测试' },
@@ -333,6 +323,8 @@ const AppContent: React.FC = () => {
         return <ModuleListPage />;
       case 'entity-workflow':
         return <WorkflowEditPage />;
+      case 'api-test':
+        return <ApiTestPanel />;
       case 'test-new-architecture':
         return <TestNewArchitecture />;
       case 'test-behavior':
