@@ -16,6 +16,7 @@ export interface ModuleAttribute {
   description?: string;
   enumClassId?: string;
   displayId?: string; // 去掉模块前缀的属性ID，用于显示
+  _status?: ModuleStatus; // 属性状态：saved(已保存) | new(新增) | dirty(已修改) | saving(保存中)
 }
 
 // 模块接口
@@ -27,6 +28,7 @@ export interface Module {
   attributes: ModuleAttribute[];
   deprecated?: boolean;
   _status?: ModuleStatus; // 模块状态：saved(已保存) | new(新增) | dirty(已修改) | saving(保存中)
+  _editStatus?: 'editing' | 'saving'; // 编辑状态：编辑中 | 保存中
 }
 
 export type AttributeStatus = ItemStatus;
@@ -115,4 +117,43 @@ export interface BehaviorDef {
   }>;
   _indexId?: string; // 稳定的索引ID，用作React key
   _status?: ItemStatus; // 状态：saved(已保存) | new(新增) | dirty(已修改) | saving(保存中)
+}
+
+// 远程服务定义接口 (对应 /hub/expressions/ API)
+export interface ExpressionDef {
+  id: string; // 服务ID
+  name: string; // 服务名称
+  description: string;
+  url: string; // 服务URL
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'; // 必须的HTTP方法
+  headers?: Record<string, string>;
+  parameters: BehaviorParameter[];
+  returns: BehaviorReturn;
+  timeout?: number;
+  retryCount?: number;
+  deprecated?: boolean;
+  tags?: string[];
+  category?: string;
+  examples?: Array<{
+    name: string;
+    description: string;
+    input: Record<string, any>;
+    output: any;
+  }>;
+  _indexId?: string; // 稳定的索引ID，用作React key
+  _status?: ItemStatus; // 状态：saved(已保存) | new(新增) | dirty(已修改) | saving(保存中)
+}
+
+// 表达式项联合类型 - 包含行为函数和远程服务
+export type ExpressionItem =
+  | (BehaviorDef & { type: 'behavior' })
+  | (ExpressionDef & { type: 'expression' });
+
+// 表达式调用结果
+export interface ExpressionCallResult {
+  success: boolean;
+  data?: any;
+  error?: string;
+  duration: number; // 调用耗时（毫秒）
+  timestamp: number; // 调用时间戳
 }

@@ -28,6 +28,7 @@ import {
 } from '@douyinfe/semi-icons';
 
 import { EntityPropertyTypeSelector, DataRestrictionButton } from './ext/type-selector-ext';
+import { SearchFilterBar } from './ext/search-filter-bar';
 import { ModuleSelectorTableModal } from './bt/module-selector-table';
 import { useEntityList, useEntityListActions } from '../stores/entity-list';
 import { useModuleStore, useGraphList } from '../stores';
@@ -132,16 +133,48 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
     loadEntities();
   }, [loadEntities]);
 
-  // 转换为表格数据 - 带排序逻辑
+  // 🎯 本地编辑状态 - 避免每次输入都更新全局store
+  const [localEdits, setLocalEdits] = useState<Map<string, any>>(new Map());
+
+  // 🎯 获取合并后的实体数据（原始数据 + 本地编辑）
+  const getMergedEntity = useCallback(
+    (entity: any) => {
+      const localEdit = localEdits.get(entity._indexId);
+      if (!localEdit) return entity;
+
+      const mergedEntity = { ...entity, ...localEdit };
+
+      // 合并属性编辑
+      if (localEdit.attributes) {
+        mergedEntity.attributes = (entity.attributes || []).map((attr: any) => {
+          const attrEdit = localEdit.attributes[attr._indexId];
+          return attrEdit ? { ...attr, ...attrEdit } : attr;
+        });
+      }
+
+      return mergedEntity;
+    },
+    [localEdits]
+  );
+
+  // 转换为表格数据 - 带排序逻辑，使用合并后的数据
   const tableData = useMemo(() => {
-    console.log('🔄 重新计算表格数据，实体数量:', entities.length);
+    console.log(
+      '🔄 重新计算表格数据，实体数量:',
+      entities.length,
+      '本地编辑数量:',
+      localEdits.size
+    );
     const data: any[] = [];
 
-    entities.forEach((entity) => {
+    entities.forEach((originalEntity) => {
+      // 🎯 使用合并后的实体数据（原始数据 + 本地编辑）
+      const entity = getMergedEntity(originalEntity);
+
       const entityRow: any = {
         key: entity._indexId,
         type: 'entity',
-        entity: entity, // 🎯 直接使用实体数据
+        entity: entity, // 🎯 使用合并后的实体数据
         children: [] as any[],
       };
 
@@ -206,7 +239,7 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
     });
 
     return data;
-  }, [entities, modules]); // 🎯 简化依赖
+  }, [entities, modules, localEdits, getMergedEntity]); // 🎯 添加localEdits依赖
 
   // 过滤数据
   const filteredData = useMemo(() => {
@@ -245,33 +278,98 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
     });
   }, [tableData, searchText]); // 🎯 简化依赖，tableData已经包含了必要的依赖
 
-  // 🎯 字段变更处理 - 直接更新实体，简化逻辑
+  // 🎯 字段变更处理 - 使用本地状态，避免频繁更新store
   const handleEntityFieldChange = useCallback(
     (entityIndexId: string, field: string, value: any) => {
-      console.log('🔍 更新实体字段:', entityIndexId, field, value);
-      updateEntityField(entityIndexId, field, value);
+      console.log('🔍 更新实体字段（本地）:', entityIndexId, field, value);
+      setLocalEdits((prev) => {
+        const newEdits = new Map(prev);
+        const currentEdit = newEdits.get(entityIndexId) || {};
+        newEdits.set(entityIndexId, { ...currentEdit, [field]: value });
+        return newEdits;
+      });
     },
-    [updateEntityField]
+    []
   );
 
   const handleAttributeFieldChange = useCallback(
     (entityIndexId: string, attributeId: string, field: string, value: any) => {
-      console.log('🔍 更新属性字段:', entityIndexId, attributeId, field, value);
-      updateEntityAttribute(entityIndexId, attributeId, field, value);
+      console.log('🔍 更新属性字段（本地）:', entityIndexId, attributeId, field, value);
+      setLocalEdits((prev) => {
+        const newEdits = new Map(prev);
+        const currentEdit = newEdits.get(entityIndexId) || {};
+        const attributes = currentEdit.attributes || {};
+        newEdits.set(entityIndexId, {
+          ...currentEdit,
+          attributes: {
+            ...attributes,
+            [attributeId]: { ...attributes[attributeId], [field]: value },
+          },
+        });
+        return newEdits;
+      });
     },
-    [updateEntityAttribute]
+    []
+  );
+
+  // 🎯 应用本地编辑到store（保存时调用）
+  const applyLocalEdits = useCallback(
+    async (entityIndexId: string) => {
+      const localEdit = localEdits.get(entityIndexId);
+      if (!localEdit) return;
+
+      const originalEntity = entities.find((e) => e._indexId === entityIndexId);
+      if (!originalEntity) return;
+
+      try {
+        console.log('🔍 应用本地编辑到store:', entityIndexId, localEdit);
+
+        // 应用实体字段编辑
+        if (localEdit.id !== undefined || localEdit.name !== undefined) {
+          Object.keys(localEdit).forEach((field) => {
+            if (field !== 'attributes' && localEdit[field] !== undefined) {
+              updateEntityField(entityIndexId, field, localEdit[field]);
+            }
+          });
+        }
+
+        // 应用属性编辑
+        if (localEdit.attributes) {
+          Object.keys(localEdit.attributes).forEach((attrId) => {
+            const attrEdit = localEdit.attributes[attrId];
+            Object.keys(attrEdit).forEach((field) => {
+              updateEntityAttribute(entityIndexId, attrId, field, attrEdit[field]);
+            });
+          });
+        }
+
+        // 清除本地编辑状态
+        setLocalEdits((prev) => {
+          const newEdits = new Map(prev);
+          newEdits.delete(entityIndexId);
+          return newEdits;
+        });
+      } catch (error) {
+        console.error('❌ 应用本地编辑失败:', error);
+      }
+    },
+    [localEdits, entities, updateEntityField, updateEntityAttribute]
   );
 
   const handleTypeChange = (entityIndexId: string, attributeId: string, typeInfo: any) => {
     handleAttributeFieldChange(entityIndexId, attributeId, 'type', typeInfo.type);
   };
 
-  // 🎯 检查实体是否有修改 - 直接检查实体状态
-  const isEntityDirty = useCallback((entity: any) => {
-    const status = entity._status;
-    // console.log('🔍 检查实体状态:', entity._indexId, '状态:', status);
-    return status === 'dirty' || status === 'new';
-  }, []);
+  // 🎯 检查实体是否有修改 - 包括本地编辑状态
+  const isEntityDirty = useCallback(
+    (entity: any) => {
+      const status = entity._status;
+      const hasLocalEdits = localEdits.has(entity._indexId);
+      // console.log('🔍 检查实体状态:', entity._indexId, '状态:', status, '本地编辑:', hasLocalEdits);
+      return status === 'dirty' || status === 'new' || hasLocalEdits;
+    },
+    [localEdits]
+  );
 
   // 检查实体是否可以保存（必填项都已填写且无重复）
   const canSaveEntity = (entity: any): boolean => {
@@ -380,46 +478,18 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
 
   // 表格列定义
   const columns = [
-    // 第一列：展开按钮（合并表头包含搜索框）
+    // 第一列：展开按钮
     {
       key: 'expand',
-      width: 20,
-      title: () => (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-          <Input
-            placeholder="搜索实体、属性..."
-            value={searchText}
-            onChange={setSearchText}
-            style={{ width: '100px' }}
-            size="small"
-          />
-          <Button
-            icon={<IconRefresh />}
-            onClick={async () => {
-              console.log('🔄 刷新数据');
-              await loadEntities();
-              console.log('🔄 数据已刷新');
-            }}
-            loading={loading}
-            size="small"
-          >
-            刷新
-          </Button>
-        </div>
-      ),
-      onHeaderCell: () => ({
-        colSpan: 3, // 合并前三列
-      }),
+      title: '',
+      width: 40,
       render: (_: any, record: any, index: number, { expandIcon }: any) => expandIcon,
     },
-    // 第二列：链接按钮&行为树跳转按钮（表头已合并）
+    // 第二列：操作按钮
     {
       key: 'navigation',
-      width: 60,
       title: '',
-      onHeaderCell: () => ({
-        colSpan: 0, // colSpan为0表示这列已被合并
-      }),
+      width: 80,
       render: (_: any, record: any) => {
         if (record.type === 'entity') {
           const entity = record.entity;
@@ -474,31 +544,49 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         return null;
       },
     },
-    // 第三列：标签（表头已合并）
+    // 第三列：类型标签
     {
       key: 'type',
+      title: '类型',
       width: 60,
-      title: '',
-      onHeaderCell: () => ({
-        colSpan: 0, // colSpan为0表示这列已被合并
-      }),
       render: (_: any, record: any) => {
         if (record.type === 'entity') {
           const isNew = record.entity?._status === 'new';
+          const attributeCount = record.entity?.attributes?.length || 0;
+
           return (
-            <Tag
-              color="blue"
-              style={
-                isNew
-                  ? {
-                      boxShadow: '0 0 8px rgba(59, 130, 246, 0.6)',
-                      animation: 'pulse 2s infinite',
-                    }
-                  : {}
-              }
+            <Badge
+              count={attributeCount > 0 ? attributeCount : undefined}
+              overflowCount={99}
+              type="primary"
+              theme="inverted"
+              data-badge-type="primary"
             >
-              实体
-            </Tag>
+              <Tag
+                color="blue"
+                style={
+                  isNew
+                    ? {
+                        boxShadow: '0 0 8px rgba(59, 130, 246, 0.6)',
+                        animation: 'pulse 2s infinite',
+                        cursor: 'pointer',
+                      }
+                    : { cursor: 'pointer' }
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (e.ctrlKey || e.metaKey) {
+                    // Ctrl/Cmd + 点击在新窗口打开
+                    window.open(`/entities/${record.entity?.id || 'new'}`, '_blank');
+                  } else {
+                    // 普通点击在当前窗口导航
+                    window.location.href = `/entities/${record.entity?.id || 'new'}`;
+                  }
+                }}
+              >
+                实体
+              </Tag>
+            </Badge>
           );
         }
         if (record.type === 'attribute') {
@@ -519,16 +607,37 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
             </Tag>
           );
         }
-        if (record.type === 'module') return <Tag color="orange">模块</Tag>;
-        if (record.type === 'module-attribute') return <Tag color="grey">属性</Tag>;
+        if (record.type === 'module') {
+          return (
+            <Tag
+              color="orange"
+              style={{ cursor: 'pointer' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (e.ctrlKey || e.metaKey) {
+                  // Ctrl/Cmd + 点击在新窗口打开
+                  window.open(`/modules/${record.module?.id}`, '_blank');
+                } else {
+                  // 普通点击在当前窗口导航
+                  window.location.href = `/modules/${record.module?.id}`;
+                }
+              }}
+            >
+              模块
+            </Tag>
+          );
+        }
+        if (record.type === 'module-attribute') {
+          return <Tag color="grey">属性</Tag>;
+        }
         return <Tag>{record.type}</Tag>;
       },
     },
-    // 第四列：ID 120px
+    // 第四列：ID
     {
       title: 'ID',
       key: 'id',
-      width: 160,
+      width: 200,
       render: (_: any, record: any) => {
         if (record.type === 'entity') {
           const errorMessage = getFieldValidationError(
@@ -600,11 +709,11 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         return null;
       },
     },
-    // 第五列：Name 160px
+    // 第五列：名称
     {
       title: '名称',
       key: 'name',
-      width: 200,
+      width: 240,
       render: (_: any, record: any) => {
         if (record.type === 'entity') {
           return (
@@ -650,7 +759,7 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         return null;
       },
     },
-    // 第六列：控件集合 80px
+    // 第六列：操作按钮
     {
       title: () => (
         <Button size="small" icon={<IconPlus />} type="primary" onClick={handleAddEntity}>
@@ -658,7 +767,7 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         </Button>
       ),
       key: 'actions',
-      width: 100,
+      // width: 180,
       render: (_: any, record: any) => (
         <div
           style={{
@@ -746,6 +855,9 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
                       onConfirm={async (e) => {
                         e?.stopPropagation?.();
                         try {
+                          // 先应用本地编辑到store
+                          await applyLocalEdits(entity._indexId);
+                          // 然后保存实体
                           await saveEntity(entity);
                           console.log('✅ 实体保存成功');
                           Notification.success({
@@ -1033,6 +1145,17 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
 
   return (
     <div style={{ padding: '24px', minWidth: '720px', maxWidth: '960px' }}>
+      <SearchFilterBar
+        searchText={searchText}
+        onSearchChange={setSearchText}
+        onRefresh={async () => {
+          console.log('🔄 刷新数据');
+          await loadEntities();
+          console.log('🔄 数据已刷新');
+        }}
+        loading={loading}
+        placeholder="搜索实体、属性..."
+      />
       <Table
         columns={columns}
         dataSource={filteredData}
@@ -1046,7 +1169,7 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         size="small"
         style={{ tableLayout: 'fixed' }}
         className="entity-list-table"
-        scroll={{ y: 'calc(100vh - 200px)' }}
+        scroll={{ y: 'calc(100vh - 186px)' }}
         rowKey="key"
         onRow={useCallback((record: any, index?: number) => {
           // 为新增状态的行添加className，避免每次渲染创建新对象
@@ -1066,21 +1189,8 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
       <style>
         {`
           .entity-list-table .semi-table-tbody > .semi-table-row > .semi-table-row-cell {
-            padding-right: 12px;
-            padding-left: 12px;
-          }
-
-                    /* 合并表头样式优化 */
-          .entity-list-table .semi-table-thead > tr > th[colspan="3"] {
-            text-align: left;
-            padding: 12px 16px;
-            position: relative;
-          }
-
-          /* 确保搜索框和按钮的布局在合并单元格中正确显示 */
-          .entity-list-table .semi-table-thead > tr > th[colspan="3"] > div {
-            min-width: 320px;
-            max-width: 100%;
+            padding-right: 8px;
+            padding-left: 8px;
           }
 
           /* 新增实体行的左边框 */

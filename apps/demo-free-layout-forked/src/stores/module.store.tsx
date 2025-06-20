@@ -35,24 +35,42 @@ export interface ModuleActions {
   loadModules: () => Promise<void>;
   getModulesByIds: (ids: string[]) => Module[];
 
-  // 编辑相关
+  // 编辑相关（保留旧的编辑模式）
   startEditModule: (moduleId: string) => void;
   updateEditingModule: (moduleId: string, updates: Partial<Module>) => void;
-  saveModule: (moduleId: string) => Promise<void>;
+  saveModuleEdit: (moduleId: string) => Promise<void>; // 重命名避免冲突
   resetModuleChanges: (moduleId: string) => void;
   isModuleDirty: (moduleId: string) => boolean;
   getEditingModule: (moduleId: string) => Module | null;
 
-  // 模块操作
+  // 模块操作 - 参考实体的实现方式
+  addModule: (
+    module: Omit<Module, '_indexId' | 'attributes'> & {
+      attributes?: Omit<ModuleAttribute, '_indexId'>[];
+    }
+  ) => void; // 只添加到本地状态，不保存到后台
+  updateModuleField: (indexId: string, field: string, value: any) => void; // 直接更新store中的模块字段
+  updateModuleAttribute: (
+    moduleIndexId: string,
+    attributeId: string,
+    field: string,
+    value: any
+  ) => void; // 直接更新store中的模块属性字段
+  saveModule: (module: Module) => Promise<void>; // 保存完整的模块对象（参考saveEntity）
   createModule: (
     module: Omit<Module, '_indexId' | 'attributes'> & {
       attributes?: Omit<ModuleAttribute, '_indexId'>[];
     }
-  ) => Promise<void>;
+  ) => Promise<void>; // 直接保存到后台
   updateModule: (moduleId: string, updates: Partial<Module>) => Promise<void>;
   deleteModule: (moduleId: string) => Promise<void>;
 
   // 直接属性操作（非编辑模式）
+  addAttributeToModuleLocal: (
+    moduleIndexId: string,
+    attribute?: Omit<ModuleAttribute, '_indexId'>
+  ) => void; // 本地添加属性
+  removeAttributeFromModuleLocal: (moduleIndexId: string, attributeIndexId: string) => void; // 本地删除属性
   addAttributeToModule: (
     moduleId: string,
     attribute: Omit<ModuleAttribute, '_indexId'>
@@ -92,24 +110,58 @@ export const useModuleStore = create<ModuleStore>()(
       error: null,
 
       loadModules: async () => {
+        console.log('🔄 [ModuleStore] loadModules 开始加载');
         set({ loading: true, error: null });
         try {
           const modules = await moduleApi.getAll();
-          const modulesWithIndex = modules.map((m) => ({
-            ...m,
-            _indexId: m._indexId || nanoid(),
-            attributes: (m.attributes || []).map((a) => ({
-              ...a,
-              _indexId: a._indexId || nanoid(),
-              displayId: a.displayId || a.id.split('/').pop() || a.id,
-            })),
-          }));
+          console.log('🔄 [ModuleStore] API返回的原始模块数据:', {
+            count: modules.length,
+            firstModule: modules[0],
+            modules: modules.slice(0, 3), // 只显示前3个
+          });
 
-          // 🎯 按id排序模块
-          const sortedModules = modulesWithIndex.sort((a, b) => a.id.localeCompare(b.id));
+          // 🐛 检查是否有模块缺少必要字段
+          const invalidModules = modules.filter((m) => !m.id || !m.name);
+          if (invalidModules.length > 0) {
+            console.warn('⚠️ [ModuleStore] 发现无效模块数据:', invalidModules);
+          }
+
+          const modulesWithIndex = modules.map((m, index) => {
+            // 🐛 为每个模块添加安全检查
+            if (!m.id) {
+              console.error(`❌ [ModuleStore] 模块 ${index} 缺少id字段:`, m);
+            }
+            if (!m.name) {
+              console.error(`❌ [ModuleStore] 模块 ${index} 缺少name字段:`, m);
+            }
+
+            return {
+              ...m,
+              _indexId: m._indexId || nanoid(),
+              attributes: (m.attributes || []).map((a) => ({
+                ...a,
+                _indexId: a._indexId || nanoid(),
+                displayId: a.displayId || a.id.split('/').pop() || a.id,
+              })),
+            };
+          });
+
+          // 🎯 按id排序模块，确保id不为空
+          const sortedModules = modulesWithIndex.sort((a, b) => {
+            const idA = a.id || '';
+            const idB = b.id || '';
+            return idA.localeCompare(idB);
+          });
+
+          console.log('🔄 [ModuleStore] 处理后的模块数据:', {
+            count: sortedModules.length,
+            firstModule: sortedModules[0],
+          });
 
           set({ modules: sortedModules, loading: false });
+          console.log('✅ [ModuleStore] 模块数据已保存到store');
         } catch (error) {
+          console.error('❌ [ModuleStore] 加载模块失败:', error);
           set({ error: (error as Error).message, loading: false });
         }
       },
@@ -147,8 +199,103 @@ export const useModuleStore = create<ModuleStore>()(
         });
       },
 
-      // 🎯 保存模块
-      saveModule: async (moduleId) => {
+      // 🎯 直接更新模块字段（参考实体的updateEntityField）
+      updateModuleField: (indexId, field, value) => {
+        set((state) => {
+          const moduleIndex = state.modules.findIndex((m) => m._indexId === indexId);
+          if (moduleIndex !== -1) {
+            (state.modules[moduleIndex] as any)[field] = value;
+            // 标记为dirty状态
+            if (state.modules[moduleIndex]._status !== 'new') {
+              state.modules[moduleIndex]._status = 'dirty';
+            }
+          }
+        });
+      },
+
+      // 🎯 直接更新模块属性字段（参考实体的updateEntityAttribute）
+      updateModuleAttribute: (moduleIndexId, attributeIndexId, field, value) => {
+        set((state) => {
+          const moduleIndex = state.modules.findIndex((m) => m._indexId === moduleIndexId);
+          if (moduleIndex !== -1) {
+            const attributeIndex = state.modules[moduleIndex].attributes.findIndex(
+              (attr) => attr._indexId === attributeIndexId
+            );
+            if (attributeIndex !== -1) {
+              (state.modules[moduleIndex].attributes[attributeIndex] as any)[field] = value;
+              // 标记属性为dirty状态
+              if (state.modules[moduleIndex].attributes[attributeIndex]._status !== 'new') {
+                state.modules[moduleIndex].attributes[attributeIndex]._status = 'dirty';
+              }
+              // 标记模块为dirty状态
+              if (state.modules[moduleIndex]._status !== 'new') {
+                state.modules[moduleIndex]._status = 'dirty';
+              }
+            }
+          }
+        });
+      },
+
+      // 🎯 保存完整的模块对象（参考实体的saveEntity）
+      saveModule: async (module) => {
+        const { updateModule } = get();
+
+        // 确保模块有_indexId
+        if (!module._indexId) {
+          module._indexId = nanoid();
+        }
+
+        // 设置为保存中状态
+        set((state) => {
+          const moduleIndex = state.modules.findIndex((m) => m._indexId === module._indexId);
+          if (moduleIndex !== -1) {
+            state.modules[moduleIndex]._editStatus = 'saving';
+          }
+        });
+
+        try {
+          let savedModule;
+          if (module._status === 'new') {
+            console.log('📝 创建新模块:', module.id);
+            savedModule = await moduleApi.create(module);
+          } else {
+            console.log('📝 更新模块:', module.id);
+            savedModule = await moduleApi.update(module.id, module);
+          }
+
+          // 更新为已保存状态，同时更新所有属性的状态
+          set((state) => {
+            const moduleIndex = state.modules.findIndex((m) => m._indexId === module._indexId);
+            if (moduleIndex !== -1) {
+              state.modules[moduleIndex] = {
+                ...savedModule,
+                _indexId: module._indexId, // 保留_indexId
+                _status: 'saved',
+                _editStatus: undefined,
+                attributes: (module.attributes || []).map((attr) => ({
+                  ...attr,
+                  _status: 'saved' as const,
+                })),
+              };
+            }
+          });
+
+          console.log('✅ 模块保存成功:', module.id);
+        } catch (error) {
+          console.error('❌ 模块保存失败:', error);
+          // 恢复原状态
+          set((state) => {
+            const moduleIndex = state.modules.findIndex((m) => m._indexId === module._indexId);
+            if (moduleIndex !== -1) {
+              state.modules[moduleIndex]._editStatus = undefined;
+            }
+          });
+          throw error;
+        }
+      },
+
+      // 🎯 保存编辑中的模块（重命名的旧方法）
+      saveModuleEdit: async (moduleId) => {
         const { editingModules } = get();
         const editState = editingModules.get(moduleId);
         if (!editState || !editState.isDirty) return;
@@ -212,7 +359,71 @@ export const useModuleStore = create<ModuleStore>()(
         return modules.find((m) => m.id === moduleId) || null;
       },
 
-      // 🎯 创建新模块
+      // 🎯 添加新模块到本地状态（不保存到后台）
+      addModule: (module) => {
+        const newModule: Module = {
+          ...module,
+          _indexId: nanoid(),
+          _status: 'new' as const, // 标记为新增状态
+          attributes: (module.attributes || []).map((attr) => ({
+            ...attr,
+            _indexId: nanoid(),
+            displayId: attr.displayId || attr.id.split('/').pop() || attr.id,
+          })),
+        };
+
+        set((state) => {
+          // 新增模块添加到顶部
+          const otherModules = state.modules.filter((m) => m._status !== 'new');
+          const newModules = state.modules.filter((m) => m._status === 'new');
+          state.modules = [...newModules, newModule, ...otherModules];
+        });
+
+        console.log('✅ 添加新模块到本地状态:', newModule._indexId);
+      },
+
+      // 🎯 根据_indexId保存模块（支持新增和修改状态）
+      saveModuleByIndexId: async (moduleIndexId: string) => {
+        const { modules } = get();
+        const module = modules.find((m) => m._indexId === moduleIndexId);
+        if (!module) {
+          throw new Error(`模块 ${moduleIndexId} 不存在`);
+        }
+
+        try {
+          console.log('📝 ModuleStore: 保存模块', {
+            indexId: moduleIndexId,
+            id: module.id,
+            status: module._status,
+          });
+
+          if (module._status === 'new') {
+            // 新增模块：调用create API
+            await moduleApi.create(module);
+            console.log('✅ ModuleStore: 新增模块保存成功');
+          } else {
+            // 修改模块：调用update API
+            await moduleApi.update(module.id, module);
+            console.log('✅ ModuleStore: 更新模块保存成功');
+          }
+
+          // 更新模块状态为已保存
+          set((state) => {
+            const moduleIndex = state.modules.findIndex((m) => m._indexId === moduleIndexId);
+            if (moduleIndex > -1) {
+              state.modules[moduleIndex] = {
+                ...state.modules[moduleIndex],
+                _status: undefined, // 清除状态标记，表示已保存
+              };
+            }
+          });
+        } catch (error) {
+          console.error('❌ ModuleStore: 保存模块失败:', error);
+          throw error;
+        }
+      },
+
+      // 🎯 创建新模块（直接保存到后台）
       createModule: async (module) => {
         const newModule: Module = {
           ...module,
@@ -269,11 +480,30 @@ export const useModuleStore = create<ModuleStore>()(
         }
       },
 
-      // 🎯 删除模块
-      deleteModule: async (moduleId) => {
+      // 🎯 删除模块（支持新增和已保存状态）
+      deleteModule: async (moduleIndexId) => {
+        const { modules } = get();
+        const module = modules.find((m) => m._indexId === moduleIndexId);
+        if (!module) {
+          console.warn('⚠️ 删除失败：找不到模块', moduleIndexId);
+          return;
+        }
+
         try {
-          // 调用删除API
-          await moduleApi.delete(moduleId);
+          // 如果是新增状态的模块，直接从本地删除
+          if (module._status === 'new') {
+            console.log('🗑️ 删除新增模块（仅本地）:', module.id || '无ID');
+            set((state) => {
+              state.modules = state.modules.filter((m) => m._indexId !== moduleIndexId);
+              state.editingModules.delete(moduleIndexId);
+            });
+            console.log('✅ 新增模块删除成功');
+            return;
+          }
+
+          // 已保存的模块需要调用API删除
+          console.log('🗑️ 调用API删除模块:', module.id);
+          await moduleApi.delete(module.id);
 
           console.log('✅ ModuleStore: 删除API调用成功，重新查询后台数据同步状态');
 
@@ -285,14 +515,73 @@ export const useModuleStore = create<ModuleStore>()(
 
           // 清除编辑状态
           set((state) => {
-            state.editingModules.delete(moduleId);
+            state.editingModules.delete(moduleIndexId);
           });
 
-          console.log('✅ ModuleStore: 删除操作完成，数据已同步');
+          console.log('✅ ModuleStore: 已保存模块删除操作完成，数据已同步');
         } catch (error) {
           console.error('❌ ModuleStore: 删除失败:', error);
           throw error;
         }
+      },
+
+      // 🎯 本地添加属性到模块（不保存到后台）
+      addAttributeToModuleLocal: (moduleIndexId, attribute) => {
+        set((state) => {
+          const moduleIndex = state.modules.findIndex((m) => m._indexId === moduleIndexId);
+          if (moduleIndex === -1) {
+            console.error(`模块 ${moduleIndexId} 不存在`);
+            return;
+          }
+
+          const newAttribute = {
+            id: '',
+            name: '',
+            type: 'string',
+            ...attribute,
+            _indexId: nanoid(),
+            _status: 'new' as const, // 标记为新增状态
+          };
+
+          // 为属性添加displayId
+          newAttribute.displayId =
+            newAttribute.displayId || newAttribute.id.split('/').pop() || newAttribute.id;
+
+          state.modules[moduleIndex].attributes.push(newAttribute);
+
+          // 标记模块为dirty（如果不是新增状态）
+          if (state.modules[moduleIndex]._status !== 'new') {
+            state.modules[moduleIndex]._status = 'dirty';
+          }
+
+          console.log('✅ 本地添加属性到模块:', moduleIndexId, newAttribute._indexId);
+        });
+      },
+
+      // 🎯 本地删除模块属性（不保存到后台）
+      removeAttributeFromModuleLocal: (moduleIndexId, attributeIndexId) => {
+        set((state) => {
+          const moduleIndex = state.modules.findIndex((m) => m._indexId === moduleIndexId);
+          if (moduleIndex === -1) {
+            console.error(`模块 ${moduleIndexId} 不存在`);
+            return;
+          }
+
+          const originalLength = state.modules[moduleIndex].attributes.length;
+          state.modules[moduleIndex].attributes = state.modules[moduleIndex].attributes.filter(
+            (attr) => attr._indexId !== attributeIndexId
+          );
+
+          if (state.modules[moduleIndex].attributes.length < originalLength) {
+            // 标记模块为dirty（如果不是新增状态）
+            if (state.modules[moduleIndex]._status !== 'new') {
+              state.modules[moduleIndex]._status = 'dirty';
+            }
+            console.log('✅ 本地删除模块属性:', moduleIndexId, attributeIndexId);
+          } else {
+            console.warn('⚠️ 属性删除失败：找不到属性', attributeIndexId);
+          }
+        });
       },
 
       // 🎯 添加属性到模块（直接操作，非编辑模式）
@@ -430,7 +719,7 @@ export const useModuleStore = create<ModuleStore>()(
 
         for (const moduleId of dirtyModuleIds) {
           try {
-            await get().saveModule(moduleId);
+            await get().saveModuleEdit(moduleId); // 使用编辑模式的保存方法
           } catch (error) {
             console.error(`保存模块 ${moduleId} 失败:`, error);
           }

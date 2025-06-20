@@ -6,6 +6,7 @@ import type { Module, Entity, EnumClass } from '../services/types';
 // 导入所有数据文件
 import modulesData from './modules.json';
 import graphsData from './graphs.json';
+import expressionsData from './expressions.json';
 import enumsData from './enums.json';
 import entitiesData from './entities.json';
 import behaviorsData from './behaviors.json';
@@ -15,6 +16,7 @@ export const REAL_MODULES = modulesData as Module[];
 export const REAL_ENTITIES = entitiesData as Entity[];
 export const REAL_ENUMS = enumsData; // 原始格式保持不变
 export const REAL_BEHAVIORS = behaviorsData; // Expression格式，直接使用
+export const REAL_EXPRESSIONS = expressionsData; // 远程服务数据
 export const REAL_GRAPHS = graphsData;
 
 // 数据统计和元信息
@@ -23,6 +25,7 @@ export const getDataStats = () => ({
   entities: REAL_ENTITIES.length,
   enums: Array.isArray(REAL_ENUMS) ? REAL_ENUMS.length : 0,
   behaviors: REAL_BEHAVIORS.length,
+  expressions: REAL_EXPRESSIONS.length,
   graphs: REAL_GRAPHS.length,
   lastUpdated: new Date().toISOString(),
   dataSource: 'unified-mock-data',
@@ -31,6 +34,9 @@ export const getDataStats = () => ({
 // 便捷查询函数
 export const findBehavior = (id: string) =>
   REAL_BEHAVIORS.find((behavior: any) => behavior.id === id);
+
+export const findExpression = (id: string) =>
+  REAL_EXPRESSIONS.find((expression: any) => expression.id === id);
 
 export const findGraph = (entityId: string) =>
   REAL_GRAPHS.find((graph: any) => graph.id === entityId);

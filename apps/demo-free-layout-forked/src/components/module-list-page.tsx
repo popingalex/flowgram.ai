@@ -13,6 +13,7 @@ import {
   Tag,
   Tooltip,
   Notification,
+  Badge,
 } from '@douyinfe/semi-ui';
 import {
   IconPlus,
@@ -21,9 +22,11 @@ import {
   IconSave,
   IconUndo,
   IconRefresh,
+  IconLink,
 } from '@douyinfe/semi-icons';
 
-import { EntityPropertyTypeSelector } from './ext/type-selector-ext';
+import { DataRestrictionButton, EntityPropertyTypeSelector } from './ext/type-selector-ext';
+import { SearchFilterBar } from './ext/search-filter-bar';
 import { useModuleStore } from '../stores';
 
 const { Text } = Typography;
@@ -185,11 +188,14 @@ export const ModuleListPage: React.FC = () => {
   const {
     modules,
     loading,
-    createModule,
-    updateModule,
+    addModule,
+    updateModuleField,
+    updateModuleAttribute,
+    saveModule,
     deleteModule,
-    addAttributeToModule,
-    removeAttributeFromModule,
+    addAttributeToModuleLocal,
+    removeAttributeFromModuleLocal,
+    loadModules,
   } = useModuleStore();
 
   const [searchText, setSearchText] = useState('');
@@ -199,8 +205,16 @@ export const ModuleListPage: React.FC = () => {
     '🔄 ModuleListPage重新渲染，模块数量:',
     modules.length,
     '第一个模块状态:',
-    modules[0]?._status
+    modules[0]?._status,
+    '加载状态:',
+    loading
   );
+
+  // 初始化加载
+  React.useEffect(() => {
+    console.log('🔄 ModuleListPage useEffect: 手动触发loadModules');
+    loadModules();
+  }, [loadModules]);
 
   // 检查字段校验错误信息
   const getFieldValidationError = useCallback(
@@ -237,12 +251,6 @@ export const ModuleListPage: React.FC = () => {
     },
     [modules]
   );
-
-  // 检查模块是否有修改
-  const isModuleDirty = useCallback((module: any) => {
-    const status = module._status;
-    return status === 'dirty' || status === 'new';
-  }, []);
 
   // 检查模块是否可以保存（必填项都已填写且无重复）
   const canSaveModule = (module: any): boolean => {
@@ -302,16 +310,106 @@ export const ModuleListPage: React.FC = () => {
     return '保存模块修改';
   };
 
-  // 转换为表格数据 - 带排序逻辑
+  // 🎯 本地编辑状态 - 避免每次输入都更新全局store（参考实体的实现）
+  const [localEdits, setLocalEdits] = useState<Map<string, any>>(new Map());
+
+  // 检查模块是否有修改（包括本地编辑状态）
+  const isModuleDirty = useCallback(
+    (module: any) => {
+      const status = module._status;
+      const hasLocalEdits = localEdits.has(module._indexId);
+      return status === 'dirty' || status === 'new' || hasLocalEdits;
+    },
+    [localEdits]
+  );
+
+  // 🎯 获取合并后的模块数据（原始数据 + 本地编辑）
+  const getMergedModule = useCallback(
+    (module: any) => {
+      const localEdit = localEdits.get(module._indexId);
+      if (!localEdit) return module;
+
+      const mergedModule = { ...module, ...localEdit };
+
+      // 合并属性编辑
+      if (localEdit.attributes) {
+        mergedModule.attributes = (module.attributes || []).map((attr: any) => {
+          const attrEdit = localEdit.attributes[attr._indexId];
+          return attrEdit ? { ...attr, ...attrEdit } : attr;
+        });
+      }
+
+      return mergedModule;
+    },
+    [localEdits]
+  );
+
+  // 🎯 应用本地编辑到store（保存时调用）- 参考实体的实现
+  const applyLocalEdits = useCallback(
+    async (moduleIndexId: string) => {
+      const localEdit = localEdits.get(moduleIndexId);
+      if (!localEdit) return;
+
+      const originalModule = modules.find((m) => m._indexId === moduleIndexId);
+      if (!originalModule) return;
+
+      try {
+        console.log('🔍 应用本地编辑到store:', moduleIndexId, localEdit);
+
+        // 应用模块字段编辑
+        if (localEdit.id !== undefined || localEdit.name !== undefined) {
+          Object.keys(localEdit).forEach((field) => {
+            if (field !== 'attributes' && localEdit[field] !== undefined) {
+              updateModuleField(moduleIndexId, field, localEdit[field]);
+            }
+          });
+        }
+
+        // 应用属性编辑
+        if (localEdit.attributes) {
+          Object.keys(localEdit.attributes).forEach((attrId) => {
+            const attrEdit = localEdit.attributes[attrId];
+            Object.keys(attrEdit).forEach((field) => {
+              updateModuleAttribute(moduleIndexId, attrId, field, attrEdit[field]);
+            });
+          });
+        }
+
+        // 清除本地编辑状态
+        setLocalEdits((prev) => {
+          const newEdits = new Map(prev);
+          newEdits.delete(moduleIndexId);
+          return newEdits;
+        });
+      } catch (error) {
+        console.error('❌ 应用本地编辑失败:', error);
+      }
+    },
+    [localEdits, modules, updateModuleField, updateModuleAttribute]
+  );
+
+  // 转换为表格数据 - 带排序逻辑，使用合并后的数据
   const tableData = useMemo(() => {
-    console.log('🔄 重新计算表格数据，模块数量:', modules.length);
+    console.log('🔄 重新计算表格数据，模块数量:', modules.length, '本地编辑数量:', localEdits.size);
     const data: any[] = [];
 
-    modules.forEach((module) => {
+    // 模块排序：新增的在前，然后按ID排序
+    const sortedModules = [...modules].sort((a, b) => {
+      // 新增状态的模块排在前面
+      if (a._status === 'new' && b._status !== 'new') return -1;
+      if (a._status !== 'new' && b._status === 'new') return 1;
+      // 同样状态的按ID排序，确保id不为空
+      return (a.id || '').localeCompare(b.id || '');
+    });
+
+    sortedModules.forEach((originalModule) => {
+      // 🎯 使用合并后的模块数据（原始数据 + 本地编辑）
+      const module = getMergedModule(originalModule);
+
       const moduleRow: any = {
         key: module._indexId,
         type: 'module',
-        module: module, // 🎯 直接使用模块数据
+        module: module, // 🎯 使用合并后的模块数据
         children: [] as any[],
       };
 
@@ -337,7 +435,7 @@ export const ModuleListPage: React.FC = () => {
     });
 
     return data;
-  }, [modules]); // 🎯 简化依赖
+  }, [modules, localEdits, getMergedModule]); // 🎯 添加localEdits依赖
 
   // 过滤数据
   const filteredData = useMemo(() => {
@@ -364,44 +462,51 @@ export const ModuleListPage: React.FC = () => {
     });
   }, [tableData, searchText]);
 
-  // 🎯 字段变更处理 - 直接更新模块，简化逻辑
+  // 🎯 字段变更处理 - 使用本地状态，避免频繁更新store
   const handleModuleFieldChange = useCallback(
     (moduleIndexId: string, field: string, value: any) => {
-      console.log('🔍 更新模块字段:', moduleIndexId, field, value);
-      // 找到模块并更新字段，触发store状态更新
-      const module = modules.find((m) => m._indexId === moduleIndexId);
-      if (module) {
-        const updatedModule = { ...module, [field]: value };
-        updateModule(moduleIndexId, updatedModule);
-      }
+      console.log('🔍 更新模块字段（本地）:', moduleIndexId, field, value);
+      setLocalEdits((prev) => {
+        const newEdits = new Map(prev);
+        const currentEdit = newEdits.get(moduleIndexId) || {};
+        newEdits.set(moduleIndexId, { ...currentEdit, [field]: value });
+        return newEdits;
+      });
     },
-    [modules, updateModule]
+    []
   );
 
   const handleAttributeFieldChange = useCallback(
     (moduleIndexId: string, attributeIndexId: string, field: string, value: any) => {
-      console.log('🔍 更新属性字段:', moduleIndexId, attributeIndexId, field, value);
-      // 找到模块和属性并更新，触发store状态更新
-      const module = modules.find((m) => m._indexId === moduleIndexId);
-      if (module) {
-        const updatedAttributes = (module.attributes || []).map((attr) =>
-          (attr as any)._indexId === attributeIndexId ? { ...attr, [field]: value } : attr
-        );
-        const updatedModule = { ...module, attributes: updatedAttributes };
-        updateModule(moduleIndexId, updatedModule);
-      }
+      console.log('🔍 更新属性字段（本地）:', moduleIndexId, attributeIndexId, field, value);
+      setLocalEdits((prev) => {
+        const newEdits = new Map(prev);
+        const currentEdit = newEdits.get(moduleIndexId) || {};
+        const attributes = currentEdit.attributes || {};
+        newEdits.set(moduleIndexId, {
+          ...currentEdit,
+          attributes: {
+            ...attributes,
+            [attributeIndexId]: { ...attributes[attributeIndexId], [field]: value },
+          },
+        });
+        return newEdits;
+      });
     },
-    [modules, updateModule]
+    []
   );
 
   const handleTypeChange = (moduleId: string, attributeId: string, typeInfo: any) => {
     handleAttributeFieldChange(moduleId, attributeId, 'type', typeInfo.type);
   };
 
-  // 🎯 模块保存逻辑 - 直接调用store方法，简化逻辑
+  // 🎯 模块保存逻辑 - 参考实体的实现
   const handleSaveModule = async (module: any) => {
     try {
-      await updateModule(module._indexId, module);
+      // 先应用本地编辑到store
+      await applyLocalEdits(module._indexId);
+      // 然后保存模块
+      await saveModule(module);
       console.log('✅ 模块保存成功');
       Notification.success({
         title: '保存成功',
@@ -420,33 +525,61 @@ export const ModuleListPage: React.FC = () => {
 
   // 表格列定义
   const columns = [
-    // 第一列：展开按钮 20px
+    // 第一列：展开按钮
     {
       key: 'expand',
-      width: 20,
+      title: '',
+      width: 40,
       render: (_: any, record: any, index: number, { expandIcon }: any) => expandIcon,
     },
-    // 第三列：标签 60px
+    // 第二列：类型标签
     {
       key: 'type',
+      title: '类型',
       width: 60,
       render: (_: any, record: any) => {
         if (record.type === 'module') {
           const isNew = record.module?._status === 'new';
+          const attributeCount = record.module?.attributes?.length || 0;
+
           return (
-            <Tag
-              color="green"
-              style={
-                isNew
-                  ? {
-                      boxShadow: '0 0 8px rgba(34, 197, 94, 0.6)',
-                      animation: 'pulse 2s infinite',
-                    }
-                  : {}
-              }
+            <Tooltip
+              content={`模块详情页面: /modules/${record.module?.id || 'new'}`}
+              position="bottom"
             >
-              模块
-            </Tag>
+              <Badge
+                count={attributeCount > 0 ? attributeCount : undefined}
+                overflowCount={99}
+                type="success"
+                theme="inverted"
+                data-badge-type="success"
+              >
+                <Tag
+                  color="green"
+                  style={
+                    isNew
+                      ? {
+                          boxShadow: '0 0 8px rgba(34, 197, 94, 0.6)',
+                          animation: 'pulse 2s infinite',
+                          cursor: 'pointer',
+                        }
+                      : { cursor: 'pointer' }
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (e.ctrlKey || e.metaKey) {
+                      // Ctrl/Cmd + 点击在新窗口打开
+                      window.open(`/modules/${record.module?.id || 'new'}`, '_blank');
+                    } else {
+                      // 普通点击在当前窗口导航
+                      window.location.href = `/modules/${record.module?.id || 'new'}`;
+                    }
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>模块</span>
+                </Tag>
+              </Badge>
+            </Tooltip>
           );
         }
         if (record.type === 'attribute') {
@@ -470,11 +603,11 @@ export const ModuleListPage: React.FC = () => {
         return <Tag>{record.type}</Tag>;
       },
     },
-    // 第四列：ID 160px
+    // 第三列：ID
     {
       title: 'ID',
       key: 'id',
-      width: 160,
+      width: 200,
       render: (_: any, record: any) => {
         if (record.type === 'module') {
           const errorMessage = getFieldValidationError(
@@ -508,11 +641,11 @@ export const ModuleListPage: React.FC = () => {
         return null;
       },
     },
-    // 第五列：Name 200px
+    // 第四列：Name
     {
       title: '名称',
       key: 'name',
-      width: 200,
+      width: 240,
       render: (_: any, record: any) => {
         if (record.type === 'module') {
           return <ModuleNameInput module={record.module} onFieldChange={handleModuleFieldChange} />;
@@ -528,7 +661,7 @@ export const ModuleListPage: React.FC = () => {
         return null;
       },
     },
-    // 第六列：操作按钮 100px
+    // 第五列：操作按钮
     {
       title: () => (
         <Button size="small" icon={<IconPlus />} type="primary" onClick={handleAddModule}>
@@ -536,30 +669,40 @@ export const ModuleListPage: React.FC = () => {
         </Button>
       ),
       key: 'actions',
-      width: 100,
+      // width: 100, // 移除固定宽度，让其自适应
       render: (_: any, record: any) => (
         <div
           style={{
             display: 'flex',
             gap: '2px',
             justifyContent: 'flex-start',
+            alignItems: 'center',
           }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* 类型选择器 - 只在属性行显示 */}
           {record.type === 'attribute' && record.attribute && (
-            <Tooltip content="选择属性类型">
-              <EntityPropertyTypeSelector
+            <>
+              <Tooltip content="选择属性类型">
+                <EntityPropertyTypeSelector
+                  value={{ type: record.attribute.type }}
+                  onChange={(typeInfo) =>
+                    handleTypeChange(
+                      record.module?._indexId || '',
+                      record.attribute._indexId,
+                      typeInfo
+                    )
+                  }
+                />
+              </Tooltip>
+              <DataRestrictionButton
                 value={{ type: record.attribute.type }}
-                onChange={(typeInfo) =>
-                  handleTypeChange(
-                    record.module?._indexId || '',
-                    record.attribute._indexId,
-                    typeInfo
-                  )
-                }
+                onClick={() => {
+                  console.log('编辑数据限制:', record.attribute);
+                }}
+                disabled={record.readonly}
               />
-            </Tooltip>
+            </>
           )}
 
           {/* 模块操作按钮 */}
@@ -643,22 +786,25 @@ export const ModuleListPage: React.FC = () => {
 
           {/* 属性删除按钮 */}
           {record.type === 'attribute' && record.module && record.attribute && (
-            <Tooltip content="删除属性">
-              <Popconfirm
-                title="确定删除这个属性吗？"
-                onConfirm={(e) => {
-                  e?.stopPropagation?.();
-                  handleDeleteAttribute(record.module, record.attribute);
-                }}
-              >
-                <Button
-                  size="small"
-                  type="danger"
-                  icon={<IconDelete />}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </Popconfirm>
-            </Tooltip>
+            <>
+              <Button size="small" disabled style={{ opacity: 0.3 }} />
+              <Tooltip content="删除属性">
+                <Popconfirm
+                  title="确定删除这个属性吗？"
+                  onConfirm={(e) => {
+                    e?.stopPropagation?.();
+                    handleDeleteAttribute(record.module, record.attribute);
+                  }}
+                >
+                  <Button
+                    size="small"
+                    type="danger"
+                    icon={<IconDelete />}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </Popconfirm>
+              </Tooltip>
+            </>
           )}
         </div>
       ),
@@ -689,11 +835,26 @@ export const ModuleListPage: React.FC = () => {
   const handleDeleteAttribute = async (module: any, attribute: any) => {
     try {
       console.log('🗑️ 删除属性:', attribute.id, '从模块:', module.id);
-      removeAttributeFromModule(module._indexId, attribute._indexId);
-      console.log('✅ 属性删除成功');
+
+      // 如果属性是新增状态，直接从本地删除
+      if (attribute._status === 'new') {
+        console.log('🗑️ 删除新增属性（仅本地）:', attribute.id);
+        removeAttributeFromModuleLocal(module._indexId, attribute._indexId);
+        console.log('✅ 属性删除成功');
+        Notification.success({
+          title: '删除成功',
+          content: `属性 "${attribute.name || attribute.id}" 已删除`,
+          duration: 3,
+        });
+        return;
+      }
+
+      // 已保存的属性需要先本地删除，然后等用户保存模块时一起保存
+      removeAttributeFromModuleLocal(module._indexId, attribute._indexId);
+      console.log('✅ 属性删除成功（需保存模块以同步到后台）');
       Notification.success({
         title: '删除成功',
-        content: `属性 "${attribute.name || attribute.id}" 已删除`,
+        content: `属性 "${attribute.name || attribute.id}" 已删除，请保存模块以同步到后台`,
         duration: 3,
       });
     } catch (error) {
@@ -708,51 +869,38 @@ export const ModuleListPage: React.FC = () => {
 
   const handleAddModule = () => {
     const newModule = {
-      _indexId: nanoid(), // 使用nanoid作为稳定的React key
       id: '', // 业务ID由用户填写（必填）
       name: '', // 名称可以为空
       attributes: [],
-      _status: 'new' as const, // 标记为新增状态
     };
 
-    createModule(newModule);
-    console.log('✅ 添加新模块:', newModule._indexId);
+    addModule(newModule);
+    console.log('✅ 添加新模块到本地状态');
   };
 
   const handleAddAttribute = (moduleId: string) => {
     const newAttribute = {
-      _indexId: nanoid(),
       id: '', // 让用户自己填写
       name: '',
       type: 'string',
-      _status: 'new' as const, // 标记为新增状态
     };
-    addAttributeToModule(moduleId, newAttribute);
+    addAttributeToModuleLocal(moduleId, newAttribute);
     console.log('✅ 为模块添加属性:', moduleId);
   };
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '16px', display: 'flex', gap: '12px' }}>
-        <Input
-          placeholder="搜索模块、属性..."
-          value={searchText}
-          onChange={setSearchText}
-          style={{ width: 300 }}
-        />
-        <Button
-          icon={<IconRefresh />}
-          onClick={() => {
-            console.log('🔄 刷新数据');
-            // TODO: 添加数据刷新逻辑
-            console.log('🔄 数据已刷新');
-          }}
-          loading={loading}
-        >
-          刷新
-        </Button>
-      </div>
-
+    <div style={{ padding: '24px', minWidth: '720px', maxWidth: '960px' }}>
+      <SearchFilterBar
+        searchText={searchText}
+        onSearchChange={setSearchText}
+        onRefresh={async () => {
+          console.log('🔄 刷新模块数据');
+          await loadModules();
+          console.log('🔄 模块数据已刷新');
+        }}
+        loading={loading}
+        placeholder="搜索模块、属性..."
+      />
       <Table
         columns={columns}
         dataSource={filteredData}
@@ -767,7 +915,7 @@ export const ModuleListPage: React.FC = () => {
         size="small"
         style={{ tableLayout: 'fixed' }}
         className="module-list-table"
-        scroll={{ x: 580, y: 'calc(100vh - 200px)' }}
+        scroll={{ y: 'calc(100vh - 186px)' }}
         rowKey="key"
         onRow={useCallback((record: any, index?: number) => {
           // 为新增状态的行添加className，避免每次渲染创建新对象
@@ -798,7 +946,7 @@ export const ModuleListPage: React.FC = () => {
       <style>
         {`
           .module-list-table .semi-table-tbody > .semi-table-row > .semi-table-row-cell {
-            padding-right: 12px;
+            padding-right: 8px;
             padding-left: 8px;
           }
 
@@ -817,6 +965,37 @@ export const ModuleListPage: React.FC = () => {
             0% { opacity: 1; }
             50% { opacity: 0.7; }
             100% { opacity: 1; }
+          }
+
+          /* Badge深色边框样式 - 通用样式 */
+          .module-list-table .semi-badge .semi-badge-count,
+          .module-list-table .semi-badge-count {
+            border: 1px solid var(--semi-color-text-1) !important;
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15) !important;
+            min-width: 16px !important;
+            height: 16px !important;
+            font-size: 10px !important;
+            line-height: 14px !important;
+            padding: 0 4px !important;
+            transform: scale(0.8) !important;
+            transform-origin: center !important;
+          }
+
+          /* 调整Badge位置，避免完全覆盖标签 */
+          .module-list-table .semi-badge {
+            position: relative !important;
+          }
+
+          .module-list-table .semi-badge .semi-badge-count {
+            top: -8px !important;
+            right: -8px !important;
+          }
+
+          /* success类型Badge的边框颜色 */
+          .module-list-table .semi-badge-success .semi-badge-count,
+          .module-list-table [data-badge-type="success"] .semi-badge-count {
+            border-color: var(--semi-color-success) !important;
+            box-shadow: 0 0 0 1px var(--semi-color-success) !important;
           }
         `}
       </style>

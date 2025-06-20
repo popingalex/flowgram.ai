@@ -3,8 +3,23 @@
 
 import { nanoid } from 'nanoid';
 
-import type { Module, Entity, EnumClass, BehaviorDef, BehaviorParameter } from './types';
-import { REAL_MODULES, REAL_ENTITIES, REAL_ENUMS, REAL_BEHAVIORS, REAL_GRAPHS } from '../mock-data';
+import type {
+  Module,
+  Entity,
+  EnumClass,
+  BehaviorDef,
+  ExpressionDef,
+  ExpressionCallResult,
+  BehaviorParameter,
+} from './types';
+import {
+  REAL_MODULES,
+  REAL_ENTITIES,
+  REAL_ENUMS,
+  REAL_BEHAVIORS,
+  REAL_EXPRESSIONS,
+  REAL_GRAPHS,
+} from '../mock-data';
 
 // 创建可变的 mock 数据副本用于 CRUD 操作
 let mockEntities: Entity[] = [...REAL_ENTITIES];
@@ -78,6 +93,7 @@ const API_CONFIG = {
     ENTITY: '/cm/entity/',
     ENUM: '/cm/enum/',
     FUNCTION: '/hub/behaviors/',
+    EXPRESSION: '/hub/expressions/',
     GRAPH: '/hub/graphs/',
   },
   TIMEOUT: 5000, // 5秒超时
@@ -167,6 +183,11 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
   // 行为数据 - 只读
   if (url.includes('/hub/behaviors/')) {
     return REAL_BEHAVIORS;
+  }
+
+  // 远程服务数据 - 只读
+  if (url.includes('/hub/expressions/')) {
+    return REAL_EXPRESSIONS;
   }
 
   // 行为树图数据 - 支持 CRUD
@@ -543,7 +564,7 @@ export const enumApi = {
 
 // 函数行为相关API
 export const behaviorApi = {
-  // 获取所有函数行为 - 直接返回后台原始数据，不做转换
+  // 获取所有函数行为 - 转换后台数据格式
   getAll: async () => {
     const rawData = await apiRequest('http://localhost:9999/hub/behaviors/');
     console.log('🔍 [behaviorApi] 原始API数据:', {
@@ -552,12 +573,38 @@ export const behaviorApi = {
       firstItem: rawData?.[0],
     });
 
-    // 直接返回后台数据，只添加_indexId用作React key
+    // 转换后台数据格式为标准BehaviorDef格式
     if (Array.isArray(rawData)) {
-      return rawData.map((item: any) => ({
-        ...item,
-        _indexId: nanoid(), // 只添加React key，其他数据保持原样
-      }));
+      return rawData.map((item: any) => {
+        // 从ID提取类名和方法名
+        const idParts = item.id.split('.');
+        const methodName = idParts[idParts.length - 1] || item.name || 'unknown';
+        const className = idParts[idParts.length - 2] || 'Unknown';
+
+        // 转换参数格式：inputs -> parameters
+        const parameters = (item.inputs || []).map((input: any) => ({
+          name: input.id,
+          type: input.type || 'any',
+          description: input.desc || input.id,
+        }));
+
+        return {
+          id: item.id,
+          name: methodName,
+          description: item.javadoc || item.desc || `${className}.${methodName}`,
+          className: className,
+          fullClassName: idParts.slice(0, -1).join('.'),
+          methodName: methodName,
+          category: className,
+          parameters: parameters, // 转换后的参数
+          returns: {
+            type: item.output?.type || 'void',
+            description: item.output?.desc || '',
+          },
+          deprecated: item.deprecated || false,
+          _indexId: nanoid(), // React key
+        };
+      });
     }
 
     return [];
@@ -630,5 +677,124 @@ export const graphApi = {
   delete: (id: string): Promise<void> => {
     const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.GRAPH}${id}/`);
     return apiRequest(url, { method: 'DELETE' });
+  },
+};
+
+// 远程服务相关API
+export const expressionApi = {
+  // 获取所有远程服务
+  getAll: async (): Promise<ExpressionDef[]> => {
+    const rawData = await apiRequest('http://localhost:9999/hub/expressions/');
+    console.log('🔍 [expressionApi] 原始API数据:', {
+      isArray: Array.isArray(rawData),
+      length: rawData?.length,
+      firstItem: rawData?.[0],
+    });
+
+    // 转换真实API数据格式为标准ExpressionDef格式
+    if (Array.isArray(rawData)) {
+      return rawData.map((item: any) => {
+        // 转换参数格式：inputs -> parameters
+        const parameters = (item.inputs || []).map((input: any) => ({
+          name: input.id,
+          type: input.type || 'any',
+          description: input.desc || input.name || input.id,
+          required: input.required || false,
+          default: input.value,
+        }));
+
+        return {
+          id: item.id,
+          name: item.name,
+          description: item.desc || item.name, // 使用desc字段作为描述
+          url: item.body || '', // 使用body字段作为URL
+          method: 'POST' as const, // 远程服务调用通常是POST
+          parameters: parameters, // 转换后的参数
+          returns: {
+            type: item.output?.type || 'any',
+            description: item.output?.desc || item.output?.name || '',
+          },
+          category: '远程服务', // 统一分类
+          deprecated: item.deprecated || false,
+          _indexId: nanoid(), // React key
+        };
+      });
+    }
+
+    return [];
+  },
+
+  // 获取单个远程服务
+  getById: (id: string): Promise<ExpressionDef> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.EXPRESSION}${id}/`);
+    return apiRequest(url);
+  },
+
+  // 创建远程服务
+  create: (expression: Omit<ExpressionDef, 'deprecated'>): Promise<ExpressionDef> => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.EXPRESSION);
+    return apiRequest(url, {
+      method: 'POST',
+      body: JSON.stringify({ ...expression, deprecated: false }),
+    });
+  },
+
+  // 更新远程服务
+  update: (id: string, updates: Partial<ExpressionDef>): Promise<ExpressionDef> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.EXPRESSION}${id}/`);
+    return apiRequest(url, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  // 删除远程服务
+  delete: (id: string): Promise<void> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.EXPRESSION}${id}/`);
+    return apiRequest(url, { method: 'DELETE' });
+  },
+
+  // 调用远程服务 - 用于测试
+  call: async (id: string, parameters: Record<string, any>): Promise<ExpressionCallResult> => {
+    const startTime = Date.now();
+
+    try {
+      // 这里应该调用实际的远程服务
+      // 目前先模拟调用
+      console.log('🚀 [expressionApi] 调用远程服务:', id, parameters);
+
+      // 模拟网络延迟
+      await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 1000));
+
+      // 模拟成功响应
+      const mockResponse = {
+        success: true,
+        message: '调用成功',
+        data: {
+          id: id,
+          parameters: parameters,
+          timestamp: new Date().toISOString(),
+          mockResult: true,
+        },
+      };
+
+      const duration = Date.now() - startTime;
+
+      return {
+        success: true,
+        data: mockResponse,
+        duration,
+        timestamp: Date.now(),
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '调用失败',
+        duration,
+        timestamp: Date.now(),
+      };
+    }
   },
 };

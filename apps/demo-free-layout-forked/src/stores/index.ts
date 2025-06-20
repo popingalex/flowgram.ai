@@ -21,6 +21,18 @@ export {
 } from './behavior.store';
 export type { BehaviorStoreState, BehaviorActions, BehaviorStore } from './behavior.store';
 
+// 表达式管理 (行为函数 + 远程服务)
+export {
+  useExpressionStore,
+  useExpressionList,
+  useExpressionActions,
+  useExpressionLoading,
+  useExpressionError,
+  useExpressionCategories,
+  useExpressionCallResults,
+} from './expression.store';
+export type { ExpressionStoreState, ExpressionActions, ExpressionStore } from './expression.store';
+
 // 工作流图管理
 export {
   useGraphStore,

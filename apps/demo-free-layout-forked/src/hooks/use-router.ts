@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 export type RouteType =
   | 'entities'
   | 'modules'
+  | 'expressions'
   | 'entity-workflow'
   | 'api-test'
   | 'test-new-architecture'
@@ -27,6 +28,10 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
 
     if (hashPath === 'modules') {
       return { route: 'modules' };
+    }
+
+    if (hashPath === 'expressions') {
+      return { route: 'expressions' };
     }
 
     // 测试页面路由
@@ -71,6 +76,10 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
     return { route: 'modules' };
   }
 
+  if (path === 'expressions') {
+    return { route: 'expressions' };
+  }
+
   // 测试页面路由
   if (path === 'api-test') {
     return { route: 'api-test' };
@@ -112,6 +121,8 @@ const generateUrl = (routeState: RouteState): string => {
       return '/entities/';
     case 'modules':
       return '/modules/';
+    case 'expressions':
+      return '/expressions/';
     case 'entity-workflow':
       return `/entities/${routeState.entityId}/`;
     case 'api-test':

@@ -49,6 +49,7 @@ import { TestNewArchitecture } from './components/test-new-architecture';
 // import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
 import { ModuleListPage } from './components/module-list-page';
 import { EnumStoreProvider } from './components/ext/type-selector-ext/enum-store';
+import { ExpressionListPage } from './components/expression-list-page';
 // import { BehaviorTestPage } from './components/ext/behavior-test'; // 已删除
 import { EntityWorkflowSyncer } from './components/entity-workflow-syncer';
 import { EntitySelector } from './components/entity-selector';
@@ -270,8 +271,10 @@ const AppContent: React.FC = () => {
   // 主要导航项
   const mainNavItems = React.useMemo(
     () => [
-      { itemKey: 'entities', text: '实体列表' },
-      { itemKey: 'modules', text: '模块列表' },
+      { itemKey: 'entities', text: '实体列表', link: '/#entities' },
+      { itemKey: 'modules', text: '模块列表', link: '/#modules' },
+      { itemKey: 'expressions', text: '表达式列表', link: '/#expressions' },
+      { itemKey: 'entity-workflow', text: '实体工作流', link: '/#entity-workflow' },
     ],
     []
   );
@@ -279,11 +282,15 @@ const AppContent: React.FC = () => {
   // 测试页面导航项
   const testNavItems = React.useMemo(
     () => [
-      { itemKey: 'api-test', text: 'API连通性测试' },
-      { itemKey: 'test-new-architecture', text: '新架构测试' },
-      { itemKey: 'test-properties', text: '属性编辑器测试' },
-      { itemKey: 'test-behavior', text: '函数行为测试' },
-      { itemKey: 'test-variable-selector', text: 'VariableSelector测试' },
+      { itemKey: 'api-test', text: 'API连通性测试', link: '/#api-test' },
+      { itemKey: 'test-new-architecture', text: '新架构测试', link: '/#test-new-architecture' },
+      { itemKey: 'test-properties', text: '属性编辑器测试', link: '/#test-properties' },
+      { itemKey: 'test-behavior', text: '函数行为测试', link: '/#test-behavior' },
+      {
+        itemKey: 'test-variable-selector',
+        text: 'VariableSelector测试',
+        link: '/#test-variable-selector',
+      },
       // { itemKey: 'test-module-entity', text: '模块实体测试' }, // 已删除
     ],
     []
@@ -321,6 +328,8 @@ const AppContent: React.FC = () => {
         return <EntityListPage onViewWorkflow={handleViewWorkflow} />;
       case 'modules':
         return <ModuleListPage />;
+      case 'expressions':
+        return <ExpressionListPage />;
       case 'entity-workflow':
         return <WorkflowEditPage />;
       case 'api-test':
