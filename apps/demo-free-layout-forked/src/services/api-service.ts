@@ -118,13 +118,25 @@ export const getApiMode = () => ({
 // 构建完整的API URL
 const buildApiUrl = (endpoint: string) => `${API_CONFIG.BASE_URL}${endpoint}`;
 
-// 带超时的fetch请求
+// 带超时的fetch请求 - 🔧 优化超时机制，移除setTimeout
 const fetchWithTimeout = async (url: string, options?: RequestInit): Promise<Response> => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT);
+
+  // 🔧 使用Promise.race替代setTimeout进行超时控制
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new Error('Request timeout'));
+    }, API_CONFIG.TIMEOUT);
+
+    // 确保在请求完成或中止时清理定时器
+    controller.signal.addEventListener('abort', () => {
+      clearTimeout(timeoutId);
+    });
+  });
 
   try {
-    const response = await fetch(url, {
+    const fetchPromise = fetch(url, {
       ...options,
       signal: controller.signal,
       headers: {
@@ -132,10 +144,10 @@ const fetchWithTimeout = async (url: string, options?: RequestInit): Promise<Res
         ...options?.headers,
       },
     });
-    clearTimeout(timeoutId);
+
+    const response = await Promise.race([fetchPromise, timeoutPromise]);
     return response;
   } catch (error) {
-    clearTimeout(timeoutId);
     throw error;
   }
 };
@@ -170,14 +182,12 @@ const realApiRequest = async (url: string, options?: RequestInit) => {
   }
 };
 
-// Mock API请求处理
+// Mock API请求处理 - 🔧 移除人为延迟
 const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> => {
   const method = options?.method || 'GET';
   const body = options?.body ? JSON.parse(options.body as string) : null;
 
-  // 模拟网络延迟
-  await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 200));
-
+  // 🔧 移除模拟网络延迟，直接处理请求
   console.log(`🔄 Mock API: ${method} ${url}`, body ? { body } : '');
 
   // 行为数据 - 只读
@@ -691,32 +701,45 @@ export const expressionApi = {
       firstItem: rawData?.[0],
     });
 
-    // 转换真实API数据格式为标准ExpressionDef格式
+    // 转换真实API数据格式为标准BaseExpression格式
     if (Array.isArray(rawData)) {
       return rawData.map((item: any) => {
-        // 转换参数格式：inputs -> parameters
-        const parameters = (item.inputs || []).map((input: any) => ({
-          name: input.id,
-          type: input.type || 'any',
-          description: input.desc || input.name || input.id,
+        // 转换输入参数格式：保持inputs字段
+        const inputs = (item.inputs || []).map((input: any) => ({
+          id: input.id,
+          name: input.name || input.id,
+          type: input.type || 'string',
+          description: input.desc || input.description || '',
           required: input.required || false,
-          default: input.value,
+          value: input.value || input.defaultValue, // 默认值
+          scope: input.scope || 'query',
+          _indexId: input._indexId || nanoid(), // 🔧 确保每个参数都有_indexId
+          _status: 'saved' as const,
         }));
+
+        // 转换输出格式
+        const output = {
+          id: item.output?.id || 'result',
+          name: item.output?.name || '返回结果',
+          type: item.output?.type || 'any',
+          description: item.output?.desc || item.output?.description || '',
+          _indexId: nanoid(),
+          _status: 'saved' as const,
+        };
 
         return {
           id: item.id,
           name: item.name,
-          description: item.desc || item.name, // 使用desc字段作为描述
-          url: item.body || '', // 使用body字段作为URL
-          method: 'POST' as const, // 远程服务调用通常是POST
-          parameters: parameters, // 转换后的参数
-          returns: {
-            type: item.output?.type || 'any',
-            description: item.output?.desc || item.output?.name || '',
-          },
-          category: '远程服务', // 统一分类
+          description: item.desc || item.name,
+          url: item.url || '',
+          method: (item.method || 'POST') as 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH',
+          inputs: inputs, // 使用正确的字段名
+          output: output, // 使用正确的字段名
+          group: item.group || 'remote',
+          category: '远程服务',
           deprecated: item.deprecated || false,
-          _indexId: nanoid(), // React key
+          _indexId: nanoid(),
+          _status: 'saved' as const,
         };
       });
     }
@@ -754,7 +777,7 @@ export const expressionApi = {
     return apiRequest(url, { method: 'DELETE' });
   },
 
-  // 调用远程服务 - 用于测试
+  // 调用远程服务 - 用于测试 - 🔧 移除人为延迟
   call: async (id: string, parameters: Record<string, any>): Promise<ExpressionCallResult> => {
     const startTime = Date.now();
 
@@ -763,10 +786,7 @@ export const expressionApi = {
       // 目前先模拟调用
       console.log('🚀 [expressionApi] 调用远程服务:', id, parameters);
 
-      // 模拟网络延迟
-      await new Promise((resolve) => setTimeout(resolve, 500 + Math.random() * 1000));
-
-      // 模拟成功响应
+      // 🔧 移除模拟网络延迟，直接处理
       const mockResponse = {
         success: true,
         message: '调用成功',

@@ -7,23 +7,19 @@
       {
         "id": "container/content",
         "type": "(entity:s,type_id:s,type_name:s,flow_min:n,flow_max:n,amount:n,detail:u,cost:n,capacity:n,delivery_rate:n,production_rate:n)[]",
-        "name": "内容物",
-        "_indexId": "rq_U4lCah0uyCUhgw-owe"
+        "name": "内容物"
       },
       {
         "id": "container/strategy",
         "type": "s",
-        "name": "策略",
-        "_indexId": "t40TfHa7lvSV5WH7yyx3c"
+        "name": "策略"
       },
       {
         "id": "container/capacity",
         "type": "n",
-        "name": "容量",
-        "_indexId": "I1hzwTTmANZv4cN-ZdG80"
+        "name": "容量"
       }
-    ],
-    "_indexId": "p-kCaflR-ONaSZvsoJw1f"
+    ]
   },
   {
     "id": "mobile",
@@ -33,47 +29,39 @@
       {
         "id": "mobile/path",
         "type": "n[6][]",
-        "name": "路径",
-        "_indexId": "SD3Q-2ZeSYro3nQ-zhuxM"
+        "name": "路径"
       },
       {
         "id": "mobile/step_path",
         "type": "n[6][]",
-        "name": "步进路径",
-        "_indexId": "j3yXF-VUrStX8ta2o7id_"
+        "name": "步进路径"
       },
       {
         "id": "mobile/road_path",
         "type": "n[6][]",
-        "name": "路网路径",
-        "_indexId": "XhhM6q0cZSOIR7dICUmvd"
+        "name": "路网路径"
       },
       {
         "id": "mobile/step_road_path",
         "type": "n[6][]",
-        "name": "路网步进路径",
-        "_indexId": "CA5Shcn4sD7hA98tTFEda"
+        "name": "路网步进路径"
       },
       {
         "id": "mobile/road_position",
         "type": "n[3][]",
-        "name": "路网位置",
-        "_indexId": "DQi8uM99mrkb-cVIYSXQ4"
+        "name": "路网位置"
       },
       {
         "id": "mobile/destination",
         "type": "n[6]",
-        "name": "目的地",
-        "_indexId": "VHByw9UgmeHqDTmi7fk3K"
+        "name": "目的地"
       },
       {
         "id": "mobile/velocity",
         "type": "(mode:s,scalar:n)[]",
-        "name": "速度",
-        "_indexId": "yNHV37f6sBNgh0xfb3VMy"
+        "name": "速度"
       }
-    ],
-    "_indexId": "pMRR2tdbqaC9LYUBUlxav"
+    ]
   },
   {
     "id": "terrain",
@@ -83,29 +71,24 @@
       {
         "id": "terrain/landform_matrix",
         "type": "(depth:n,elevation:n,composition:(matter:s,amount:n)[])[][]",
-        "name": "地貌矩阵",
-        "_indexId": "YtPzbHebIdJ5eLvDA19Aj"
+        "name": "地貌矩阵"
       },
       {
         "id": "terrain/hydrology_matrix",
         "type": "(depth:n,elevation:n,velocities:(n:n,w:n,e:n,s:n),flow:n)[][]",
-        "name": "水文矩阵",
-        "_indexId": "Id4Tig3gUTof3PBzc9aGa"
+        "name": "水文矩阵"
       },
       {
         "id": "terrain/road_network",
         "type": "(node:s,position:n[3],neighbors:s[])[]",
-        "name": "路网",
-        "_indexId": "BT_HgAq9Aes25AM0MK8jP"
+        "name": "路网"
       },
       {
         "id": "terrain/river_network",
         "type": "(node:s,position:n[3],neighbors:s[])[]",
-        "name": "河网",
-        "_indexId": "pycd6BF1nuYhduyy2-WRo"
+        "name": "河网"
       }
-    ],
-    "_indexId": "QcRwYPqPVFT2cpf9dumiA"
+    ]
   },
   {
     "id": "controlled",
@@ -115,59 +98,49 @@
       {
         "id": "controlled/commands",
         "type": "(command:s,args:u)[]",
-        "name": "指令集合",
-        "_indexId": "-VsbYy8VJUd1VGxngnUpS"
+        "name": "指令集合"
       },
       {
         "id": "controlled/standby_position",
         "type": "n[3]",
-        "name": "待机位置",
-        "_indexId": "zw_okJwe4e37RsY1ZRcoj"
+        "name": "待机位置"
       },
       {
         "id": "controlled/work_position",
         "type": "n[3]",
-        "name": "工作位置",
-        "_indexId": "EMBHzToymFRfiHnGylL8k"
+        "name": "工作位置"
       },
       {
         "id": "controlled/action",
         "type": "s",
-        "name": "行为",
-        "_indexId": "fkqGlnQeJrCjV6_Q4lOXX"
+        "name": "行为"
       },
       {
         "id": "controlled/action_cost",
         "type": "n",
-        "name": "行为消耗",
-        "_indexId": "xby2VsZa_kV3tY466-pWA"
+        "name": "行为消耗"
       },
       {
         "id": "controlled/action_progress",
         "type": "n",
-        "name": "行为进度",
-        "_indexId": "IEUa4Bi7qKtLMh9JEfPWk"
+        "name": "行为进度"
       },
       {
         "id": "controlled/action_target",
         "type": "s",
-        "name": "行为目标",
-        "_indexId": "B0J4pBo2ImeE88PwS_zz2"
+        "name": "行为目标"
       },
       {
         "id": "controlled/stance",
         "type": "s",
-        "name": "姿态",
-        "_indexId": "sgCHIVRpNGTcYVsNRGHeA"
+        "name": "姿态"
       },
       {
         "id": "controlled/status",
         "type": "s",
-        "name": "状态",
-        "_indexId": "Abi4b-b8uZYZSV12xolHO"
+        "name": "状态"
       }
-    ],
-    "_indexId": "vCQ1xaMuYq6qNMWGylpWJ"
+    ]
   },
   {
     "id": "vehicle",
@@ -177,23 +150,19 @@
       {
         "id": "vehicle/loading_area",
         "type": "s",
-        "name": "装货位置",
-        "_indexId": "tZW_hf66kvRPDgnI23Fle"
+        "name": "装货位置"
       },
       {
         "id": "vehicle/unloading_area",
         "type": "s",
-        "name": "卸货位置",
-        "_indexId": "sDWHs3_SRS34D35ytQ-CF"
+        "name": "卸货位置"
       },
       {
         "id": "vehicle/type",
         "type": "s",
-        "name": "载具类型",
-        "_indexId": "Yl-R61yNePKB5xYMJbt1D"
+        "name": "载具类型"
       }
-    ],
-    "_indexId": "V2WyoQOF06HCHlWaoSywy"
+    ]
   },
   {
     "id": "transform",
@@ -203,34 +172,28 @@
       {
         "id": "transform/coordinates",
         "type": "n[3]",
-        "name": "坐标",
-        "_indexId": "Og6-fWJPSRcGMFwrb60m2"
+        "name": "坐标"
       },
       {
         "id": "transform/position",
         "type": "n[3]",
-        "name": "位置",
-        "_indexId": "9I5-upgoIA2nuaLA5reQC"
+        "name": "位置"
       },
       {
         "id": "transform/lonlatposition",
         "type": "n[3]",
-        "name": "经纬度位置",
-        "_indexId": "U3e0d1JP8Ko965AS_P_AD"
+        "name": "经纬度位置"
       },
       {
         "id": "transform/rotation",
         "type": "n[3]",
-        "name": "旋转",
-        "_indexId": "pscdH-v9g-s8N2phMaePP"
+        "name": "旋转"
       },
       {
         "id": "transform/scale",
         "type": "n[3]",
-        "name": "缩放",
-        "_indexId": "oSf2UjeaiOMfY4LOTFSnY"
+        "name": "缩放"
       }
-    ],
-    "_indexId": "vQqR6UP0BbRqHEGEpzRo-"
+    ]
   }
 ]

@@ -1012,6 +1012,16 @@
                 "demo"
             ],
             "versionPolicyName": "appPolicy"
+        },
+        {
+            "packageName": "@flowgram.ai/api-platform",
+            "projectFolder": "apps/api-platform",
+            "tags": [
+                "level-1",
+                "team-flow",
+                "app"
+            ],
+            "versionPolicyName": "appPolicy"
         }
     ]
 }

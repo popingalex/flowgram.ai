@@ -11,8 +11,7 @@
       "police_station"
     ],
     "createdAt": "2023-01-01T00:00:00.000Z",
-    "updatedAt": "2023-01-01T00:00:00.000Z",
-    "_indexId": "enum_001"
+    "updatedAt": "2023-01-01T00:00:00.000Z"
   },
   {
     "id": "task_status",
@@ -26,8 +25,7 @@
       "cancelled"
     ],
     "createdAt": "2023-01-01T00:00:00.000Z",
-    "updatedAt": "2023-01-01T00:00:00.000Z",
-    "_indexId": "enum_002"
+    "updatedAt": "2023-01-01T00:00:00.000Z"
   },
   {
     "id": "weather_type",
@@ -42,8 +40,7 @@
       "stormy"
     ],
     "createdAt": "2023-01-01T00:00:00.000Z",
-    "updatedAt": "2023-01-01T00:00:00.000Z",
-    "_indexId": "enum_003"
+    "updatedAt": "2023-01-01T00:00:00.000Z"
   },
   {
     "id": "priority_level",
@@ -57,7 +54,6 @@
       "critical"
     ],
     "createdAt": "2023-01-01T00:00:00.000Z",
-    "updatedAt": "2023-01-01T00:00:00.000Z",
-    "_indexId": "enum_004"
+    "updatedAt": "2023-01-01T00:00:00.000Z"
   }
 ]

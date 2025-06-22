@@ -111,6 +111,12 @@ export interface GraphActions {
   saveGraph: (graph: WorkflowGraph) => Promise<void>;
   createGraph: (graph: Omit<WorkflowGraph, 'id'> & { id?: string }) => Promise<void>;
   deleteGraph: (id: string) => Promise<void>;
+
+  // 🔑 实体ID映射管理
+  updateEntityIdMapping: (mapping: Map<string, string>) => void;
+
+  // 🔑 更新graphs数据（用于nanoid共享）
+  updateGraphs: (graphs: WorkflowGraph[]) => void;
 }
 
 export type GraphStore = GraphStoreState & GraphActions;
@@ -144,14 +150,20 @@ const useGraphStoreBase = create<GraphStore>()(
 
           // 确保数据是数组且每个图都有必要的属性
           const validGraphs = Array.isArray(data)
-            ? data.filter(
-                (graph) =>
-                  graph &&
-                  typeof graph.id === 'string' &&
-                  typeof graph.name === 'string' &&
-                  Array.isArray(graph.nodes) &&
-                  Array.isArray(graph.edges)
-              )
+            ? data
+                .filter(
+                  (graph) =>
+                    graph &&
+                    typeof graph.id === 'string' &&
+                    typeof graph.name === 'string' &&
+                    Array.isArray(graph.nodes) &&
+                    Array.isArray(graph.edges)
+                )
+                .map((graph) => ({
+                  ...graph,
+                  // 🔑 动态生成_indexId，如果已存在则保持不变
+                  _indexId: graph._indexId || nanoid(),
+                }))
             : [];
 
           set((state) => {
@@ -160,9 +172,14 @@ const useGraphStoreBase = create<GraphStore>()(
           });
         } catch (error) {
           console.error('Failed to load graphs from API, using mock data:', error);
-          // 使用mock数据作为备选
+          // 使用mock数据作为备选，同时为mock数据添加_indexId
+          const graphsWithIndexId = (REAL_GRAPHS as WorkflowGraph[]).map((graph) => ({
+            ...graph,
+            _indexId: graph._indexId || nanoid(),
+          }));
+
           set({
-            graphs: REAL_GRAPHS as WorkflowGraph[],
+            graphs: graphsWithIndexId,
             lastLoaded: Date.now(),
             error: 'API请求失败，使用本地数据',
             loading: false,
@@ -322,6 +339,24 @@ const useGraphStoreBase = create<GraphStore>()(
           });
         }
       },
+
+      // 🔑 实体ID映射管理 - 建立原始ID到nanoid的映射关系
+      updateEntityIdMapping: (mapping: Map<string, string>) => {
+        // 这个方法主要用于建立实体ID映射关系
+        // 暂时存储映射关系，供EntityWorkflowSyncer使用
+        console.log('🔄 [GraphStore] 更新实体ID映射:', Object.fromEntries(mapping));
+
+        // 可以考虑在这里更新图数据中的实体引用，但目前先保持简单
+        // 实际的关联逻辑在EntityWorkflowSyncer中处理
+      },
+
+      // 🔑 更新graphs数据（用于nanoid共享）
+      updateGraphs: (graphs: WorkflowGraph[]) => {
+        set((state) => {
+          state.graphs = graphs;
+        });
+        console.log('🔄 [GraphStore] 更新graphs数据，共', graphs.length, '个');
+      },
     })),
     {
       name: 'graph-store',
@@ -355,6 +390,8 @@ export const useGraphActions = () =>
       saveGraph: state.saveGraph,
       createGraph: state.createGraph,
       deleteGraph: state.deleteGraph,
+      updateEntityIdMapping: state.updateEntityIdMapping,
+      updateGraphs: state.updateGraphs,
     }))
   );
 

@@ -114,6 +114,7 @@ rush dev:docs # docs
 rush dev:demo-fixed-layout
 rush dev:demo-free-layout
 rush dev:demo-free-layout-forked
+rush dev:api-platform
 ```
 
 ## 🗄️ Mock数据支持

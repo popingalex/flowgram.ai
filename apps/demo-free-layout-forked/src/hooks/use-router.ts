@@ -3,10 +3,12 @@ import { useState, useEffect, useCallback } from 'react';
 export type RouteType =
   | 'entities'
   | 'modules'
-  | 'expressions'
+  | 'exp-remote'
+  | 'exp-local'
   | 'entity-workflow'
   | 'api-test'
   | 'test-new-architecture'
+  | 'test-indexed-store'
   | 'test-behavior'
   | 'test-variable-selector'
   | 'test-properties';
@@ -14,6 +16,7 @@ export type RouteType =
 export interface RouteState {
   route: RouteType;
   entityId?: string;
+  expressionId?: string;
 }
 
 // 解析URL路径（支持hash和正常路径）
@@ -30,8 +33,21 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
       return { route: 'modules' };
     }
 
-    if (hashPath === 'expressions') {
-      return { route: 'expressions' };
+    if (hashPath === 'exp/remote') {
+      return { route: 'exp-remote' };
+    }
+
+    if (hashPath === 'exp/local') {
+      return { route: 'exp-local' };
+    }
+
+    // 匹配 exp/remote/{expressionId}
+    const expRemoteMatch = hashPath.match(/^exp\/remote\/([^/]+)\/?$/);
+    if (expRemoteMatch) {
+      return {
+        route: 'exp-remote',
+        expressionId: expRemoteMatch[1],
+      };
     }
 
     // 测试页面路由
@@ -41,6 +57,10 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
 
     if (hashPath === 'test-new-architecture') {
       return { route: 'test-new-architecture' };
+    }
+
+    if (hashPath === 'test-indexed-store') {
+      return { route: 'test-indexed-store' };
     }
 
     if (hashPath === 'test-behavior') {
@@ -76,8 +96,21 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
     return { route: 'modules' };
   }
 
-  if (path === 'expressions') {
-    return { route: 'expressions' };
+  if (path === 'exp/remote') {
+    return { route: 'exp-remote' };
+  }
+
+  if (path === 'exp/local') {
+    return { route: 'exp-local' };
+  }
+
+  // 匹配 exp/remote/{expressionId}
+  const expRemoteMatch = path.match(/^exp\/remote\/([^/]+)\/?$/);
+  if (expRemoteMatch) {
+    return {
+      route: 'exp-remote',
+      expressionId: expRemoteMatch[1],
+    };
   }
 
   // 测试页面路由
@@ -87,6 +120,10 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
 
   if (path === 'test-new-architecture') {
     return { route: 'test-new-architecture' };
+  }
+
+  if (path === 'test-indexed-store') {
+    return { route: 'test-indexed-store' };
   }
 
   if (path === 'test-behavior') {
@@ -121,14 +158,18 @@ const generateUrl = (routeState: RouteState): string => {
       return '/entities/';
     case 'modules':
       return '/modules/';
-    case 'expressions':
-      return '/expressions/';
+    case 'exp-remote':
+      return routeState.expressionId ? `/exp/remote/${routeState.expressionId}/` : '/exp/remote/';
+    case 'exp-local':
+      return '/exp/local/';
     case 'entity-workflow':
       return `/entities/${routeState.entityId}/`;
     case 'api-test':
       return '/api-test/';
     case 'test-new-architecture':
       return '/test-new-architecture/';
+    case 'test-indexed-store':
+      return '/test-indexed-store/';
     case 'test-behavior':
       return '/test-behavior/';
     case 'test-variable-selector':

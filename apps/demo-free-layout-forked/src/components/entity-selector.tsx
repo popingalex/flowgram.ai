@@ -30,10 +30,11 @@ export const EntitySelector: React.FC = () => {
     // 计算模块数量
     const moduleCount = entity.bundles?.length || 0;
 
-    // 查找对应的工作流图 - 使用原始业务ID
-    const businessId = (entity as any).$id || entity.id;
+    // 🔑 修复：查找对应的工作流图 - 使用稳定的原始业务ID
+    const stableBusinessId = entity._originalId || entity.id;
     const entityGraph = graphs.find(
-      (graph: any) => graph.id === businessId || graph.id.toLowerCase() === businessId.toLowerCase()
+      (graph: any) =>
+        graph.id === stableBusinessId || graph.id.toLowerCase() === stableBusinessId.toLowerCase()
     );
     const workflowNodeCount = entityGraph?.nodes?.length || 0;
 

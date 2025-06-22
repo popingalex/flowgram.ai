@@ -103,9 +103,7 @@ const createEntityEditStore = (initialEntity: Entity) =>
             // TODO: 调用实际的保存API
             console.log('Saving entity:', editingEntity);
 
-            // 模拟异步保存
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
+            // 🔧 移除模拟异步保存的延迟，直接完成保存
             set(
               {
                 originalEntity: cloneDeep(editingEntity),

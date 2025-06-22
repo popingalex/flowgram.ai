@@ -29,6 +29,7 @@ import {
 // 现有的组件
 
 import { ModuleStoreProvider } from './stores/module.store';
+import { useEntityGraphMappingActions } from './stores/entity-graph-mapping.store';
 import {
   useEntityStore,
   EntityEditProvider,
@@ -47,9 +48,10 @@ import { useRouter, RouteType } from './hooks/use-router';
 import { Editor } from './editor';
 import { TestNewArchitecture } from './components/test-new-architecture';
 // import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
+import { IndexedStoreTest } from './components/test/indexed-store-test';
 import { ModuleListPage } from './components/module-list-page';
 import { EnumStoreProvider } from './components/ext/type-selector-ext/enum-store';
-import { ExpressionListPage } from './components/expression-list-page';
+import { ExpressionListPage } from './components/expression-list';
 // import { BehaviorTestPage } from './components/ext/behavior-test'; // 已删除
 import { EntityWorkflowSyncer } from './components/entity-workflow-syncer';
 import { EntitySelector } from './components/entity-selector';
@@ -60,39 +62,86 @@ import { ApiTestPanel } from './components/api-test-panel';
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-// 实体数据初始化组件 - 直接使用EntityListStore加载数据
-const EntityStoreInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// 🔑 统一数据初始化组件 - 按正确顺序加载，建立nanoid关联
+const DataStoreInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { entities } = useEntityList();
+  const { graphs } = useGraphList();
   const { loadEntities, clearNewEntities } = useEntityListActions();
-  const initializedRef = React.useRef(false);
-
-  // 只在第一次加载时获取实体数据
-  React.useEffect(() => {
-    if (!initializedRef.current) {
-      // 页面刷新时清除未保存的新增实体
-      clearNewEntities();
-      loadEntities();
-      initializedRef.current = true;
-    }
-  }, [loadEntities, clearNewEntities]);
-
-  return <>{children}</>;
-};
-
-// 函数行为数据初始化组件 - 加载后台函数列表
-const BehaviorStoreInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { loadBehaviors } = useBehaviorActions();
-  const { loadGraphs } = useGraphActions();
-  const initializedRef = React.useRef(false);
+  const { loadGraphs, updateEntityIdMapping, updateGraphs } = useGraphActions();
+  const { initializeMappings } = useEntityGraphMappingActions();
 
-  // 只在第一次加载时获取函数行为数据和工作流图数据
+  const [entitiesLoaded, setEntitiesLoaded] = React.useState(false);
+  const [behaviorsLoaded, setBehaviorsLoaded] = React.useState(false);
+  const initializedRef = React.useRef(false);
+  const behaviorsLoadedRef = React.useRef(false);
+
+  // 🔑 第一步：加载实体数据
   React.useEffect(() => {
     if (!initializedRef.current) {
-      loadBehaviors();
-      loadGraphs();
+      console.log('🔄 [DataInit] 第一步：加载实体数据');
+      clearNewEntities();
+      loadEntities().then(() => {
+        setEntitiesLoaded(true);
+        console.log('✅ [DataInit] 实体数据加载完成');
+      });
       initializedRef.current = true;
     }
-  }, [loadBehaviors, loadGraphs]);
+  }, []); // 移除函数依赖，确保只执行一次
+
+  // 🔑 第二步：实体加载完成后，加载行为树数据
+  React.useEffect(() => {
+    if (entitiesLoaded && !behaviorsLoadedRef.current) {
+      console.log('🔄 [DataInit] 第二步：加载行为树数据');
+      Promise.all([loadBehaviors(), loadGraphs()]).then(() => {
+        setBehaviorsLoaded(true);
+        behaviorsLoadedRef.current = true;
+        console.log('✅ [DataInit] 行为树数据加载完成');
+      });
+    }
+  }, [entitiesLoaded]); // 只依赖实体加载状态
+
+  // 🔑 第三步：建立实体-行为树nanoid共享关系
+  const nanoidSharingCompletedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (
+      entitiesLoaded &&
+      behaviorsLoaded &&
+      entities.length > 0 &&
+      graphs.length > 0 &&
+      !nanoidSharingCompletedRef.current
+    ) {
+      console.log('🔄 [DataInit] 开始nanoid共享，实体:', entities.length, '行为树:', graphs.length);
+
+      // 🔑 关键修复：让相同业务ID的实体和行为树共用同一个nanoid
+      const updatedGraphs = graphs.map((graph) => {
+        // 查找对应的实体
+        const matchingEntity = entities.find(
+          (entity) => entity.id === graph.id || entity.id.toLowerCase() === graph.id.toLowerCase()
+        );
+
+        if (matchingEntity) {
+          // 让行为树使用实体的_indexId
+          return {
+            ...graph,
+            _indexId: matchingEntity._indexId,
+          };
+        }
+
+        return graph;
+      });
+
+      // 更新graphs store中的数据
+      updateGraphs(updatedGraphs);
+
+      // 🔗 建立映射关系（现在实体和行为树有相同的_indexId了）
+      initializeMappings(entities, updatedGraphs);
+
+      nanoidSharingCompletedRef.current = true;
+      console.log('✅ [DataInit] nanoid共享完成');
+    }
+  }, [entitiesLoaded, behaviorsLoaded]); // 只依赖加载状态，不依赖数组数据
 
   return <>{children}</>;
 };
@@ -256,24 +305,19 @@ const AppContent: React.FC = () => {
     window.location.reload();
   }, []);
 
-  // 处理导航选择
-  const handleNavSelect = React.useCallback(
-    (data: any) => {
-      if (data.selectedKeys && data.selectedKeys.length > 0) {
-        const selectedKey = data.selectedKeys[0] as string;
-        // 所有页面都使用路由系统
-        navigate({ route: selectedKey as RouteType });
-      }
-    },
-    [navigate]
-  );
-
   // 主要导航项
   const mainNavItems = React.useMemo(
     () => [
       { itemKey: 'entities', text: '实体列表', link: '/#entities' },
       { itemKey: 'modules', text: '模块列表', link: '/#modules' },
-      { itemKey: 'expressions', text: '表达式列表', link: '/#expressions' },
+      {
+        itemKey: 'expressions',
+        text: '表达式管理',
+        items: [
+          { itemKey: 'exp-remote', text: '远程服务', link: '/#exp/remote' },
+          { itemKey: 'exp-local', text: '本地行为函数', link: '/#exp/local' },
+        ],
+      },
       { itemKey: 'entity-workflow', text: '实体工作流', link: '/#entity-workflow' },
     ],
     []
@@ -284,6 +328,7 @@ const AppContent: React.FC = () => {
     () => [
       { itemKey: 'api-test', text: 'API连通性测试', link: '/#api-test' },
       { itemKey: 'test-new-architecture', text: '新架构测试', link: '/#test-new-architecture' },
+      { itemKey: 'test-indexed-store', text: '抽象框架测试', link: '/#test-indexed-store' },
       { itemKey: 'test-properties', text: '属性编辑器测试', link: '/#test-properties' },
       { itemKey: 'test-behavior', text: '函数行为测试', link: '/#test-behavior' },
       {
@@ -328,7 +373,9 @@ const AppContent: React.FC = () => {
         return <EntityListPage onViewWorkflow={handleViewWorkflow} />;
       case 'modules':
         return <ModuleListPage />;
-      case 'expressions':
+      case 'exp-remote':
+        return <ExpressionListPage />;
+      case 'exp-local':
         return <ExpressionListPage />;
       case 'entity-workflow':
         return <WorkflowEditPage />;
@@ -336,6 +383,8 @@ const AppContent: React.FC = () => {
         return <ApiTestPanel />;
       case 'test-new-architecture':
         return <TestNewArchitecture />;
+      case 'test-indexed-store':
+        return <IndexedStoreTest />;
       case 'test-behavior':
         return <div>测试页面已删除</div>;
       case 'test-variable-selector':
@@ -351,7 +400,6 @@ const AppContent: React.FC = () => {
         <Nav
           mode="horizontal"
           selectedKeys={[currentPage]}
-          onSelect={handleNavSelect}
           header={{
             logo: <IconBranch style={{ fontSize: 36 }} />,
             text: 'Flowgram 流程设计器',
@@ -430,12 +478,10 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => (
   <EnumStoreProvider>
     <ModuleStoreProvider>
-      <EntityStoreInitializer>
-        <BehaviorStoreInitializer>
-          <EntityWorkflowSyncer />
-          <AppContent />
-        </BehaviorStoreInitializer>
-      </EntityStoreInitializer>
+      <DataStoreInitializer>
+        <EntityWorkflowSyncer />
+        <AppContent />
+      </DataStoreInitializer>
     </ModuleStoreProvider>
   </EnumStoreProvider>
 );

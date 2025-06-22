@@ -85,13 +85,10 @@ export const PropertiesEdit: React.FC<PropertiesEditProps> = (props) => {
           onChange={updateNewProperty}
           onDelete={() => {
             const key = newProperty.key;
-            // after onblur
-            setTimeout(() => {
-              const newValue = { ...value };
-              delete newValue[key];
-              props.onChange(newValue);
-              clearCache();
-            }, 10);
+            const newValue = { ...value };
+            delete newValue[key];
+            props.onChange(newValue);
+            clearCache();
           }}
         />
       )}

@@ -1,1 +1,129 @@
-[{"id":"TIF_SUBTRACT","name":"DEM文件减法运算","desc":"处理TIFF文件的减法运算，生成DEM高程文件","deprecated":false,"body":"http://10.3.9.138:16000/tif_subtract_4coords","output":{"id":"result","type":"u","name":"处理结果","desc":"DEM文件处理结果，包含状态码和数据","required":false},"inputs":[{"id":"output_filepath","type":"s","name":"输出文件路径","desc":"DEM文件的输出路径","value":"/home/work/GisData/water/dem_test.tif","required":true},{"id":"points","type":"u[]","name":"坐标点集合","desc":"四个角点坐标，按左下、右下、右上、左上顺序","value":[{"lat":39.9,"lon":116.3},{"lat":39.9,"lon":116.4},{"lat":40.0,"lon":116.4},{"lat":40.0,"lon":116.3}],"required":true}]},{"id":"FLOOD_TASK_WORKLOAD","name":"洪水任务工作量计算","desc":"计算洪水场景任务总工作量，包括材料体积和设备数量","deprecated":false,"body":"http://10.3.10.73:9300/prepare_volume","output":{"id":"workload_result","type":"u","name":"工作量计算结果","desc":"包含材料体积、总工作量、预估时长等信息","required":false},"inputs":[{"id":"dikeWidth","type":"n","name":"堤坝宽度","desc":"堤坝的宽度，单位米","value":8.0,"required":true},{"id":"breachDepth","type":"n","name":"决口深度","desc":"决口的深度，单位米","value":12.12,"required":true},{"id":"breachWidth","type":"n","name":"决口宽度","desc":"决口的宽度，单位米","value":226.27,"required":true},{"id":"breachVelocity","type":"n","name":"决口流速","desc":"决口处的水流速度，单位m/s","value":2.5,"required":true},{"id":"sceneType","type":"s","name":"场景类型","desc":"推演场景类型，如REALTIME","value":"REALTIME","required":true}]}]
+[
+  {
+    "id": "TIF_SUBTRACT",
+    "name": "DEM文件减法运算",
+    "desc": "处理TIFF文件的减法运算，生成DEM高程文件",
+    "deprecated": false,
+    "method": "POST",
+    "url": "http://10.3.9.138:16000/tif_subtract_4coords",
+    "body": null,
+    "group": "remote/gis/tiff",
+    "output": {
+      "id": "result",
+      "type": "u",
+      "name": "处理结果",
+      "desc": "DEM文件处理结果，包含状态码和数据",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "taskId",
+        "type": "s",
+        "name": "任务ID",
+        "desc": "DEM处理任务的唯一标识符",
+        "value": "task_123456",
+        "required": true,
+        "scope": "query"
+      },
+      {
+        "id": "output_filepath",
+        "type": "s",
+        "name": "输出文件路径",
+        "desc": "DEM文件的输出路径",
+        "value": "/home/work/GisData/water/dem_test.tif",
+        "required": true,
+        "scope": "query"
+      },
+      {
+        "id": "points",
+        "type": "u[]",
+        "name": "坐标点集合",
+        "desc": "四个角点坐标，按左下、右下、右上、左上顺序",
+        "value": [
+          {
+            "lat": 39.9,
+            "lon": 116.3
+          },
+          {
+            "lat": 39.9,
+            "lon": 116.4
+          },
+          {
+            "lat": 40.0,
+            "lon": 116.4
+          },
+          {
+            "lat": 40.0,
+            "lon": 116.3
+          }
+        ],
+        "required": true,
+        "scope": "query"
+      }
+    ]
+  },
+  {
+    "id": "FLOOD_TASK_WORKLOAD",
+    "name": "洪水任务工作量计算",
+    "desc": "计算洪水场景任务总工作量，包括材料体积和设备数量",
+    "deprecated": false,
+    "method": "GET",
+    "url": "http://10.3.10.73:9300/prepare_volume",
+    "body": null,
+    "group": "remote/simulation/flood",
+    "output": {
+      "id": "workload_result",
+      "type": "u",
+      "name": "工作量计算结果",
+      "desc": "包含材料体积、总工作量、预估时长等信息",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "dikeWidth",
+        "type": "n",
+        "name": "堤坝宽度",
+        "desc": "堤坝的宽度，单位米",
+        "value": 8.0,
+        "required": true,
+        "scope": "query"
+      },
+      {
+        "id": "breachDepth",
+        "type": "n",
+        "name": "决口深度",
+        "desc": "决口的深度，单位米",
+        "value": 12.12,
+        "required": true,
+        "scope": "query"
+      },
+      {
+        "id": "breachWidth",
+        "type": "n",
+        "name": "决口宽度",
+        "desc": "决口的宽度，单位米",
+        "value": 226.27,
+        "required": true,
+        "scope": "query"
+      },
+      {
+        "id": "breachVelocity",
+        "type": "n",
+        "name": "决口流速",
+        "desc": "决口处的水流速度，单位m/s",
+        "value": 2.5,
+        "required": true,
+        "scope": "query"
+      },
+      {
+        "id": "sceneType",
+        "type": "s",
+        "name": "场景类型",
+        "desc": "推演场景类型，如REALTIME",
+        "value": "REALTIME",
+        "required": true,
+        "scope": "query"
+      }
+    ]
+  }
+]

@@ -1,0 +1,63 @@
+[
+  {
+    "id": "yard_enum",
+    "name": "集结点类型",
+    "description": "集结点类型枚举",
+    "values": [
+      "default",
+      "airport",
+      "hospital",
+      "fire_station",
+      "police_station"
+    ],
+    "createdAt": "2023-01-01T00:00:00.000Z",
+    "updatedAt": "2023-01-01T00:00:00.000Z",
+    "_indexId": "enum_001"
+  },
+  {
+    "id": "task_status",
+    "name": "任务状态",
+    "description": "任务执行状态枚举",
+    "values": [
+      "pending",
+      "running",
+      "completed",
+      "failed",
+      "cancelled"
+    ],
+    "createdAt": "2023-01-01T00:00:00.000Z",
+    "updatedAt": "2023-01-01T00:00:00.000Z",
+    "_indexId": "enum_002"
+  },
+  {
+    "id": "weather_type",
+    "name": "天气类型",
+    "description": "天气状况类型枚举",
+    "values": [
+      "sunny",
+      "cloudy",
+      "rainy",
+      "snowy",
+      "foggy",
+      "stormy"
+    ],
+    "createdAt": "2023-01-01T00:00:00.000Z",
+    "updatedAt": "2023-01-01T00:00:00.000Z",
+    "_indexId": "enum_003"
+  },
+  {
+    "id": "priority_level",
+    "name": "优先级级别",
+    "description": "任务优先级级别枚举",
+    "values": [
+      "low",
+      "normal",
+      "high",
+      "urgent",
+      "critical"
+    ],
+    "createdAt": "2023-01-01T00:00:00.000Z",
+    "updatedAt": "2023-01-01T00:00:00.000Z",
+    "_indexId": "enum_004"
+  }
+]

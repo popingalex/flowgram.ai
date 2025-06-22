@@ -14,6 +14,7 @@ function deepClone<T>(obj: T): T {
 // 实体列表状态管理 - 简化版
 export interface EntityListState {
   entities: Entity[];
+  originalEntities: Map<string, Entity>; // 🔑 新增：保存原始版本用于撤销
   selectedEntityId: string | null;
   loading: boolean;
   error: string | null;
@@ -47,10 +48,14 @@ export interface EntityListState {
   loadEntities: () => Promise<void>;
   saveEntity: (entity: Entity) => Promise<void>;
   removeEntity: (id: string) => Promise<void>;
+
+  // 撤销功能
+  resetEntityChanges: (indexId: string) => void;
 }
 
 export const useEntityListStore = create<EntityListState>((set, get) => ({
   entities: [],
+  originalEntities: new Map(), // 🔑 初始化原始实体映射
   selectedEntityId: null,
   loading: false,
   error: null,
@@ -98,17 +103,31 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
 
   // 🎯 简化的字段更新 - 直接更新实体字段并标记为dirty
   updateEntityField: (indexId, field, value) =>
-    set((state) => ({
-      entities: state.entities.map((entity) =>
+    set((state) => {
+      const updatedEntities = state.entities.map((entity) =>
         entity._indexId === indexId
           ? {
               ...entity,
               [field]: value,
-              _status: entity._status === 'new' ? 'new' : 'dirty', // 🎯 自动管理状态
+              _status: (entity._status === 'new' ? 'new' : 'dirty') as ItemStatus, // 🎯 自动管理状态
             }
           : entity
-      ),
-    })),
+      );
+
+      // 🔗 如果更新的是实体ID，需要同步更新映射关系
+      if (field === 'id') {
+        const updatedEntity = updatedEntities.find((e) => e._indexId === indexId);
+        if (updatedEntity) {
+          // 导入映射store并更新
+          import('./entity-graph-mapping.store').then(({ useEntityGraphMappingActions }) => {
+            const { updateEntityBusinessId } = useEntityGraphMappingActions();
+            updateEntityBusinessId(indexId, value as string);
+          });
+        }
+      }
+
+      return { entities: updatedEntities };
+    }),
 
   // 🎯 属性更新
   updateEntityAttribute: (entityIndexId, attributeId, field, value) =>
@@ -220,6 +239,7 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
       const entitiesWithIndex = fetchedEntities.map((entity) => ({
         ...entity,
         _indexId: entity._indexId || nanoid(),
+        // 🔑 保存原始业务ID用于行为树关联 - 使用$id字段
         _status: 'saved' as const, // 🎯 从后台加载的实体都是已保存状态
         attributes: (entity.attributes || []).map((attr) => ({
           ...attr,
@@ -232,8 +252,17 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
       const currentNewEntities = get().entities.filter((e) => e._status === 'new');
       const sortedLoadedEntities = entitiesWithIndex.sort((a, b) => a.id.localeCompare(b.id));
 
+      // 🔑 保存原始版本用于撤销
+      const originalEntities = new Map<string, Entity>();
+      sortedLoadedEntities.forEach((entity) => {
+        if (entity._indexId) {
+          originalEntities.set(entity._indexId, deepClone(entity));
+        }
+      });
+
       set({
         entities: [...currentNewEntities, ...sortedLoadedEntities],
+        originalEntities,
         loading: false,
       });
 
@@ -266,8 +295,10 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
         console.log('📝 创建新实体:', entity.id);
         savedEntity = await entityApi.create(entity);
       } else {
-        console.log('📝 更新实体:', entity.id);
-        savedEntity = await entityApi.update(entity.id, entity);
+        // 🔑 修复：使用原始ID作为API参数，新ID在请求体中
+        const originalId = (entity as any).$id || entity.id;
+        console.log('📝 更新实体:', { originalId, newId: entity.id });
+        savedEntity = await entityApi.update(originalId, entity);
       }
 
       // 更新为已保存状态，同时更新所有属性的状态
@@ -304,6 +335,41 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
       set({ loading: false });
       throw error;
     }
+  },
+
+  // 🎯 重置实体更改 - 直接抄API页面的有效逻辑
+  resetEntityChanges: (indexId) => {
+    const { entities, originalEntities } = get();
+    const entity = entities.find((e) => e._indexId === indexId);
+
+    if (!entity) {
+      console.warn('⚠️ 重置失败：找不到实体', indexId);
+      return;
+    }
+
+    // 如果是新增状态的实体，直接删除
+    if (entity._status === 'new') {
+      set((state) => ({
+        entities: state.entities.filter((e) => e._indexId !== indexId),
+        selectedEntityId: state.selectedEntityId === indexId ? null : state.selectedEntityId,
+      }));
+      console.log('🔄 删除新增实体:', indexId);
+      return;
+    }
+
+    // 🔑 关键：从原始版本恢复，直接抄API页面的逻辑
+    const originalEntity = originalEntities.get(indexId);
+    if (!originalEntity) {
+      console.warn('⚠️ 重置失败：找不到原始实体', indexId);
+      return;
+    }
+
+    // 直接从原始版本恢复 - 和API页面一模一样的逻辑
+    set((state) => ({
+      entities: state.entities.map((e) => (e._indexId === indexId ? deepClone(originalEntity) : e)),
+    }));
+
+    console.log('🔄 从原始版本恢复实体:', indexId);
   },
 }));
 
@@ -343,6 +409,7 @@ export const useEntityListActions = () => {
   const loadEntities = useEntityListStore((state) => state.loadEntities);
   const saveEntity = useEntityListStore((state) => state.saveEntity);
   const removeEntity = useEntityListStore((state) => state.removeEntity);
+  const resetEntityChanges = useEntityListStore((state) => state.resetEntityChanges);
 
   return useMemo(
     () => ({
@@ -363,6 +430,7 @@ export const useEntityListActions = () => {
       loadEntities,
       saveEntity,
       removeEntity,
+      resetEntityChanges,
     }),
     [
       setEntities,
@@ -382,6 +450,7 @@ export const useEntityListActions = () => {
       loadEntities,
       saveEntity,
       removeEntity,
+      resetEntityChanges,
     ]
   );
 };

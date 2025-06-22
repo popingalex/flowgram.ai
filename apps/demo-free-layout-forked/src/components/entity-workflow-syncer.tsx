@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 
 import { convertGraphToWorkflowData } from '../utils/graph-to-workflow';
+import { useEntityGraphMappingActions } from '../stores/entity-graph-mapping.store';
 import {
   useGraphStore,
   useEntityListActions,
@@ -17,23 +18,16 @@ export const EntityWorkflowSyncer: React.FC = () => {
   const { getEntityByStableId } = useEntityListActions();
   const { graphs } = useGraphStore();
   const { setGraph, clearGraph, setLoading } = useCurrentGraphStore();
+  const { findGraphByEntityIndexId, findGraphByEntityBusinessId } = useEntityGraphMappingActions();
 
   useEffect(() => {
-    console.log('[EntityWorkflowSyncer] useEffect触发:', {
-      selectedEntityId,
-      hasEditingEntity: !!editingEntity,
-      graphsCount: graphs.length,
-    });
-
     if (!selectedEntityId) {
-      console.log('[EntityWorkflowSyncer] 清空图 - 无selectedEntityId');
       clearGraph();
       return;
     }
 
     // 等待graphs数据加载完成
     if (graphs.length === 0) {
-      console.log('[EntityWorkflowSyncer] 等待graphs加载...');
       return;
     }
 
@@ -45,28 +39,46 @@ export const EntityWorkflowSyncer: React.FC = () => {
       return;
     }
 
-    // 查找对应的工作流图 - 使用实体的原始业务ID ($id)
-    const entityBusinessId = (entity as any).$id || entity.id; // 优先使用$id，回退到id
-    let entityGraph = graphs.find((graph) => graph.id === entityBusinessId);
+    // 🔑 查找对应的工作流图 - 使用新的映射系统（基于indexId的稳定关联）
 
-    // 如果还是没找到，尝试小写匹配
-    if (!entityGraph) {
-      entityGraph = graphs.find(
-        (graph) => graph.id.toLowerCase() === entityBusinessId.toLowerCase()
-      );
+    // 策略1：使用实体indexId查找对应的行为树（推荐方式）
+    let graphMapping = findGraphByEntityIndexId(entity._indexId);
+    let entityGraph = null;
+    let searchMethod = '';
+
+    if (graphMapping) {
+      // 通过映射找到行为树
+      entityGraph = graphs.find((graph) => graph._indexId === graphMapping!.graphIndexId);
+      searchMethod = 'indexId映射';
     }
 
-    console.log(`[EntityWorkflowSyncer] 查找工作流图:`, {
-      selectedEntityId,
-      entityNanoid: entity.id,
-      entityBusinessId,
-      foundGraph: !!entityGraph,
-      availableGraphs: graphs.map((g) => g.id),
+    // 策略2：如果映射系统没找到，使用业务ID匹配（向后兼容）
+    if (!entityGraph) {
+      const entityBusinessId = entity.id;
+      graphMapping = findGraphByEntityBusinessId(entityBusinessId);
+
+      if (graphMapping) {
+        entityGraph = graphs.find((graph) => graph._indexId === graphMapping!.graphIndexId);
+        searchMethod = '业务ID映射';
+      } else {
+        // 直接匹配业务ID（最后的兜底策略）
+        entityGraph = graphs.find((graph) => graph.id === entityBusinessId);
+        if (!entityGraph) {
+          entityGraph = graphs.find(
+            (graph) => graph.id.toLowerCase() === entityBusinessId.toLowerCase()
+          );
+        }
+        searchMethod = entityGraph ? '直接ID匹配' : '未找到';
+      }
+    }
+
+    console.log('🔍 [EntityWorkflowSyncer] 查找结果:', {
+      entity: entity.id,
+      method: searchMethod,
+      found: entityGraph?.id || '无',
     });
 
     if (!entityGraph) {
-      console.warn(`[EntityWorkflowSyncer] 未找到实体${entityBusinessId}的工作流图`);
-
       // 生成默认的实体节点
       const defaultWorkflowData = {
         nodes: [
@@ -84,8 +96,7 @@ export const EntityWorkflowSyncer: React.FC = () => {
         edges: [],
       };
 
-      console.log('[EntityWorkflowSyncer] 设置默认工作流:', { selectedEntityId, entityBusinessId });
-      setGraph(defaultWorkflowData, selectedEntityId, `default-${entityBusinessId}`);
+      setGraph(defaultWorkflowData, selectedEntityId, `default-${entity._indexId}`);
       return;
     }
 
@@ -99,11 +110,6 @@ export const EntityWorkflowSyncer: React.FC = () => {
         const convertedData = convertGraphToWorkflowData(entityGraph);
 
         // 设置到当前图存储
-        console.log('[EntityWorkflowSyncer] 设置工作流图:', {
-          selectedEntityId,
-          graphId: entityGraph.id,
-          nodeCount: convertedData?.nodes?.length,
-        });
         setGraph(convertedData, selectedEntityId, entityGraph.id);
       } catch (error) {
         console.error('[EntityWorkflowSyncer] 转换失败:', error);
@@ -120,6 +126,8 @@ export const EntityWorkflowSyncer: React.FC = () => {
     clearGraph,
     setLoading,
     getEntityByStableId,
+    findGraphByEntityIndexId,
+    findGraphByEntityBusinessId,
   ]);
 
   return null;

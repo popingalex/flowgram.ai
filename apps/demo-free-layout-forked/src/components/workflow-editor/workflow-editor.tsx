@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useEffect, useCallback, useRef, useMemo, useState } from 'react';
 
 import {
   EditorRenderer,
@@ -330,18 +330,12 @@ const EntityPropertySyncer: React.FC = () => {
     }
   }, []);
 
-  // 带重试的同步函数
+  // 带重试的同步函数 - 🔧 移除setTimeout，用状态管理替代
   const syncWithRetry = useCallback(
     (entityId: string, editingEntityData?: any) => {
-      // 如果实体Store还在加载中，延迟同步
+      // 如果实体Store还在加载中，直接返回，依赖useEffect重新调用
       if (loading) {
-        setTimeout(() => syncWithRetry(entityId, editingEntityData), 500);
         return;
-      }
-
-      // 清除之前的定时器
-      if (syncTimeoutRef.current) {
-        clearTimeout(syncTimeoutRef.current);
       }
 
       const performSync = () => {
@@ -349,14 +343,13 @@ const EntityPropertySyncer: React.FC = () => {
 
         if (!success && retryCountRef.current < maxRetries) {
           retryCountRef.current++;
-
-          // 指数退避重试
-          const delay = Math.pow(2, retryCountRef.current) * 200;
-          syncTimeoutRef.current = setTimeout(performSync, delay);
+          // 🔧 移除setTimeout重试，直接重新调用
+          // 在React中，应该通过状态变化触发重新渲染而不是定时器
+          performSync();
         }
       };
 
-      // 立即执行一次
+      // 立即执行
       performSync();
     },
     [syncEntityToStartNodes, loading]
@@ -385,13 +378,6 @@ const EntityPropertySyncer: React.FC = () => {
     // 🎯 立即同步，避免防抖延迟影响用户输入体验
     const hasChanges = JSON.stringify(editingEntity) !== JSON.stringify(originalEntity);
     syncWithRetry(editingEntity.id, hasChanges ? editingEntity : undefined);
-
-    // 清理函数
-    return () => {
-      if (syncTimeoutRef.current) {
-        clearTimeout(syncTimeoutRef.current);
-      }
-    };
   }, [
     editingEntity?.id,
     attributesHash, // 🎯 使用稳定的属性hash而不是JSON.stringify
@@ -433,8 +419,9 @@ export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className
     loadModules();
   }, [loadModules]);
 
-  // 自动布局逻辑 - 仅在实体切换时触发，避免属性修改导致重置视角
+  // 🔧 自动布局逻辑 - 移除setTimeout，用状态管理触发布局
   const lastEntityIdRef = useRef<string | null>(null);
+  const [shouldTriggerLayout, setShouldTriggerLayout] = useState(false);
 
   useEffect(() => {
     // 只有在实体ID实际发生变化时才触发布局
@@ -442,27 +429,41 @@ export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className
     lastEntityIdRef.current = entityId;
 
     if (!loading && workflowData && workflowData.nodes?.length > 0 && isEntityChanged) {
-      // 延迟执行确保DOM已渲染
-      setTimeout(() => {
+      setShouldTriggerLayout(true);
+    }
+  }, [loading, workflowData?.nodes?.length, entityId]);
+
+  // 🔧 使用useEffect替代setTimeout进行布局触发
+  useEffect(() => {
+    if (shouldTriggerLayout) {
+      // 使用requestAnimationFrame确保DOM已渲染
+      const frameId = requestAnimationFrame(() => {
         const autoLayoutButton = document.querySelector(
           '[data-auto-layout-button]'
         ) as HTMLButtonElement;
         if (autoLayoutButton) {
           autoLayoutButton.click();
 
-          // 布局完成后适应视图
-          setTimeout(() => {
+          // 使用另一个requestAnimationFrame确保布局完成后适应视图
+          const frameId2 = requestAnimationFrame(() => {
             const fitViewButton = document.querySelector(
               '[data-fit-view-button]'
             ) as HTMLButtonElement;
             if (fitViewButton) {
               fitViewButton.click();
             }
-          }, 500);
+          });
         }
-      }, 1000);
+      });
+
+      setShouldTriggerLayout(false);
+
+      // 清理函数
+      return () => {
+        cancelAnimationFrame(frameId);
+      };
     }
-  }, [loading, workflowData?.nodes?.length, entityId]); // 保持原有依赖，但通过ref控制实际执行
+  }, [shouldTriggerLayout]);
 
   // 🎯 核心修复：使用实体的稳定索引ID和工作流状态
   const stableEntityKey = editingEntity?._indexId || entityId || 'no-entity';

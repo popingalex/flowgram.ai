@@ -25,6 +25,7 @@ interface ModuleEditState {
 // Store State
 export interface ModuleStoreState {
   modules: Module[]; // 原始模块列表
+  originalModules: Map<string, Module>; // 🔑 新增：保存原始版本用于撤销
   editingModules: Map<string, ModuleEditState>; // 正在编辑的模块副本
   loading: boolean;
   error: string | null;
@@ -40,6 +41,7 @@ export interface ModuleActions {
   updateEditingModule: (moduleId: string, updates: Partial<Module>) => void;
   saveModuleEdit: (moduleId: string) => Promise<void>; // 重命名避免冲突
   resetModuleChanges: (moduleId: string) => void;
+  resetModuleChangesById: (moduleId: string) => void; // 🎯 新增：重置直接模式的模块
   isModuleDirty: (moduleId: string) => boolean;
   getEditingModule: (moduleId: string) => Module | null;
 
@@ -105,12 +107,12 @@ export const useModuleStore = create<ModuleStore>()(
   devtools(
     immer((set, get) => ({
       modules: [],
+      originalModules: new Map(), // 🔑 初始化原始模块映射
       editingModules: new Map(),
       loading: false,
       error: null,
 
       loadModules: async () => {
-        console.log('🔄 [ModuleStore] loadModules 开始加载');
         set({ loading: true, error: null });
         try {
           const modules = await moduleApi.getAll();
@@ -138,6 +140,7 @@ export const useModuleStore = create<ModuleStore>()(
             return {
               ...m,
               _indexId: m._indexId || nanoid(),
+              _originalId: m._originalId || m.id, // 🔑 保存原始业务ID用于API调用
               attributes: (m.attributes || []).map((a) => ({
                 ...a,
                 _indexId: a._indexId || nanoid(),
@@ -153,13 +156,23 @@ export const useModuleStore = create<ModuleStore>()(
             return idA.localeCompare(idB);
           });
 
-          console.log('🔄 [ModuleStore] 处理后的模块数据:', {
+          // 🔑 保存原始版本用于撤销
+          const originalModules = new Map<string, Module>();
+          sortedModules.forEach((module) => {
+            if (module._indexId) {
+              originalModules.set(module._indexId, JSON.parse(JSON.stringify(module)));
+            }
+          });
+
+          set({
+            modules: sortedModules,
+            originalModules,
+            loading: false,
+          });
+          console.log('✅ [ModuleStore] 模块数据已保存到store:', {
             count: sortedModules.length,
             firstModule: sortedModules[0],
           });
-
-          set({ modules: sortedModules, loading: false });
-          console.log('✅ [ModuleStore] 模块数据已保存到store');
         } catch (error) {
           console.error('❌ [ModuleStore] 加载模块失败:', error);
           set({ error: (error as Error).message, loading: false });
@@ -259,8 +272,10 @@ export const useModuleStore = create<ModuleStore>()(
             console.log('📝 创建新模块:', module.id);
             savedModule = await moduleApi.create(module);
           } else {
-            console.log('📝 更新模块:', module.id);
-            savedModule = await moduleApi.update(module.id, module);
+            // 🔑 修复：使用原始ID作为API参数，新ID在请求体中
+            const originalId = module._originalId || module.id;
+            console.log('📝 更新模块:', { originalId, newId: module.id });
+            savedModule = await moduleApi.update(originalId, module);
           }
 
           // 更新为已保存状态，同时更新所有属性的状态
@@ -342,6 +357,48 @@ export const useModuleStore = create<ModuleStore>()(
         });
       },
 
+      // 🎯 重置模块更改 - 直接抄API页面的有效逻辑
+      resetModuleChangesById: (moduleId: string) => {
+        const { modules, originalModules } = get();
+        const module = modules.find((m) => m.id === moduleId);
+
+        if (!module) {
+          console.warn('⚠️ 重置失败：找不到模块', moduleId);
+          return;
+        }
+
+        // 如果是新增状态的模块，直接删除
+        if (module._status === 'new') {
+          set((state) => {
+            state.modules = state.modules.filter((m) => m._indexId !== module._indexId);
+          });
+          console.log('🔄 删除新增模块:', moduleId);
+          return;
+        }
+
+        // 🔑 关键：从原始版本恢复，直接抄API页面的逻辑
+        if (!module._indexId) {
+          console.warn('⚠️ 重置失败：模块缺少_indexId', moduleId);
+          return;
+        }
+
+        const originalModule = originalModules.get(module._indexId);
+        if (!originalModule) {
+          console.warn('⚠️ 重置失败：找不到原始模块', moduleId);
+          return;
+        }
+
+        // 直接从原始版本恢复 - 和API页面一模一样的逻辑
+        set((state) => {
+          const moduleIndex = state.modules.findIndex((m) => m._indexId === module._indexId);
+          if (moduleIndex !== -1) {
+            state.modules[moduleIndex] = JSON.parse(JSON.stringify(originalModule));
+          }
+        });
+
+        console.log('🔄 从原始版本恢复模块:', moduleId);
+      },
+
       // 🎯 检查模块是否有未保存的更改
       isModuleDirty: (moduleId) => {
         const { editingModules } = get();
@@ -402,8 +459,10 @@ export const useModuleStore = create<ModuleStore>()(
             await moduleApi.create(module);
             console.log('✅ ModuleStore: 新增模块保存成功');
           } else {
-            // 修改模块：调用update API
-            await moduleApi.update(module.id, module);
+            // 🔑 修复：修改模块时使用原始ID作为API参数
+            const originalId = module._originalId || module.id;
+            console.log('📝 ModuleStore: 更新模块', { originalId, newId: module.id });
+            await moduleApi.update(originalId, module);
             console.log('✅ ModuleStore: 更新模块保存成功');
           }
 

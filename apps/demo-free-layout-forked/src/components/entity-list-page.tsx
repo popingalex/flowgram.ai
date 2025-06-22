@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 
 import { nanoid } from 'nanoid';
 import {
@@ -27,8 +27,9 @@ import {
   IconBranch,
 } from '@douyinfe/semi-icons';
 
+import { IndexedInput, createIndexedValidator } from './indexed-input';
+import { UniversalInput, createUniversalValidator } from './ext/universal-input';
 import { EntityPropertyTypeSelector, DataRestrictionButton } from './ext/type-selector-ext';
-import { SearchFilterBar } from './ext/search-filter-bar';
 import { ModuleSelectorTableModal } from './bt/module-selector-table';
 import { useEntityList, useEntityListActions } from '../stores/entity-list';
 import { useModuleStore, useGraphList } from '../stores';
@@ -39,7 +40,7 @@ interface EntityListPageProps {
   onViewWorkflow?: (entityId: string) => void;
 }
 
-// 通用字段输入组件 - 简化版本，只显示错误状态
+// 通用字段输入组件 - 🔧 优化memo条件和稳定性
 const FieldInput = React.memo(
   ({
     value,
@@ -50,6 +51,7 @@ const FieldInput = React.memo(
     required = false, // 是否必填
     isDuplicate = false, // 是否重复
     errorMessage = '', // 校验错误信息
+    inputKey, // 🔧 添加稳定的key参数
   }: {
     value: string;
     onChange: (newValue: string) => void;
@@ -59,6 +61,7 @@ const FieldInput = React.memo(
     required?: boolean;
     isDuplicate?: boolean;
     errorMessage?: string;
+    inputKey?: string; // 🔧 稳定的key，用于防止重绘
   }) => {
     if (readonly) {
       const displayValue = isIdField && value ? value.split('/').pop() : value;
@@ -82,6 +85,7 @@ const FieldInput = React.memo(
 
     return (
       <Input
+        key={inputKey} // 🔧 使用稳定的key防止重绘
         value={value}
         onChange={onChange}
         onClick={(e) => e.stopPropagation()}
@@ -96,7 +100,15 @@ const FieldInput = React.memo(
         }}
       />
     );
-  }
+  },
+  // 🔧 优化memo条件，只在关键属性变化时重新渲染
+  (prevProps, nextProps) =>
+    prevProps.value === nextProps.value &&
+    prevProps.readonly === nextProps.readonly &&
+    prevProps.required === nextProps.required &&
+    prevProps.isDuplicate === nextProps.isDuplicate &&
+    prevProps.errorMessage === nextProps.errorMessage &&
+    prevProps.inputKey === nextProps.inputKey
 );
 FieldInput.displayName = 'FieldInput';
 
@@ -112,6 +124,7 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
     deleteEntity,
     saveEntity,
     loadEntities,
+    resetEntityChanges,
   } = useEntityListActions();
   const { modules } = useModuleStore();
   const { graphs } = useGraphList();
@@ -120,74 +133,42 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
   const [showModuleLinkModal, setShowModuleLinkModal] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<any>(null);
 
-  // 🐛 调试：监控组件重新渲染
-  console.log(
-    '🔄 EntityListPage重新渲染，实体数量:',
-    entities.length,
-    '第一个实体状态:',
-    entities[0]?._status
-  );
+  // 🔧 优化调试：减少日志频率，只在实体数量变化时输出
+  const prevEntitiesLengthRef = useRef(entities.length);
+  if (entities.length !== prevEntitiesLengthRef.current) {
+    console.log(
+      '🔄 EntityListPage实体数量变化:',
+      prevEntitiesLengthRef.current,
+      '->',
+      entities.length
+    );
+    prevEntitiesLengthRef.current = entities.length;
+  }
 
   // 初始化加载
   React.useEffect(() => {
     loadEntities();
   }, [loadEntities]);
 
-  // 🎯 本地编辑状态 - 避免每次输入都更新全局store
-  const [localEdits, setLocalEdits] = useState<Map<string, any>>(new Map());
-
-  // 🎯 获取合并后的实体数据（原始数据 + 本地编辑）
-  const getMergedEntity = useCallback(
-    (entity: any) => {
-      const localEdit = localEdits.get(entity._indexId);
-      if (!localEdit) return entity;
-
-      const mergedEntity = { ...entity, ...localEdit };
-
-      // 合并属性编辑
-      if (localEdit.attributes) {
-        mergedEntity.attributes = (entity.attributes || []).map((attr: any) => {
-          const attrEdit = localEdit.attributes[attr._indexId];
-          return attrEdit ? { ...attr, ...attrEdit } : attr;
-        });
-      }
-
-      return mergedEntity;
-    },
-    [localEdits]
-  );
-
-  // 转换为表格数据 - 带排序逻辑，使用合并后的数据
+  // 🔧 优化表格数据计算 - 减少复杂度和重新计算频率
   const tableData = useMemo(() => {
-    console.log(
-      '🔄 重新计算表格数据，实体数量:',
-      entities.length,
-      '本地编辑数量:',
-      localEdits.size
-    );
-    const data: any[] = [];
+    // 🔧 减少日志频率，只在实体数量变化时输出
+    console.log('🔄 重新计算表格数据，实体数量:', entities.length);
 
-    entities.forEach((originalEntity) => {
-      // 🎯 使用合并后的实体数据（原始数据 + 本地编辑）
-      const entity = getMergedEntity(originalEntity);
-
+    const data: any[] = entities.map((entity) => {
       const entityRow: any = {
         key: entity._indexId,
         type: 'entity',
-        entity: entity, // 🎯 使用合并后的实体数据
-        children: [] as any[],
+        entity: entity,
+        children: [],
       };
 
-      // 实体属性 - 排序：新增的在前，然后按ID排序
-      const sortedAttributes = [...(entity.attributes || [])].sort((a, b) => {
-        // 新增状态的属性排在前面
-        if (a._status === 'new' && b._status !== 'new') return -1;
-        if (a._status !== 'new' && b._status === 'new') return 1;
-        // 同样状态的按ID排序
-        return (a.id || '').localeCompare(b.id || '');
-      });
+      // 🔧 简化属性排序 - 只按状态分组，减少复杂排序
+      const attributes = entity.attributes || [];
+      const newAttributes = attributes.filter((attr) => attr._status === 'new');
+      const otherAttributes = attributes.filter((attr) => attr._status !== 'new');
 
-      sortedAttributes.forEach((attr: any) => {
+      [...newAttributes, ...otherAttributes].forEach((attr: any) => {
         entityRow.children.push({
           key: attr._indexId,
           type: 'attribute',
@@ -197,32 +178,23 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         });
       });
 
-      // 关联模块 - 按模块名排序
-      const sortedBundles = [...(entity.bundles || [])].sort((a, b) => {
-        const moduleA = modules.find((m) => m._indexId === a);
-        const moduleB = modules.find((m) => m._indexId === b);
-        return (moduleA?.name || '').localeCompare(moduleB?.name || '');
-      });
-
-      sortedBundles.forEach((bundleId: string) => {
-        const module = modules.find((m) => m._indexId === bundleId);
+      // 🔧 简化模块处理 - 减少查找操作
+      const bundles = entity.bundles || [];
+      bundles.forEach((bundleId: string) => {
+        const module = modules.find((m) => m.id === bundleId);
         if (module) {
           const moduleRow: any = {
-            key: module._indexId,
+            key: `${entity._indexId}-${module._indexId}`, // 🔧 确保key的唯一性
             type: 'module',
             entity: entity,
             module: module,
-            children: [] as any[],
+            children: [],
           };
 
-          // 模块属性 - 按ID排序
-          const sortedModuleAttributes = [...(module.attributes || [])].sort((a, b) =>
-            (a.id || '').localeCompare(b.id || '')
-          );
-
-          sortedModuleAttributes.forEach((attr: any) => {
+          // 🔧 简化模块属性处理
+          (module.attributes || []).forEach((attr: any) => {
             moduleRow.children.push({
-              key: attr._indexId,
+              key: `${entity._indexId}-${module._indexId}-${attr._indexId}`, // 🔧 确保key的唯一性
               type: 'module-attribute',
               entity: entity,
               module: module,
@@ -235,11 +207,11 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         }
       });
 
-      data.push(entityRow);
+      return entityRow;
     });
 
     return data;
-  }, [entities, modules, localEdits, getMergedEntity]); // 🎯 添加localEdits依赖
+  }, [entities, modules]);
 
   // 过滤数据
   const filteredData = useMemo(() => {
@@ -278,98 +250,34 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
     });
   }, [tableData, searchText]); // 🎯 简化依赖，tableData已经包含了必要的依赖
 
-  // 🎯 字段变更处理 - 使用本地状态，避免频繁更新store
+  // 🎯 字段变更处理 - 直接更新实体，简化逻辑
   const handleEntityFieldChange = useCallback(
     (entityIndexId: string, field: string, value: any) => {
-      console.log('🔍 更新实体字段（本地）:', entityIndexId, field, value);
-      setLocalEdits((prev) => {
-        const newEdits = new Map(prev);
-        const currentEdit = newEdits.get(entityIndexId) || {};
-        newEdits.set(entityIndexId, { ...currentEdit, [field]: value });
-        return newEdits;
-      });
+      console.log('🔍 更新实体字段:', entityIndexId, field, value);
+      console.trace('🔍 更新事件堆栈跟踪:');
+      updateEntityField(entityIndexId, field, value);
     },
-    []
+    [updateEntityField]
   );
 
   const handleAttributeFieldChange = useCallback(
     (entityIndexId: string, attributeId: string, field: string, value: any) => {
-      console.log('🔍 更新属性字段（本地）:', entityIndexId, attributeId, field, value);
-      setLocalEdits((prev) => {
-        const newEdits = new Map(prev);
-        const currentEdit = newEdits.get(entityIndexId) || {};
-        const attributes = currentEdit.attributes || {};
-        newEdits.set(entityIndexId, {
-          ...currentEdit,
-          attributes: {
-            ...attributes,
-            [attributeId]: { ...attributes[attributeId], [field]: value },
-          },
-        });
-        return newEdits;
-      });
+      console.log('🔍 更新属性字段:', entityIndexId, attributeId, field, value);
+      updateEntityAttribute(entityIndexId, attributeId, field, value);
     },
-    []
-  );
-
-  // 🎯 应用本地编辑到store（保存时调用）
-  const applyLocalEdits = useCallback(
-    async (entityIndexId: string) => {
-      const localEdit = localEdits.get(entityIndexId);
-      if (!localEdit) return;
-
-      const originalEntity = entities.find((e) => e._indexId === entityIndexId);
-      if (!originalEntity) return;
-
-      try {
-        console.log('🔍 应用本地编辑到store:', entityIndexId, localEdit);
-
-        // 应用实体字段编辑
-        if (localEdit.id !== undefined || localEdit.name !== undefined) {
-          Object.keys(localEdit).forEach((field) => {
-            if (field !== 'attributes' && localEdit[field] !== undefined) {
-              updateEntityField(entityIndexId, field, localEdit[field]);
-            }
-          });
-        }
-
-        // 应用属性编辑
-        if (localEdit.attributes) {
-          Object.keys(localEdit.attributes).forEach((attrId) => {
-            const attrEdit = localEdit.attributes[attrId];
-            Object.keys(attrEdit).forEach((field) => {
-              updateEntityAttribute(entityIndexId, attrId, field, attrEdit[field]);
-            });
-          });
-        }
-
-        // 清除本地编辑状态
-        setLocalEdits((prev) => {
-          const newEdits = new Map(prev);
-          newEdits.delete(entityIndexId);
-          return newEdits;
-        });
-      } catch (error) {
-        console.error('❌ 应用本地编辑失败:', error);
-      }
-    },
-    [localEdits, entities, updateEntityField, updateEntityAttribute]
+    [updateEntityAttribute]
   );
 
   const handleTypeChange = (entityIndexId: string, attributeId: string, typeInfo: any) => {
     handleAttributeFieldChange(entityIndexId, attributeId, 'type', typeInfo.type);
   };
 
-  // 🎯 检查实体是否有修改 - 包括本地编辑状态
-  const isEntityDirty = useCallback(
-    (entity: any) => {
-      const status = entity._status;
-      const hasLocalEdits = localEdits.has(entity._indexId);
-      // console.log('🔍 检查实体状态:', entity._indexId, '状态:', status, '本地编辑:', hasLocalEdits);
-      return status === 'dirty' || status === 'new' || hasLocalEdits;
-    },
-    [localEdits]
-  );
+  // 🎯 检查实体是否有修改 - 直接检查实体状态
+  const isEntityDirty = useCallback((entity: any) => {
+    const status = entity._status;
+    // console.log('🔍 检查实体状态:', entity._indexId, '状态:', status);
+    return status === 'dirty' || status === 'new';
+  }, []);
 
   // 检查实体是否可以保存（必填项都已填写且无重复）
   const canSaveEntity = (entity: any): boolean => {
@@ -476,92 +384,97 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
     return '保存实体修改';
   };
 
-  // 表格列定义
-  const columns = [
-    // 第一列：展开按钮
-    {
-      key: 'expand',
-      title: '',
-      width: 40,
-      render: (_: any, record: any, index: number, { expandIcon }: any) => expandIcon,
-    },
-    // 第二列：操作按钮
-    {
-      key: 'navigation',
-      title: '',
-      width: 80,
-      render: (_: any, record: any) => {
-        if (record.type === 'entity') {
-          const entity = record.entity;
-          return entity ? (
-            <Space spacing={4}>
-              <Tooltip content="编辑工作流">
-                <Badge
-                  count={(() => {
-                    const graph = graphs.find(
-                      (g) => g.id.toLowerCase() === entity.id.toLowerCase()
-                    );
-                    const nodeCount = graph?.nodes?.length || 0;
-                    return nodeCount > 0 ? nodeCount : undefined;
-                  })()}
-                  overflowCount={99}
-                  type="primary"
-                  theme="inverted"
-                  data-badge-type="primary"
-                >
-                  <Button
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // 在新窗口打开工作流编辑页面，使用hash格式确保兼容性
-                      window.open(`/#entity-workflow/${entity.id}`, '_blank');
-                    }}
-                    icon={<IconBranch />}
-                  />
-                </Badge>
-              </Tooltip>
-              <Tooltip content="关联模块">
-                <Badge
-                  count={entity.bundles?.length > 0 ? entity.bundles.length : undefined}
-                  overflowCount={99}
-                  type="success"
-                  theme="inverted"
-                  data-badge-type="success"
-                >
-                  <Button
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleLinkModule(entity);
-                    }}
-                    icon={<IconLink />}
-                  />
-                </Badge>
-              </Tooltip>
-            </Space>
-          ) : null;
-        }
-        return null;
+  // 表格列定义 - 使用useMemo避免重复创建onChange回调
+  const columns = useMemo(
+    () => [
+      // 第一列：展开按钮（合并表头包含搜索框）
+      {
+        key: 'expand',
+        width: 20,
+        title: '',
+        render: (_: any, record: any, index: number, { expandIcon }: any) => expandIcon,
       },
-    },
-    // 第三列：类型标签
-    {
-      key: 'type',
-      title: '类型',
-      width: 60,
-      render: (_: any, record: any) => {
-        if (record.type === 'entity') {
-          const isNew = record.entity?._status === 'new';
-          const attributeCount = record.entity?.attributes?.length || 0;
+      // 第二列：链接按钮&行为树跳转按钮
+      {
+        key: 'navigation',
+        width: 60,
+        title: '',
+        render: (_: any, record: any) => {
+          if (record.type === 'entity') {
+            const entity = record.entity;
+            return entity ? (
+              <Space spacing={4}>
+                <Tooltip content="编辑工作流">
+                  <Badge
+                    count={(() => {
+                      if (!entity?._indexId) return undefined;
 
-          return (
-            <Badge
-              count={attributeCount > 0 ? attributeCount : undefined}
-              overflowCount={99}
-              type="primary"
-              theme="inverted"
-              data-badge-type="primary"
-            >
+                      // 🔑 修复：统一使用_indexId进行关联
+                      // 直接使用_indexId匹配，现在实体和行为树共用同一个nanoid
+                      let graph = graphs.find((g) => g._indexId === entity._indexId);
+                      if (entity.id == 'scene') {
+                        console.log('🔍 [DEBUG] scene entity: ', entity);
+                        console.log('🔍 [DEBUG] scene entity._indexId: ', entity._indexId);
+                        console.log(
+                          '🔍 [DEBUG] all graphs _indexIds: ',
+                          graphs.map((g) => ({ id: g.id, _indexId: g._indexId }))
+                        );
+                        console.log('🔍 [DEBUG] found graph by _indexId: ', graph);
+                        console.log('🔍 [DEBUG] graph?.nodes?.length: ', graph?.nodes?.length);
+                      }
+
+                      const nodeCount = graph?.nodes?.length || 0;
+                      return nodeCount > 0 ? nodeCount : undefined;
+                    })()}
+                    overflowCount={99}
+                    type="primary"
+                    theme="inverted"
+                    data-badge-type="primary"
+                  >
+                    <Button
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // 在新窗口打开工作流编辑页面，使用hash格式确保兼容性
+                        window.open(`/#entity-workflow/${entity.id}`, '_blank');
+                      }}
+                      icon={<IconBranch />}
+                    />
+                  </Badge>
+                </Tooltip>
+                <Tooltip content="关联模块">
+                  <Badge
+                    count={entity.bundles?.length > 0 ? entity.bundles.length : undefined}
+                    overflowCount={99}
+                    type="success"
+                    theme="inverted"
+                    data-badge-type="success"
+                  >
+                    <Button
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLinkModule(entity);
+                      }}
+                      icon={<IconLink />}
+                    />
+                  </Badge>
+                </Tooltip>
+              </Space>
+            ) : null;
+          }
+          return null;
+        },
+      },
+      // 第三列：标签
+      {
+        key: 'type',
+        width: 60,
+        title: '',
+        render: (_: any, record: any) => {
+          if (record.type === 'entity') {
+            const isNew = record.entity?._status === 'new';
+            return (
               <Tag
                 color="blue"
                 style={
@@ -569,382 +482,377 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
                     ? {
                         boxShadow: '0 0 8px rgba(59, 130, 246, 0.6)',
                         animation: 'pulse 2s infinite',
-                        cursor: 'pointer',
                       }
-                    : { cursor: 'pointer' }
+                    : {}
                 }
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (e.ctrlKey || e.metaKey) {
-                    // Ctrl/Cmd + 点击在新窗口打开
-                    window.open(`/entities/${record.entity?.id || 'new'}`, '_blank');
-                  } else {
-                    // 普通点击在当前窗口导航
-                    window.location.href = `/entities/${record.entity?.id || 'new'}`;
-                  }
-                }}
               >
                 实体
               </Tag>
-            </Badge>
-          );
-        }
-        if (record.type === 'attribute') {
-          const isNew = record.attribute?._status === 'new';
-          return (
-            <Tag
-              color="green"
-              style={
-                isNew
-                  ? {
-                      boxShadow: '0 0 8px rgba(34, 197, 94, 0.6)',
-                      animation: 'pulse 2s infinite',
-                    }
-                  : {}
-              }
-            >
-              属性
-            </Tag>
-          );
-        }
-        if (record.type === 'module') {
-          return (
-            <Tag
-              color="orange"
-              style={{ cursor: 'pointer' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                if (e.ctrlKey || e.metaKey) {
-                  // Ctrl/Cmd + 点击在新窗口打开
-                  window.open(`/modules/${record.module?.id}`, '_blank');
-                } else {
-                  // 普通点击在当前窗口导航
-                  window.location.href = `/modules/${record.module?.id}`;
+            );
+          }
+          if (record.type === 'attribute') {
+            const isNew = record.attribute?._status === 'new';
+            return (
+              <Tag
+                color="green"
+                style={
+                  isNew
+                    ? {
+                        boxShadow: '0 0 8px rgba(34, 197, 94, 0.6)',
+                        animation: 'pulse 2s infinite',
+                      }
+                    : {}
                 }
-              }}
-            >
-              模块
-            </Tag>
-          );
-        }
-        if (record.type === 'module-attribute') {
-          return <Tag color="grey">属性</Tag>;
-        }
-        return <Tag>{record.type}</Tag>;
+              >
+                属性
+              </Tag>
+            );
+          }
+          if (record.type === 'module') return <Tag color="orange">模块</Tag>;
+          if (record.type === 'module-attribute') return <Tag color="grey">属性</Tag>;
+          return <Tag>{record.type}</Tag>;
+        },
       },
-    },
-    // 第四列：ID
-    {
-      title: 'ID',
-      key: 'id',
-      width: 200,
-      render: (_: any, record: any) => {
-        if (record.type === 'entity') {
-          const errorMessage = getFieldValidationError(
-            record.entity._indexId,
-            'id',
-            record.entity.id
-          );
-          return (
-            <FieldInput
-              key={`entity-id-${record.entity._indexId}`}
-              value={record.entity.id}
-              onChange={(newValue) =>
-                handleEntityFieldChange(record.entity._indexId, 'id', newValue)
-              }
-              placeholder="实体ID（必填）"
-              isIdField={true}
-              required={true}
-              errorMessage={errorMessage}
-            />
-          );
-        } else if (record.type === 'attribute') {
-          const errorMessage = getFieldValidationError(
-            record.entity._indexId,
-            'attribute-id',
-            record.attribute.id,
-            record.attribute._indexId
-          );
-          return (
-            <FieldInput
-              key={`attr-id-${record.attribute._indexId}`}
-              value={record.attribute.id}
-              onChange={(newValue) =>
-                handleAttributeFieldChange(
-                  record.entity._indexId,
-                  record.attribute._indexId,
-                  'id',
-                  newValue
-                )
-              }
-              placeholder="属性ID（必填）"
-              isIdField={true}
-              required={true}
-              errorMessage={errorMessage}
-            />
-          );
-        } else if (record.type === 'module-attribute') {
-          return (
-            <FieldInput
-              key={`mod-attr-id-${record.attribute._indexId}`}
-              value={record.attribute.id}
-              onChange={() => {}} // 只读，不处理变更
-              placeholder="属性ID"
-              isIdField={true}
-              readonly={true}
-            />
-          );
-        } else if (record.type === 'module') {
-          return (
-            <Text
-              style={{
-                fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-                fontSize: '12px',
-              }}
-            >
-              {record.module?.id}
-            </Text>
-          );
-        }
-        return null;
+      // 第四列：ID 120px
+      {
+        title: 'ID',
+        key: 'id',
+        width: 160,
+        render: (_: any, record: any) => {
+          if (record.type === 'entity') {
+            const errorMessage = getFieldValidationError(
+              record.entity._indexId,
+              'id',
+              record.entity.id
+            );
+            return (
+              <UniversalInput
+                key={record.entity._indexId}
+                storeName="entity"
+                path={[record.entity._indexId]}
+                field="id"
+                placeholder="实体ID（必填）"
+                required={true}
+                useStore={useEntityList}
+                useStoreActions={useEntityListActions}
+                validationFn={createUniversalValidator('id', {
+                  entityType: '实体',
+                  scope: 'global',
+                })}
+                style={{
+                  fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                  fontSize: '12px',
+                }}
+              />
+            );
+          } else if (record.type === 'attribute') {
+            const errorMessage = getFieldValidationError(
+              record.entity._indexId,
+              'attribute-id',
+              record.attribute.id,
+              record.attribute._indexId
+            );
+            return (
+              <UniversalInput
+                key={record.attribute._indexId}
+                storeName="entity"
+                path={[record.entity._indexId, record.attribute._indexId]}
+                field="id"
+                placeholder="属性ID（必填）"
+                required={true}
+                useStore={useEntityList}
+                useStoreActions={useEntityListActions}
+                validationFn={createUniversalValidator('id', {
+                  entityType: '属性',
+                  scope: 'parent',
+                })}
+                style={{
+                  fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                  fontSize: '12px',
+                }}
+              />
+            );
+          } else if (record.type === 'module-attribute') {
+            return (
+              <FieldInput
+                value={record.attribute.id}
+                onChange={() => {}} // 只读，不处理变更
+                placeholder="属性ID"
+                isIdField={true}
+                readonly={true}
+                inputKey={`mod-attr-id-${record.attribute._indexId}`} // 🔧 使用稳定的inputKey
+              />
+            );
+          } else if (record.type === 'module') {
+            return (
+              <Text
+                style={{
+                  fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                  fontSize: '12px',
+                }}
+              >
+                {record.module?.id}
+              </Text>
+            );
+          }
+          return null;
+        },
       },
-    },
-    // 第五列：名称
-    {
-      title: '名称',
-      key: 'name',
-      width: 240,
-      render: (_: any, record: any) => {
-        if (record.type === 'entity') {
-          return (
-            <FieldInput
-              key={`entity-name-${record.entity._indexId}`}
-              value={record.entity.name}
-              onChange={(newValue) =>
-                handleEntityFieldChange(record.entity._indexId, 'name', newValue)
-              }
-              placeholder="实体名称"
-            />
-          );
-        } else if (record.type === 'attribute') {
-          return (
-            <FieldInput
-              key={`attr-name-${record.attribute._indexId}`}
-              value={record.attribute.name}
-              onChange={(newValue) =>
-                handleAttributeFieldChange(
-                  record.entity._indexId,
-                  record.attribute._indexId,
-                  'name',
-                  newValue
-                )
-              }
-              placeholder="属性名称"
-              readonly={record.readonly}
-            />
-          );
-        } else if (record.type === 'module-attribute') {
-          return (
-            <FieldInput
-              key={`mod-attr-name-${record.attribute._indexId}`}
-              value={record.attribute.name}
-              onChange={() => {}} // 只读，不处理变更
-              placeholder="属性名称"
-              readonly={record.readonly}
-            />
-          );
-        } else if (record.type === 'module') {
-          return <Text style={{ fontSize: '13px' }}>{record.module?.name}</Text>;
-        }
-        return null;
+      // 第五列：Name 160px
+      {
+        title: '名称',
+        key: 'name',
+        width: 200,
+        render: (_: any, record: any) => {
+          if (record.type === 'entity') {
+            return (
+              <UniversalInput
+                key={record.entity._indexId}
+                storeName="entity"
+                path={[record.entity._indexId]}
+                field="name"
+                placeholder="实体名称"
+                required={true}
+                useStore={useEntityList}
+                useStoreActions={useEntityListActions}
+                validationFn={createUniversalValidator('required')}
+              />
+            );
+          } else if (record.type === 'attribute') {
+            return (
+              <UniversalInput
+                key={record.attribute._indexId}
+                storeName="entity"
+                path={[record.entity._indexId, record.attribute._indexId]}
+                field="name"
+                placeholder="属性名称（可选）"
+                required={false} // 🔧 属性名称不是必填项
+                readonly={record.readonly}
+                useStore={useEntityList}
+                useStoreActions={useEntityListActions}
+                // 🔧 属性名称不需要验证，移除validationFn
+              />
+            );
+          } else if (record.type === 'module-attribute') {
+            return (
+              <FieldInput
+                value={record.attribute.name}
+                onChange={() => {}} // 只读，不处理变更
+                placeholder="属性名称"
+                readonly={record.readonly}
+                inputKey={`mod-attr-name-${record.attribute._indexId}`} // 🔧 使用稳定的inputKey
+              />
+            );
+          } else if (record.type === 'module') {
+            return <Text style={{ fontSize: '13px' }}>{record.module?.name}</Text>;
+          }
+          return null;
+        },
       },
-    },
-    // 第六列：操作按钮
-    {
-      title: () => (
-        <Button size="small" icon={<IconPlus />} type="primary" onClick={handleAddEntity}>
-          添加实体
-        </Button>
-      ),
-      key: 'actions',
-      // width: 180,
-      render: (_: any, record: any) => (
-        <div
-          style={{
-            display: 'flex',
-            gap: '2px',
-            justifyContent: 'flex-start',
-            alignItems: 'center',
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* 类型选择器和数据限制按钮 - 只在属性行显示 */}
-          {(record.type === 'attribute' || record.type === 'module-attribute') &&
-            record.attribute &&
-            (() => {
-              if (record.type === 'attribute') {
-                const displayAttribute = record.attribute;
-                return (
-                  <>
-                    <Tooltip content="选择属性类型">
-                      <EntityPropertyTypeSelector
+      // 第六列：控件集合 80px
+      {
+        title: () => (
+          <Button size="small" icon={<IconPlus />} type="primary" onClick={handleAddEntity}>
+            添加实体
+          </Button>
+        ),
+        key: 'actions',
+        width: 100,
+        render: (_: any, record: any) => (
+          <div
+            style={{
+              display: 'flex',
+              gap: '2px',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 类型选择器和数据限制按钮 - 只在属性行显示 */}
+            {(record.type === 'attribute' || record.type === 'module-attribute') &&
+              record.attribute &&
+              (() => {
+                if (record.type === 'attribute') {
+                  const displayAttribute = record.attribute;
+                  return (
+                    <>
+                      <Tooltip content="选择属性类型">
+                        <EntityPropertyTypeSelector
+                          value={{ type: displayAttribute.type, enum: displayAttribute.enum }}
+                          onChange={(typeInfo) =>
+                            handleTypeChange(
+                              record.entity._indexId,
+                              record.attribute._indexId,
+                              typeInfo
+                            )
+                          }
+                          disabled={record.readonly}
+                        />
+                      </Tooltip>
+                      <DataRestrictionButton
                         value={{ type: displayAttribute.type, enum: displayAttribute.enum }}
-                        onChange={(typeInfo) =>
-                          handleTypeChange(
-                            record.entity._indexId,
-                            record.attribute._indexId,
-                            typeInfo
-                          )
-                        }
+                        onClick={() => {
+                          // TODO: 打开数据限制编辑弹窗
+                          console.log('编辑数据限制:', displayAttribute);
+                        }}
                         disabled={record.readonly}
                       />
-                    </Tooltip>
-                    <DataRestrictionButton
-                      value={{ type: displayAttribute.type, enum: displayAttribute.enum }}
-                      onClick={() => {
-                        // TODO: 打开数据限制编辑弹窗
-                        console.log('编辑数据限制:', displayAttribute);
-                      }}
-                      disabled={record.readonly}
-                    />
-                  </>
-                );
-              } else {
+                    </>
+                  );
+                } else {
+                  return (
+                    <>
+                      <Tooltip content="属性类型（只读）">
+                        <EntityPropertyTypeSelector
+                          value={{ type: record.attribute.type, enum: record.attribute.enum }}
+                          onChange={(typeInfo) =>
+                            handleTypeChange(
+                              record.entity._indexId,
+                              record.attribute._indexId,
+                              typeInfo
+                            )
+                          }
+                          disabled={record.readonly}
+                        />
+                      </Tooltip>
+                      <DataRestrictionButton
+                        value={{ type: record.attribute.type, enum: record.attribute.enum }}
+                        onClick={() => {
+                          // 模块属性不允许编辑数据限制
+                          console.log('模块属性不允许编辑数据限制');
+                        }}
+                        disabled={true}
+                      />
+                    </>
+                  );
+                }
+              })()}
+
+            {/* 实体操作按钮 */}
+            {record.type === 'entity' &&
+              record.entity &&
+              (() => {
+                const entity = record.entity; // 直接使用实体数据
+                const entityIsDirty = isEntityDirty(entity);
+                const canSave = canSaveEntity(entity);
+
                 return (
                   <>
-                    <Tooltip content="属性类型（只读）">
-                      <EntityPropertyTypeSelector
-                        value={{ type: record.attribute.type, enum: record.attribute.enum }}
-                        onChange={(typeInfo) =>
-                          handleTypeChange(
-                            record.entity._indexId,
-                            record.attribute._indexId,
-                            typeInfo
-                          )
-                        }
-                        disabled={record.readonly}
-                      />
+                    <Tooltip content={getSaveErrorMessage(entity)}>
+                      <Popconfirm
+                        title="确定保存实体修改吗？"
+                        content="保存后将更新到后台数据"
+                        onConfirm={async (e) => {
+                          e?.stopPropagation?.();
+                          try {
+                            await saveEntity(entity);
+                            console.log('✅ 实体保存成功');
+                            Notification.success({
+                              title: '保存成功',
+                              content: `实体 "${entity.name || entity.id}" 已保存`,
+                              duration: 3,
+                            });
+                          } catch (error) {
+                            console.error('❌ 实体保存失败:', error);
+                            Notification.error({
+                              title: '保存失败',
+                              content: `实体 "${entity.name || entity.id}" 保存失败`,
+                              duration: 5,
+                            });
+                          }
+                        }}
+                      >
+                        <Button
+                          size="small"
+                          type="primary"
+                          onClick={(e) => e.stopPropagation()}
+                          icon={<IconSave />}
+                          disabled={!entityIsDirty || !canSave}
+                          loading={entity._editStatus === 'saving'}
+                        />
+                      </Popconfirm>
                     </Tooltip>
-                    <DataRestrictionButton
-                      value={{ type: record.attribute.type, enum: record.attribute.enum }}
-                      onClick={() => {
-                        // 模块属性不允许编辑数据限制
-                        console.log('模块属性不允许编辑数据限制');
-                      }}
-                      disabled={true}
-                    />
-                  </>
-                );
-              }
-            })()}
-
-          {/* 实体操作按钮 */}
-          {record.type === 'entity' &&
-            record.entity &&
-            (() => {
-              const entity = record.entity; // 直接使用实体数据
-              const entityIsDirty = isEntityDirty(entity);
-              const canSave = canSaveEntity(entity);
-
-              return (
-                <>
-                  <Tooltip content={getSaveErrorMessage(entity)}>
-                    <Popconfirm
-                      title="确定保存实体修改吗？"
-                      content="保存后将更新到后台数据"
-                      onConfirm={async (e) => {
-                        e?.stopPropagation?.();
-                        try {
-                          // 先应用本地编辑到store
-                          await applyLocalEdits(entity._indexId);
-                          // 然后保存实体
-                          await saveEntity(entity);
-                          console.log('✅ 实体保存成功');
-                          Notification.success({
-                            title: '保存成功',
-                            content: `实体 "${entity.name || entity.id}" 已保存`,
-                            duration: 3,
-                          });
-                        } catch (error) {
-                          console.error('❌ 实体保存失败:', error);
-                          Notification.error({
-                            title: '保存失败',
-                            content: `实体 "${entity.name || entity.id}" 保存失败`,
-                            duration: 5,
-                          });
-                        }
-                      }}
-                    >
-                      <Button
-                        size="small"
-                        type="primary"
-                        onClick={(e) => e.stopPropagation()}
-                        icon={<IconSave />}
-                        disabled={!entityIsDirty || !canSave}
-                        loading={entity._editStatus === 'saving'}
-                      />
-                    </Popconfirm>
-                  </Tooltip>
-                  {entity._status !== 'new' ? (
-                    <Tooltip content="撤销修改">
+                    {entity._status !== 'new' ? (
+                      <Tooltip content="撤销修改">
+                        <Button
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            resetEntityChanges(entity._indexId);
+                            console.log('撤销修改:', entity._indexId);
+                          }}
+                          icon={<IconUndo />}
+                          disabled={!entityIsDirty}
+                        />
+                      </Tooltip>
+                    ) : (
+                      <Button size="small" disabled style={{ opacity: 0.3 }} />
+                    )}
+                    <Tooltip content="添加属性">
                       <Button
                         size="small"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // TODO: 实现撤销修改
-                          console.log('撤销修改:', entity._indexId);
+                          handleAddAttribute(record.entity._indexId);
                         }}
-                        icon={<IconUndo />}
-                        disabled={!entityIsDirty}
+                        icon={<IconPlus />}
                       />
                     </Tooltip>
-                  ) : (
-                    <Button size="small" disabled style={{ opacity: 0.3 }} />
-                  )}
-                  <Tooltip content="添加属性">
+                    <Tooltip content="删除实体">
+                      <Popconfirm
+                        title={
+                          entity._status === 'new'
+                            ? '确定删除这个新增实体吗？'
+                            : '确定删除这个实体吗？删除后将从后台数据中移除。'
+                        }
+                        onConfirm={async (e) => {
+                          e?.stopPropagation?.();
+                          await handleDeleteEntity(entity);
+                        }}
+                      >
+                        <Button
+                          size="small"
+                          type="danger"
+                          icon={<IconDelete />}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </Popconfirm>
+                    </Tooltip>
+                  </>
+                );
+              })()}
+
+            {/* 属性删除按钮 */}
+            {record.type === 'attribute' && record.entity && record.attribute && (
+              <>
+                <Button size="small" disabled style={{ opacity: 0.3 }} />
+                <Tooltip content="删除属性">
+                  <Popconfirm
+                    title="确定删除这个属性吗？"
+                    onConfirm={async (e) => {
+                      e?.stopPropagation?.();
+                      await handleDeleteAttribute(record.entity, record.attribute);
+                    }}
+                  >
                     <Button
                       size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddAttribute(record.entity._indexId);
-                      }}
-                      icon={<IconPlus />}
+                      type="danger"
+                      icon={<IconDelete />}
+                      onClick={(e) => e.stopPropagation()}
                     />
-                  </Tooltip>
-                  <Tooltip content="删除实体">
-                    <Popconfirm
-                      title={
-                        entity._status === 'new'
-                          ? '确定删除这个新增实体吗？'
-                          : '确定删除这个实体吗？删除后将从后台数据中移除。'
-                      }
-                      onConfirm={async (e) => {
-                        e?.stopPropagation?.();
-                        await handleDeleteEntity(entity);
-                      }}
-                    >
-                      <Button
-                        size="small"
-                        type="danger"
-                        icon={<IconDelete />}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </Popconfirm>
-                  </Tooltip>
-                </>
-              );
-            })()}
+                  </Popconfirm>
+                </Tooltip>
+              </>
+            )}
 
-          {/* 属性删除按钮 */}
-          {record.type === 'attribute' && record.entity && record.attribute && (
-            <>
-              <Button size="small" disabled style={{ opacity: 0.3 }} />
-              <Tooltip content="删除属性">
+            {/* 模块解绑按钮 */}
+            {record.type === 'module' && record.entity && record.module && (
+              <Tooltip content="解绑模块">
                 <Popconfirm
-                  title="确定删除这个属性吗？"
+                  title="确定移除这个模块吗？"
                   onConfirm={async (e) => {
                     e?.stopPropagation?.();
-                    await handleDeleteAttribute(record.entity, record.attribute);
+                    await handleUnlinkModule(record.entity, record.module);
                   }}
                 >
                   <Button
@@ -955,32 +863,13 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
                   />
                 </Popconfirm>
               </Tooltip>
-            </>
-          )}
-
-          {/* 模块解绑按钮 */}
-          {record.type === 'module' && record.entity && record.module && (
-            <Tooltip content="解绑模块">
-              <Popconfirm
-                title="确定移除这个模块吗？"
-                onConfirm={async (e) => {
-                  e?.stopPropagation?.();
-                  await handleUnlinkModule(record.entity, record.module);
-                }}
-              >
-                <Button
-                  size="small"
-                  type="danger"
-                  icon={<IconDelete />}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </Popconfirm>
-            </Tooltip>
-          )}
-        </div>
-      ),
-    },
-  ];
+            )}
+          </div>
+        ),
+      },
+    ],
+    [handleEntityFieldChange, handleAttributeFieldChange, handleTypeChange, getFieldValidationError]
+  );
 
   // 事件处理
   const handleDeleteEntity = async (entity: any) => {
@@ -1091,6 +980,7 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
       name: '', // 名称可以为空
       attributes: [],
       bundles: [],
+      moduleIds: [], // 关联的模块_indexId数组
       deprecated: false,
       _status: 'new' as const, // 标记为新增状态
     };
@@ -1145,17 +1035,29 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
 
   return (
     <div style={{ padding: '24px', minWidth: '720px', maxWidth: '960px' }}>
-      <SearchFilterBar
-        searchText={searchText}
-        onSearchChange={setSearchText}
-        onRefresh={async () => {
-          console.log('🔄 刷新数据');
-          await loadEntities();
-          console.log('🔄 数据已刷新');
-        }}
-        loading={loading}
-        placeholder="搜索实体、属性..."
-      />
+      {/* 搜索和操作栏 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+        <Input
+          placeholder="搜索实体、属性..."
+          value={searchText}
+          onChange={setSearchText}
+          style={{ width: '200px' }}
+          size="small"
+        />
+        <Button
+          icon={<IconRefresh />}
+          onClick={async () => {
+            console.log('🔄 刷新数据');
+            await loadEntities();
+            console.log('🔄 数据已刷新');
+          }}
+          loading={loading}
+          size="small"
+        >
+          刷新
+        </Button>
+      </div>
+
       <Table
         columns={columns}
         dataSource={filteredData}
@@ -1169,7 +1071,7 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
         size="small"
         style={{ tableLayout: 'fixed' }}
         className="entity-list-table"
-        scroll={{ y: 'calc(100vh - 186px)' }}
+        scroll={{ y: 'calc(100vh - 200px)' }}
         rowKey="key"
         onRow={useCallback((record: any, index?: number) => {
           // 为新增状态的行添加className，避免每次渲染创建新对象
@@ -1189,8 +1091,21 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
       <style>
         {`
           .entity-list-table .semi-table-tbody > .semi-table-row > .semi-table-row-cell {
-            padding-right: 8px;
-            padding-left: 8px;
+            padding-right: 12px;
+            padding-left: 12px;
+          }
+
+                    /* 合并表头样式优化 */
+          .entity-list-table .semi-table-thead > tr > th[colspan="3"] {
+            text-align: left;
+            padding: 12px 16px;
+            position: relative;
+          }
+
+          /* 确保搜索框和按钮的布局在合并单元格中正确显示 */
+          .entity-list-table .semi-table-thead > tr > th[colspan="3"] > div {
+            min-width: 320px;
+            max-width: 100%;
           }
 
           /* 新增实体行的左边框 */

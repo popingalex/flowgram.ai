@@ -335,10 +335,18 @@
         {
             "name": "dev:demo-free-layout-forked",
             "commandKind": "global",
-            "summary": "⭐️️ run dev in app/demo-free-layout-forked",
+            "summary": "⭐️️ run dev in app/demo-free-layout-forked on port 13000",
             "autoinstallerName": "rush-commands",
             "safeForSimultaneousRushProcesses": true,
-            "shellCommand": "concurrently --kill-others --prefix \"{name}\" --names [watch],[demo] -c white,blue \"rush build:watch --to-except @flowgram.ai/demo-free-layout-forked\" \"cd apps/demo-free-layout-forked && rushx dev\""
+            "shellCommand": "concurrently --kill-others --prefix \"{name}\" --names [watch],[demo] -c white,blue \"rush build:watch --to-except @flowgram.ai/demo-free-layout-forked\" \"cd apps/demo-free-layout-forked && rushx dev -- --port 13000\""
+        },
+        {
+            "name": "dev:api-platform",
+            "commandKind": "global",
+            "summary": "⭐️️ run dev in apps/api-platform on port 13001",
+            "autoinstallerName": "rush-commands",
+            "safeForSimultaneousRushProcesses": true,
+            "shellCommand": "concurrently --kill-others --prefix \"{name}\" --names [api-platform] -c blue \"cd apps/api-platform && rushx dev -- --port 13001\""
         }
     ],
     /**

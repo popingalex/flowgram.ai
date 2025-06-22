@@ -127,10 +127,10 @@ export const GenerateEntityWorkflow: React.FC<{ disabled?: boolean }> = ({ disab
 
       Toast.success(`成功生成 ${graph.name}，包含 ${graph.nodes.length} 个节点`);
 
-      // 自动适应视图
-      setTimeout(() => {
+      // 🔧 自动适应视图 - 使用requestAnimationFrame替代setTimeout
+      requestAnimationFrame(() => {
         playground.config.fitView(workflowDocument.root.bounds.pad(30));
-      }, 100);
+      });
     } catch (error) {
       console.error('生成工作流失败:', error);
       Toast.error('生成工作流失败，请检查网络连接');

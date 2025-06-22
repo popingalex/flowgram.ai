@@ -193,12 +193,6 @@ export const ExpressionListPage: React.FC = () => {
       ),
     },
     {
-      title: '描述',
-      key: 'description',
-      width: 250,
-      render: (_: any, record: ExpressionItem) => <Text>{record.description || '-'}</Text>,
-    },
-    {
       title: '分类',
       key: 'category',
       width: 120,

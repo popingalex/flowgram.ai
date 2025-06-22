@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
 
 import { nanoid } from 'nanoid';
 import {
@@ -31,7 +31,7 @@ import { useModuleStore } from '../stores';
 
 const { Text } = Typography;
 
-// 通用字段输入组件 - 简化版本，只显示错误状态
+// 通用字段输入组件 - 🔧 优化memo条件和稳定性
 const FieldInput = React.memo(
   ({
     value,
@@ -42,6 +42,7 @@ const FieldInput = React.memo(
     required = false, // 是否必填
     isDuplicate = false, // 是否重复
     errorMessage = '', // 校验错误信息
+    inputKey, // 🔧 添加稳定的key参数
   }: {
     value: string;
     onChange: (newValue: string) => void;
@@ -51,6 +52,7 @@ const FieldInput = React.memo(
     required?: boolean;
     isDuplicate?: boolean;
     errorMessage?: string;
+    inputKey?: string; // 🔧 稳定的key，用于防止重绘
   }) => {
     if (readonly) {
       const displayValue = isIdField && value ? value.split('/').pop() : value;
@@ -74,6 +76,7 @@ const FieldInput = React.memo(
 
     return (
       <Input
+        key={inputKey} // 🔧 使用稳定的key防止重绘
         value={value}
         onChange={onChange}
         onClick={(e) => e.stopPropagation()}
@@ -88,7 +91,15 @@ const FieldInput = React.memo(
         }}
       />
     );
-  }
+  },
+  // 🔧 优化memo条件，只在关键属性变化时重新渲染
+  (prevProps, nextProps) =>
+    prevProps.value === nextProps.value &&
+    prevProps.readonly === nextProps.readonly &&
+    prevProps.required === nextProps.required &&
+    prevProps.isDuplicate === nextProps.isDuplicate &&
+    prevProps.errorMessage === nextProps.errorMessage &&
+    prevProps.inputKey === nextProps.inputKey
 );
 FieldInput.displayName = 'FieldInput';
 
@@ -110,6 +121,7 @@ const ModuleIdInput = React.memo(
       isIdField={true}
       required={true}
       errorMessage={errorMessage}
+      inputKey={`module-id-${module._indexId}`} // 🔧 使用稳定的inputKey
     />
   )
 );
@@ -128,6 +140,7 @@ const ModuleNameInput = React.memo(
       value={module.name}
       onChange={(newValue) => onFieldChange(module._indexId, 'name', newValue)}
       placeholder="模块名称"
+      inputKey={`module-name-${module._indexId}`} // 🔧 使用稳定的inputKey
     />
   )
 );
@@ -146,6 +159,10 @@ const AttributeIdInput = React.memo(
     onFieldChange: (moduleId: string, attributeId: string, field: string, value: any) => void;
     errorMessage?: string;
   }) => {
+    // 🔧 从modules中获取模块信息
+    const { modules } = useModuleStore();
+    const module = modules.find((m) => m._indexId === moduleId);
+
     // 对于模块属性，只显示属性ID部分，不显示模块前缀
     const displayValue =
       attribute.displayId || attribute.id?.split('/').pop() || attribute.id || '';
@@ -153,11 +170,18 @@ const AttributeIdInput = React.memo(
     return (
       <FieldInput
         value={displayValue}
-        onChange={(newValue) => onFieldChange(moduleId, attribute._indexId, 'id', newValue)}
+        onChange={(newValue) => {
+          // 🔧 修复：同时更新displayId和完整的id
+          onFieldChange(moduleId, attribute._indexId, 'displayId', newValue);
+          // 构建完整的模块属性ID：模块ID/属性ID
+          const fullId = module?.id ? `${module.id}/${newValue}` : newValue;
+          onFieldChange(moduleId, attribute._indexId, 'id', fullId);
+        }}
         placeholder="属性ID（必填）"
         isIdField={true}
         required={true}
         errorMessage={errorMessage}
+        inputKey={`attr-id-${attribute._indexId}`} // 🔧 使用稳定的inputKey
       />
     );
   }
@@ -178,7 +202,9 @@ const AttributeNameInput = React.memo(
     <FieldInput
       value={attribute.name}
       onChange={(newValue) => onFieldChange(moduleId, attribute._indexId, 'name', newValue)}
-      placeholder="属性名称"
+      placeholder="属性名称（可选）"
+      required={false} // 🔧 属性名称不是必填项
+      inputKey={`attr-name-${attribute._indexId}`} // 🔧 使用稳定的inputKey
     />
   )
 );
@@ -196,19 +222,23 @@ export const ModuleListPage: React.FC = () => {
     addAttributeToModuleLocal,
     removeAttributeFromModuleLocal,
     loadModules,
+    resetModuleChanges,
+    resetModuleChangesById,
   } = useModuleStore();
 
   const [searchText, setSearchText] = useState('');
 
-  // 🐛 调试：监控组件重新渲染
-  console.log(
-    '🔄 ModuleListPage重新渲染，模块数量:',
-    modules.length,
-    '第一个模块状态:',
-    modules[0]?._status,
-    '加载状态:',
-    loading
-  );
+  // 🔧 优化调试：减少日志频率，只在模块数量变化时输出
+  const prevModulesLengthRef = useRef(modules.length);
+  if (modules.length !== prevModulesLengthRef.current) {
+    console.log(
+      '🔄 ModuleListPage模块数量变化:',
+      prevModulesLengthRef.current,
+      '->',
+      modules.length
+    );
+    prevModulesLengthRef.current = modules.length;
+  }
 
   // 初始化加载
   React.useEffect(() => {
@@ -310,87 +340,15 @@ export const ModuleListPage: React.FC = () => {
     return '保存模块修改';
   };
 
-  // 🎯 本地编辑状态 - 避免每次输入都更新全局store（参考实体的实现）
-  const [localEdits, setLocalEdits] = useState<Map<string, any>>(new Map());
+  // 🎯 检查模块是否有修改 - 直接检查模块状态（参考实体的实现）
+  const isModuleDirty = useCallback((module: any) => {
+    const status = module._status;
+    return status === 'dirty' || status === 'new';
+  }, []);
 
-  // 检查模块是否有修改（包括本地编辑状态）
-  const isModuleDirty = useCallback(
-    (module: any) => {
-      const status = module._status;
-      const hasLocalEdits = localEdits.has(module._indexId);
-      return status === 'dirty' || status === 'new' || hasLocalEdits;
-    },
-    [localEdits]
-  );
-
-  // 🎯 获取合并后的模块数据（原始数据 + 本地编辑）
-  const getMergedModule = useCallback(
-    (module: any) => {
-      const localEdit = localEdits.get(module._indexId);
-      if (!localEdit) return module;
-
-      const mergedModule = { ...module, ...localEdit };
-
-      // 合并属性编辑
-      if (localEdit.attributes) {
-        mergedModule.attributes = (module.attributes || []).map((attr: any) => {
-          const attrEdit = localEdit.attributes[attr._indexId];
-          return attrEdit ? { ...attr, ...attrEdit } : attr;
-        });
-      }
-
-      return mergedModule;
-    },
-    [localEdits]
-  );
-
-  // 🎯 应用本地编辑到store（保存时调用）- 参考实体的实现
-  const applyLocalEdits = useCallback(
-    async (moduleIndexId: string) => {
-      const localEdit = localEdits.get(moduleIndexId);
-      if (!localEdit) return;
-
-      const originalModule = modules.find((m) => m._indexId === moduleIndexId);
-      if (!originalModule) return;
-
-      try {
-        console.log('🔍 应用本地编辑到store:', moduleIndexId, localEdit);
-
-        // 应用模块字段编辑
-        if (localEdit.id !== undefined || localEdit.name !== undefined) {
-          Object.keys(localEdit).forEach((field) => {
-            if (field !== 'attributes' && localEdit[field] !== undefined) {
-              updateModuleField(moduleIndexId, field, localEdit[field]);
-            }
-          });
-        }
-
-        // 应用属性编辑
-        if (localEdit.attributes) {
-          Object.keys(localEdit.attributes).forEach((attrId) => {
-            const attrEdit = localEdit.attributes[attrId];
-            Object.keys(attrEdit).forEach((field) => {
-              updateModuleAttribute(moduleIndexId, attrId, field, attrEdit[field]);
-            });
-          });
-        }
-
-        // 清除本地编辑状态
-        setLocalEdits((prev) => {
-          const newEdits = new Map(prev);
-          newEdits.delete(moduleIndexId);
-          return newEdits;
-        });
-      } catch (error) {
-        console.error('❌ 应用本地编辑失败:', error);
-      }
-    },
-    [localEdits, modules, updateModuleField, updateModuleAttribute]
-  );
-
-  // 转换为表格数据 - 带排序逻辑，使用合并后的数据
+  // 转换为表格数据 - 带排序逻辑（参考实体的实现）
   const tableData = useMemo(() => {
-    console.log('🔄 重新计算表格数据，模块数量:', modules.length, '本地编辑数量:', localEdits.size);
+    console.log('🔄 重新计算表格数据，模块数量:', modules.length);
     const data: any[] = [];
 
     // 模块排序：新增的在前，然后按ID排序
@@ -402,14 +360,11 @@ export const ModuleListPage: React.FC = () => {
       return (a.id || '').localeCompare(b.id || '');
     });
 
-    sortedModules.forEach((originalModule) => {
-      // 🎯 使用合并后的模块数据（原始数据 + 本地编辑）
-      const module = getMergedModule(originalModule);
-
+    sortedModules.forEach((module) => {
       const moduleRow: any = {
         key: module._indexId,
         type: 'module',
-        module: module, // 🎯 使用合并后的模块数据
+        module: module,
         children: [] as any[],
       };
 
@@ -435,7 +390,7 @@ export const ModuleListPage: React.FC = () => {
     });
 
     return data;
-  }, [modules, localEdits, getMergedModule]); // 🎯 添加localEdits依赖
+  }, [modules]); // 🎯 简化依赖，只依赖modules
 
   // 过滤数据
   const filteredData = useMemo(() => {
@@ -465,47 +420,36 @@ export const ModuleListPage: React.FC = () => {
   // 🎯 字段变更处理 - 使用本地状态，避免频繁更新store
   const handleModuleFieldChange = useCallback(
     (moduleIndexId: string, field: string, value: any) => {
-      console.log('🔍 更新模块字段（本地）:', moduleIndexId, field, value);
-      setLocalEdits((prev) => {
-        const newEdits = new Map(prev);
-        const currentEdit = newEdits.get(moduleIndexId) || {};
-        newEdits.set(moduleIndexId, { ...currentEdit, [field]: value });
-        return newEdits;
-      });
+      console.log('🔍 更新模块字段（立即更新到store）:', moduleIndexId, field, value);
+      // 🎯 直接更新到store中，而不是本地状态
+      updateModuleField(moduleIndexId, field, value);
     },
-    []
+    [updateModuleField]
   );
 
   const handleAttributeFieldChange = useCallback(
     (moduleIndexId: string, attributeIndexId: string, field: string, value: any) => {
-      console.log('🔍 更新属性字段（本地）:', moduleIndexId, attributeIndexId, field, value);
-      setLocalEdits((prev) => {
-        const newEdits = new Map(prev);
-        const currentEdit = newEdits.get(moduleIndexId) || {};
-        const attributes = currentEdit.attributes || {};
-        newEdits.set(moduleIndexId, {
-          ...currentEdit,
-          attributes: {
-            ...attributes,
-            [attributeIndexId]: { ...attributes[attributeIndexId], [field]: value },
-          },
-        });
-        return newEdits;
-      });
+      console.log(
+        '🔍 更新属性字段（立即更新到store）:',
+        moduleIndexId,
+        attributeIndexId,
+        field,
+        value
+      );
+      // 🎯 直接更新到store中，而不是本地状态
+      updateModuleAttribute(moduleIndexId, attributeIndexId, field, value);
     },
-    []
+    [updateModuleAttribute]
   );
 
   const handleTypeChange = (moduleId: string, attributeId: string, typeInfo: any) => {
     handleAttributeFieldChange(moduleId, attributeId, 'type', typeInfo.type);
   };
 
-  // 🎯 模块保存逻辑 - 参考实体的实现
+  // 🎯 模块保存逻辑 - 简化版本，直接保存store中的数据
   const handleSaveModule = async (module: any) => {
     try {
-      // 先应用本地编辑到store
-      await applyLocalEdits(module._indexId);
-      // 然后保存模块
+      // 直接保存模块，数据已经在store中了
       await saveModule(module);
       console.log('✅ 模块保存成功');
       Notification.success({
@@ -536,50 +480,45 @@ export const ModuleListPage: React.FC = () => {
     {
       key: 'type',
       title: '类型',
-      width: 60,
+      width: 80,
       render: (_: any, record: any) => {
         if (record.type === 'module') {
           const isNew = record.module?._status === 'new';
           const attributeCount = record.module?.attributes?.length || 0;
 
           return (
-            <Tooltip
-              content={`模块详情页面: /modules/${record.module?.id || 'new'}`}
-              position="bottom"
+            <Badge
+              count={attributeCount > 0 ? attributeCount : undefined}
+              overflowCount={99}
+              type="success"
+              theme="inverted"
+              data-badge-type="success"
             >
-              <Badge
-                count={attributeCount > 0 ? attributeCount : undefined}
-                overflowCount={99}
-                type="success"
-                theme="inverted"
-                data-badge-type="success"
-              >
-                <Tag
-                  color="green"
-                  style={
-                    isNew
-                      ? {
-                          boxShadow: '0 0 8px rgba(34, 197, 94, 0.6)',
-                          animation: 'pulse 2s infinite',
-                          cursor: 'pointer',
-                        }
-                      : { cursor: 'pointer' }
+              <Tag
+                color="green"
+                style={
+                  isNew
+                    ? {
+                        boxShadow: '0 0 8px rgba(34, 197, 94, 0.6)',
+                        animation: 'pulse 2s infinite',
+                        cursor: 'pointer',
+                      }
+                    : { cursor: 'pointer' }
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (e.ctrlKey || e.metaKey) {
+                    // Ctrl/Cmd + 点击在新窗口打开
+                    window.open(`/modules/${record.module?.id || 'new'}`, '_blank');
+                  } else {
+                    // 普通点击在当前窗口导航
+                    window.location.href = `/modules/${record.module?.id || 'new'}`;
                   }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (e.ctrlKey || e.metaKey) {
-                      // Ctrl/Cmd + 点击在新窗口打开
-                      window.open(`/modules/${record.module?.id || 'new'}`, '_blank');
-                    } else {
-                      // 普通点击在当前窗口导航
-                      window.location.href = `/modules/${record.module?.id || 'new'}`;
-                    }
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>模块</span>
-                </Tag>
-              </Badge>
-            </Tooltip>
+                }}
+              >
+                模块
+              </Tag>
+            </Badge>
           );
         }
         if (record.type === 'attribute') {
@@ -641,7 +580,7 @@ export const ModuleListPage: React.FC = () => {
         return null;
       },
     },
-    // 第四列：Name
+    // 第四列：名称
     {
       title: '名称',
       key: 'name',
@@ -669,7 +608,6 @@ export const ModuleListPage: React.FC = () => {
         </Button>
       ),
       key: 'actions',
-      // width: 100, // 移除固定宽度，让其自适应
       render: (_: any, record: any) => (
         <div
           style={{
@@ -680,7 +618,7 @@ export const ModuleListPage: React.FC = () => {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* 类型选择器 - 只在属性行显示 */}
+          {/* 类型选择器和数据限制按钮 - 只在属性行显示 */}
           {record.type === 'attribute' && record.attribute && (
             <>
               <Tooltip content="选择属性类型">
@@ -740,8 +678,8 @@ export const ModuleListPage: React.FC = () => {
                         size="small"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // TODO: 实现撤销修改
-                          console.log('撤销修改:', module._indexId);
+                          resetModuleChangesById(module.id);
+                          console.log('撤销修改:', module.id);
                         }}
                         icon={<IconUndo />}
                         disabled={!moduleIsDirty}
@@ -907,7 +845,6 @@ export const ModuleListPage: React.FC = () => {
         loading={loading}
         pagination={false}
         childrenRecordName="children"
-        defaultExpandAllRows={false}
         expandIcon={false}
         expandRowByClick={true}
         hideExpandedColumn={true}
@@ -919,25 +856,11 @@ export const ModuleListPage: React.FC = () => {
         rowKey="key"
         onRow={useCallback((record: any, index?: number) => {
           // 为新增状态的行添加className，避免每次渲染创建新对象
-          if (record.type === 'module') {
-            const className = record.module?._status === 'new' ? 'module-row-new' : '';
-            return {
-              className,
-              style: {
-                backgroundColor: 'var(--semi-color-fill-0)',
-                borderBottom: '2px solid var(--semi-color-border)',
-              },
-            };
+          if (record.type === 'module' && record.module?._status === 'new') {
+            return { className: 'module-row-new' };
           }
-          if (record.type === 'attribute') {
-            const className =
-              (record.attribute as any)?._status === 'new' ? 'attribute-row-new' : '';
-            return {
-              className,
-              style: {
-                backgroundColor: 'var(--semi-color-bg-0)',
-              },
-            };
+          if (record.type === 'attribute' && (record.attribute as any)?._status === 'new') {
+            return { className: 'attribute-row-new' };
           }
           return {};
         }, [])}
