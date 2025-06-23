@@ -5,9 +5,12 @@ import { Input, Typography, Divider } from '@douyinfe/semi-ui';
 
 import { FormItem } from '../form-item';
 import { useCurrentEntity, useCurrentEntityActions } from '../../stores';
+import { useRouter } from '../../hooks/use-router';
 import { useCloned } from '../../hooks/use-cloned';
 import { useNodeRenderContext } from '../../hooks';
 import { SidebarContext, IsSidebarContext } from '../../context';
+
+const { Text } = Typography;
 
 interface FormEntityMetasProps {
   isSidebar?: boolean;
@@ -33,33 +36,39 @@ export function FormEntityMetas({ isSidebar }: FormEntityMetasProps) {
   return (
     <>
       <FormItem name="实体ID" type="string">
-        <Input
-          value={(editingEntity as any).$id || editingEntity.id || ''}
-          onChange={(value) => handleMetaChange('$id', value)}
-          size="small"
-          placeholder="实体ID"
-          readonly={!isInSidebar}
-        />
+        <Text
+          link={{ href: `/entities/${editingEntity.id}` }}
+          style={{
+            fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+            fontSize: '13px',
+          }}
+          title="点击跳转到实体详情页面"
+        >
+          {(editingEntity as any).$id || editingEntity.id || '未设置'}
+        </Text>
       </FormItem>
 
       <FormItem name="实体名称" type="string">
-        <Input
-          value={(editingEntity as any).$name || editingEntity.name || ''}
-          onChange={(value) => handleMetaChange('$name', value)}
-          size="small"
-          placeholder="实体名称"
-          readonly={!isInSidebar}
-        />
+        <Text
+          link={{ href: `/entities/${editingEntity.id}` }}
+          style={{
+            fontSize: '13px',
+          }}
+          title="点击跳转到实体详情页面"
+        >
+          {(editingEntity as any).$name || editingEntity.name || '未设置'}
+        </Text>
       </FormItem>
 
       <FormItem name="实体描述" type="string">
-        <Input
-          value={(editingEntity as any).$description || editingEntity.description || ''}
-          onChange={(value) => handleMetaChange('$description', value)}
-          size="small"
-          placeholder="实体描述"
-          readonly={!isInSidebar}
-        />
+        <Text
+          style={{
+            fontSize: '13px',
+            color: 'var(--semi-color-text-1)',
+          }}
+        >
+          {(editingEntity as any).$description || editingEntity.description || '无描述'}
+        </Text>
       </FormItem>
     </>
   );

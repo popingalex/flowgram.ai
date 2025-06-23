@@ -16,27 +16,108 @@ const deepCompareEntities = (entity1: Entity | null, entity2: Entity | null): bo
   const clean1 = cleanEntityForComparison(entity1);
   const clean2 = cleanEntityForComparison(entity2);
 
-  return isEqual(clean1, clean2);
+  // 🎯 特殊处理：bundles字段的undefined和空数组视为相等
+  const bundles1 = clean1.bundles || [];
+  const bundles2 = clean2.bundles || [];
+
+  if (bundles1.length === 0 && bundles2.length === 0) {
+    // 如果两个都是空的，创建副本并统一设为空数组进行比较
+    clean1.bundles = [];
+    clean2.bundles = [];
+  }
+
+  const areEqual = isEqual(clean1, clean2);
+
+  // 🔍 添加详细的调试日志
+  console.log('🔍 [DeepCompare] 实体深度比较:', {
+    entity1Id: entity1.id,
+    entity2Id: entity2.id,
+    areEqual,
+    bundles1: entity1.bundles,
+    bundles2: entity2.bundles,
+    cleanBundles1: clean1.bundles,
+    cleanBundles2: clean2.bundles,
+    clean1Keys: Object.keys(clean1).sort(),
+    clean2Keys: Object.keys(clean2).sort(),
+    jsonEqual: JSON.stringify(clean1) === JSON.stringify(clean2),
+  });
+
+  // 如果不相等，详细分析差异
+  if (!areEqual) {
+    const allKeys = new Set([...Object.keys(clean1), ...Object.keys(clean2)]);
+    const differences: string[] = [];
+
+    for (const key of allKeys) {
+      if (!(key in clean1)) {
+        differences.push(`${key}: missing in original`);
+      } else if (!(key in clean2)) {
+        differences.push(`${key}: missing in editing`);
+      } else if (JSON.stringify(clean1[key]) !== JSON.stringify(clean2[key])) {
+        differences.push(
+          `${key}: ${JSON.stringify(clean1[key])} vs ${JSON.stringify(clean2[key])}`
+        );
+      }
+    }
+
+    console.log('❌ [DeepCompare] 发现差异:', differences);
+  }
+
+  return areEqual;
 };
 
 // 清理实体数据，移除状态字段和动态字段
 const cleanEntityForComparison = (entity: Entity): any => {
+  console.log('🧹 [CleanEntity] 清理前的实体:', {
+    id: entity.id,
+    keys: Object.keys(entity).sort(),
+    bundles: entity.bundles,
+    moduleIds: (entity as any).moduleIds,
+    attributes: entity.attributes?.map((attr) => ({
+      id: attr.id,
+      _indexId: (attr as any)._indexId,
+      _status: (attr as any)._status,
+    })),
+  });
+
   const cleaned = { ...entity };
 
-  // 移除实体级别的状态字段
+  // 移除实体级别的状态字段和索引字段
   delete (cleaned as any)._status;
   delete (cleaned as any)._editStatus;
   delete (cleaned as any)._originalId;
+  delete (cleaned as any)._indexId; // 🎯 修复：移除索引字段
+  delete (cleaned as any).moduleIds; // 🎯 修复：移除moduleIds字段，只比较bundles
 
-  // 清理属性数组中的状态字段
-  if (cleaned.attributes) {
-    cleaned.attributes = cleaned.attributes.map((attr: any) => {
-      const cleanedAttr = { ...attr };
-      delete cleanedAttr._status;
-      delete cleanedAttr._editStatus;
-      return cleanedAttr;
-    });
+  // 🎯 修复：统一处理bundles字段，undefined和空数组都视为空数组
+  if (!cleaned.bundles || !Array.isArray(cleaned.bundles) || cleaned.bundles.length === 0) {
+    cleaned.bundles = []; // 统一为空数组
+  } else {
+    cleaned.bundles = [...cleaned.bundles].sort(); // 排序
   }
+
+  // 清理属性数组中的状态字段和索引字段，并按id排序确保比较一致性
+  if (cleaned.attributes) {
+    cleaned.attributes = cleaned.attributes
+      .map((attr: any) => {
+        const cleanedAttr = { ...attr };
+        delete cleanedAttr._status;
+        delete cleanedAttr._editStatus;
+        delete cleanedAttr._indexId; // 🎯 修复：移除属性的索引字段
+        delete cleanedAttr._id; // 🎯 修复：移除可能存在的旧索引字段
+        return cleanedAttr;
+      })
+      .sort((a: any, b: any) => a.id.localeCompare(b.id)); // 按id排序
+  }
+
+  console.log('🧹 [CleanEntity] 清理后的实体:', {
+    id: entity.id,
+    keys: Object.keys(cleaned).sort(),
+    bundles: cleaned.bundles,
+    attributes: cleaned.attributes?.map((attr) => ({
+      id: attr.id,
+      keys: Object.keys(attr).sort(),
+    })),
+  });
 
   return cleaned;
 };
@@ -73,6 +154,9 @@ export interface CurrentEntityActions {
   // 保存/重置
   saveChanges: () => Promise<void>;
   resetChanges: () => void;
+
+  // 刷新实体数据
+  refreshEntity: (entityId: string) => Promise<void>;
 
   // 状态管理
   setError: (error: string | null) => void;
@@ -154,10 +238,36 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
         set((state) => {
           if (!state.editingEntity || !state.originalEntity) return;
 
+          console.log('🔄 [UpdateEntity] 更新实体字段:', {
+            entityId: state.editingEntity.id,
+            updates,
+            beforeUpdate: {
+              bundles: state.editingEntity.bundles,
+              moduleIds: (state.editingEntity as any).moduleIds,
+            },
+          });
+
           Object.assign(state.editingEntity, updates);
 
+          console.log('🔄 [UpdateEntity] 更新后状态:', {
+            entityId: state.editingEntity.id,
+            afterUpdate: {
+              bundles: state.editingEntity.bundles,
+              moduleIds: (state.editingEntity as any).moduleIds,
+            },
+          });
+
           // 🎯 修复：使用深度比较检查是否有变化
+          const wasDirty = state.isDirty;
           state.isDirty = !deepCompareEntities(state.editingEntity, state.originalEntity);
+
+          console.log('🔄 [UpdateEntity] Dirty状态变化:', {
+            entityId: state.editingEntity.id,
+            wasDirty,
+            nowDirty: state.isDirty,
+            stateChanged: wasDirty !== state.isDirty,
+          });
+
           state.error = null;
         });
       },
@@ -341,6 +451,77 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
           state.isSaving = saving;
         });
       },
+
+      // 刷新实体数据
+      refreshEntity: async (entityId) => {
+        const currentState = get();
+
+        set((state) => {
+          state.isSaving = true;
+          state.error = null;
+        });
+
+        try {
+          // 导入API服务
+          const { entityApi } = require('../services/api-service');
+
+          // 从API获取最新的实体数据
+          const refreshedEntity = await entityApi.getById(entityId);
+
+          if (!refreshedEntity) {
+            throw new Error('实体不存在');
+          }
+
+          // 确保实体有_indexId
+          if (!refreshedEntity._indexId) {
+            refreshedEntity._indexId = currentState.editingEntity?._indexId || nanoid();
+          }
+
+          // 确保属性有_indexId
+          if (refreshedEntity.attributes) {
+            refreshedEntity.attributes = refreshedEntity.attributes.map((attr: any) => ({
+              ...attr,
+              _indexId: attr._indexId || nanoid(),
+              _status: 'saved' as const,
+            }));
+          }
+
+          // 更新当前编辑的实体
+          set((state) => {
+            const updatedEntity = {
+              ...refreshedEntity,
+              _status: 'saved' as const,
+            };
+
+            state.originalEntity = cloneDeep(updatedEntity);
+            state.editingEntity = cloneDeep(updatedEntity);
+            state.isDirty = false;
+            state.isSaving = false;
+            state.error = null;
+          });
+
+          // 同时更新实体列表中的数据
+          const { useEntityListStore } = require('./entity-list');
+          const entityListStore = useEntityListStore.getState();
+          const entityInList = entityListStore.entities.find((e: Entity) => e.id === entityId);
+
+          if (entityInList && entityInList._indexId) {
+            entityListStore.updateEntity(entityInList._indexId, {
+              ...refreshedEntity,
+              _status: 'saved' as const,
+            });
+          }
+
+          console.log('✅ 实体数据刷新成功:', entityId);
+        } catch (error) {
+          console.error('❌ 实体数据刷新失败:', error);
+          set((state) => {
+            state.isSaving = false;
+            state.error = error instanceof Error ? error.message : 'Refresh failed';
+          });
+          throw error;
+        }
+      },
     })),
     { name: 'current-entity-store' }
   )
@@ -370,6 +551,7 @@ export const useCurrentEntityActions = () =>
       removeAttribute: state.removeAttribute,
       saveChanges: state.saveChanges,
       resetChanges: state.resetChanges,
+      refreshEntity: state.refreshEntity,
       setError: state.setError,
       setSaving: state.setSaving,
     }))

@@ -1,10 +1,20 @@
 import React, { useCallback, useMemo, useRef } from 'react';
 
-import { Button, Space, Typography, Input, Card, Popconfirm, Badge } from '@douyinfe/semi-ui';
+import {
+  Button,
+  Space,
+  Typography,
+  Input,
+  Card,
+  Popconfirm,
+  Badge,
+  Toast,
+} from '@douyinfe/semi-ui';
 import { IconSave, IconUndo, IconDelete, IconBranch } from '@douyinfe/semi-icons';
 
 import { UniversalPropertyTable } from '../bt/universal-property-table';
-import { useCurrentEntity, useCurrentEntityActions } from '../../stores';
+import { useGraphActions } from '../../stores/graph.store';
+import { useCurrentEntity, useCurrentEntityActions } from '../../stores/current-entity.store';
 import { useModuleStore, useGraphList } from '../../stores';
 import { useRouter } from '../../hooks/use-router';
 
@@ -32,6 +42,7 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
   const { updateProperty, saveChanges, resetChanges } = useCurrentEntityActions();
   const { modules } = useModuleStore();
   const { graphs } = useGraphList();
+  const { createGraph } = useGraphActions();
   const { navigate } = useRouter();
 
   // 防抖时间戳
@@ -40,9 +51,9 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
   // 🔑 使用CurrentEntityStore的editingEntity作为数据源
   const currentEntity = editingEntity || selectedEntity;
 
-  // 🔑 计算工作流统计信息
+  // 🔑 计算工作流统计信息 - 修改逻辑，始终显示工作流按钮
   const workflowStats = useMemo(() => {
-    if (!currentEntity) return { hasWorkflow: false, nodeCount: 0 };
+    if (!currentEntity) return { hasWorkflow: false, nodeCount: 0, showBadge: false };
 
     // 使用稳定的原始业务ID查找对应的工作流图
     const stableBusinessId = currentEntity._originalId || currentEntity.id;
@@ -55,7 +66,7 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
     return {
       hasWorkflow: nodeCount > 0,
       nodeCount,
-      showBadge: nodeCount > 1,
+      showBadge: nodeCount > 1, // 只有多于1个节点才显示徽章
     };
   }, [currentEntity, graphs]);
 
@@ -84,10 +95,36 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
     onUndo(); // 通知父组件
   }, [resetChanges, onUndo]);
 
-  // 跳转到工作流页面
-  const handleNavigateToWorkflow = useCallback(() => {
+  // 跳转到工作流页面或创建新工作流
+  const handleNavigateToWorkflow = useCallback(async () => {
     if (currentEntity) {
       const entityId = currentEntity._originalId || currentEntity.id;
+
+      // 如果没有工作流，先创建一个空的工作流图
+      if (!workflowStats.hasWorkflow) {
+        try {
+          console.log('🔍 [EntityDetail] 创建新工作流图:', { entityId });
+
+          // 创建空的工作流图
+          const newGraph = {
+            id: entityId,
+            name: `${currentEntity.name || entityId}的工作流`,
+            type: 'graph',
+            nodes: [],
+            edges: [],
+            description: `实体 ${currentEntity.name || entityId} 的工作流图`,
+          };
+
+          await createGraph(newGraph);
+
+          Toast.success('已创建新工作流，正在跳转...');
+        } catch (error) {
+          console.error('创建工作流失败:', error);
+          Toast.error('创建工作流失败: ' + (error instanceof Error ? error.message : '未知错误'));
+          return;
+        }
+      }
+
       console.log('🔍 [EntityDetail] 跳转到工作流页面:', {
         currentEntity,
         entityId,
@@ -96,7 +133,7 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
       });
       navigate({ route: 'entity-workflow', entityId });
     }
-  }, [currentEntity, navigate]);
+  }, [currentEntity, workflowStats.hasWorkflow, createGraph, navigate]);
 
   // 防抖版本的跳转函数
   const debouncedNavigateToWorkflow = useCallback(() => {
@@ -176,11 +213,9 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
                 >
                   撤销
                 </Button>
-                {workflowStats.hasWorkflow && (
-                  <Badge
-                    count={workflowStats.showBadge ? workflowStats.nodeCount : 0}
-                    type="primary"
-                  >
+                {/* 🔑 修改：所有实体都显示工作流按钮，节点数>1时才显示Badge */}
+                {workflowStats.showBadge ? (
+                  <Badge count={workflowStats.nodeCount} type="primary">
                     <Button
                       icon={<IconBranch />}
                       onClick={(e) => {
@@ -188,11 +223,21 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
                         debouncedNavigateToWorkflow();
                       }}
                       size="small"
-                      theme="outline"
                     >
                       工作流
                     </Button>
                   </Badge>
+                ) : (
+                  <Button
+                    icon={<IconBranch />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      debouncedNavigateToWorkflow();
+                    }}
+                    size="small"
+                  >
+                    工作流
+                  </Button>
                 )}
                 <Popconfirm
                   title="确定删除这个实体吗？"

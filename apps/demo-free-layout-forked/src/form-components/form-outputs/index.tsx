@@ -39,11 +39,12 @@ export function FormOutputs() {
 
   // 根据节点类型显示不同内容
   if (isStart) {
-    // 实体节点：显示实体属性
+    // 实体节点：显示实体属性，去掉过滤，设置为只读
     return (
       <UniversalPropertyTable
-        mode={isSidebar ? 'sidebar' : 'node'}
-        editable={isSidebar}
+        mode="node" // 始终使用node模式，确保只读
+        editable={false} // 明确设置为不可编辑
+        readonly={true} // 明确设置为只读
         showEntityProperties={true}
         showModuleProperties={false}
         entityTitle="实体属性"

@@ -225,10 +225,32 @@ const AttributeIdInput = React.memo(
     onFieldChange: (id: string, field: string, value: any) => void;
     readonly: boolean;
   }) => {
+    const { navigate } = useRouter();
+    const editingEntity = useCurrentEntityStore((state) => state.editingEntity);
     const value = record.id || '';
     const isModuleProperty = record.isModuleProperty || false;
 
+    // 检查是否为基础属性（id, name, description）
+    const isBasicProperty = ['id', 'name', 'description'].includes(record.id);
+
     if (readonlyProp) {
+      // 如果是基础属性ID且有实体ID，则显示为可点击链接
+      if (record.id === 'id' && editingEntity?.id) {
+        return (
+          <Text
+            link={{ href: `/entities/${editingEntity.id}` }}
+            style={{
+              fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+              fontSize: '12px',
+            }}
+            title="点击跳转到实体详情页面"
+          >
+            {value || '未设置'}
+          </Text>
+        );
+      }
+
+      // 其他属性显示为普通文本
       return (
         <Text
           style={{
@@ -269,10 +291,31 @@ const AttributeNameInput = React.memo(
     onFieldChange: (id: string, field: string, value: any) => void;
     readonly: boolean;
   }) => {
+    const { navigate } = useRouter();
+    const editingEntity = useCurrentEntityStore((state) => state.editingEntity);
     const value = record.name || '';
     const isModuleProperty = record.isModuleProperty || false;
 
+    // 检查是否为基础属性（id, name, description）
+    const isBasicProperty = ['id', 'name', 'description'].includes(record.id);
+
     if (readonlyProp) {
+      // 如果是基础属性name且有实体ID，则显示为可点击链接
+      if (record.id === 'name' && editingEntity?.id) {
+        return (
+          <Text
+            link={{ href: `/entities/${editingEntity.id}` }}
+            style={{
+              fontSize: '13px',
+            }}
+            title="点击跳转到实体详情页面"
+          >
+            {value || '未设置'}
+          </Text>
+        );
+      }
+
+      // 其他属性显示为普通文本
       return (
         <Text
           style={{
@@ -300,6 +343,41 @@ const AttributeNameInput = React.memo(
   }
 );
 AttributeNameInput.displayName = 'AttributeNameInput';
+
+// 描述显示组件
+const AttributeDescriptionDisplay = React.memo(
+  ({ record, readonly: readonlyProp }: { record: ExtendedAttribute; readonly: boolean }) => {
+    const value = record.description || '';
+
+    if (readonlyProp) {
+      return (
+        <Text
+          style={{
+            fontSize: '13px',
+            color: 'var(--semi-color-text-1)',
+            wordBreak: 'break-word',
+          }}
+        >
+          {value || '无描述'}
+        </Text>
+      );
+    }
+
+    // 非只读模式下，这里可以扩展为可编辑的组件
+    return (
+      <Text
+        style={{
+          fontSize: '13px',
+          color: 'var(--semi-color-text-1)',
+          wordBreak: 'break-word',
+        }}
+      >
+        {value || '无描述'}
+      </Text>
+    );
+  }
+);
+AttributeDescriptionDisplay.displayName = 'AttributeDescriptionDisplay';
 
 // 内联NodeModuleDisplay组件
 const NodeModuleDisplay: React.FC<{ modules: NodeModuleData[] }> = ({ modules }) => {
@@ -672,15 +750,21 @@ export const ModulePropertyTreeTable: React.FC = () => {
       if (!module) return;
 
       const currentBundles = editingEntity.bundles || [];
+      const currentModuleIds = editingEntity.moduleIds || [];
       let newBundles: string[];
+      let newModuleIds: string[];
 
       if (checked) {
-        // 添加模块关联 - 使用模块的业务ID
-        newBundles = [...currentBundles, module.id];
+        // 添加模块关联
+        newBundles = [...currentBundles, module.id]; // 使用业务ID
+        newModuleIds = [...currentModuleIds, module._indexId]; // 使用索引ID
       } else {
         // 移除模块关联 - 同时移除可能的不同格式ID
         newBundles = currentBundles.filter(
           (bundleId) => bundleId !== module.id && bundleId !== module._indexId
+        );
+        newModuleIds = currentModuleIds.filter(
+          (moduleId) => moduleId !== module._indexId && moduleId !== module.id
         );
       }
 
@@ -690,6 +774,8 @@ export const ModulePropertyTreeTable: React.FC = () => {
         checked,
         oldBundles: currentBundles,
         newBundles,
+        oldModuleIds: currentModuleIds,
+        newModuleIds,
       });
 
       // 更新本地选中状态
@@ -698,8 +784,11 @@ export const ModulePropertyTreeTable: React.FC = () => {
         : selectedModules.filter((id) => id !== moduleNanoid);
       setSelectedModules(newSelectedModules);
 
-      // 更新实体的bundles字段
-      updateEntity({ bundles: newBundles });
+      // 🎯 修复：同时更新bundles和moduleIds字段
+      updateEntity({
+        bundles: newBundles,
+        moduleIds: newModuleIds,
+      });
     },
     [editingEntity, modules, selectedModules, updateEntity]
   );
@@ -788,7 +877,7 @@ export const ModulePropertyTreeTable: React.FC = () => {
       {
         title: 'ID',
         key: 'id',
-        width: 160,
+        width: 100,
         ellipsis: true,
         render: (_: any, record: ModuleTreeData | ModulePropertyData) => {
           const displayId = record.isAttribute
@@ -827,7 +916,7 @@ export const ModulePropertyTreeTable: React.FC = () => {
       {
         title: '名称',
         key: 'name',
-        width: 180,
+        width: 150,
         ellipsis: true,
         render: (_: any, record: ModuleTreeData | ModulePropertyData) => {
           // 🔧 如果是模块行，让名称可以点击跳转
@@ -852,6 +941,17 @@ export const ModulePropertyTreeTable: React.FC = () => {
             </div>
           );
         },
+      },
+      {
+        title: '描述',
+        key: 'description',
+        width: 200,
+        render: (_: any, record: ModuleTreeData | ModulePropertyData) => (
+          <AttributeDescriptionDisplay
+            record={record as ExtendedAttribute}
+            readonly={record.isAttribute}
+          />
+        ),
       },
       {
         // title: '操作',
@@ -952,7 +1052,7 @@ export const ModulePropertyTreeTable: React.FC = () => {
       {
         title: 'ID',
         key: 'id',
-        width: 150,
+        width: 100,
         render: (_: any, record: ModuleTreeData | ModulePropertyData) => {
           if (record.isAttribute) {
             // 属性行：可编辑的属性ID输入框
@@ -977,7 +1077,7 @@ export const ModulePropertyTreeTable: React.FC = () => {
       {
         title: '名称',
         key: 'name',
-        width: 180,
+        width: 150,
         render: (_: any, record: ModuleTreeData | ModulePropertyData) => {
           if (record.isAttribute) {
             // 属性行：可编辑的属性名称输入框
@@ -998,6 +1098,17 @@ export const ModulePropertyTreeTable: React.FC = () => {
             );
           }
         },
+      },
+      {
+        title: '描述',
+        key: 'description',
+        width: 200,
+        render: (_: any, record: ModuleTreeData | ModulePropertyData) => (
+          <AttributeDescriptionDisplay
+            record={record as ExtendedAttribute}
+            readonly={record.isAttribute}
+          />
+        ),
       },
       {
         title: () => (
@@ -1481,7 +1592,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
       {
         title: 'ID',
         key: 'id',
-        width: 120,
+        width: 100,
         render: (_: any, record: Attribute) => (
           <AttributeIdInput
             record={record}
@@ -1493,7 +1604,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
       {
         title: '名称',
         key: 'name',
-        width: 200,
+        width: 150,
         render: (_: any, record: Attribute) => (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <AttributeNameInput
@@ -1536,7 +1647,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
             ''
           ),
         key: 'controls',
-        width: 150,
+        width: 40,
         render: (_: any, record: Attribute) => (
           <Space>
             <EntityPropertyTypeSelector
@@ -1717,7 +1828,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
                 borderRadius: '6px',
                 border: '1px solid var(--semi-color-border)',
                 overflow: 'hidden',
-                width: '100%',
+                // width: '290',
                 tableLayout: 'fixed',
               }}
             />

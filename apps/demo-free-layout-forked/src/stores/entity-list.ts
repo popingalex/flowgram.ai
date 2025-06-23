@@ -241,6 +241,9 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
         _indexId: entity._indexId || nanoid(),
         // 🔑 保存原始业务ID用于行为树关联 - 使用$id字段
         _status: 'saved' as const, // 🎯 从后台加载的实体都是已保存状态
+        // 🎯 修复：确保bundles和moduleIds字段都有默认空数组值
+        bundles: entity.bundles || [],
+        moduleIds: (entity as any).moduleIds || [],
         attributes: (entity.attributes || []).map((attr) => ({
           ...attr,
           _indexId: attr._indexId || nanoid(),
