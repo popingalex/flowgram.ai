@@ -355,7 +355,7 @@ const useGraphStoreBase = create<GraphStore>()(
         set((state) => {
           state.graphs = graphs;
         });
-        console.log('🔄 [GraphStore] 更新graphs数据，共', graphs.length, '个');
+        console.log('🔄 [GraphStore] 更新graphs数据:', graphs);
       },
     })),
     {

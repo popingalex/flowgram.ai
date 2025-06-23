@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
-import { Layout, Typography } from '@douyinfe/semi-ui';
+import { Typography } from '@douyinfe/semi-ui';
 
 import { useExpressionStore } from '../../stores/expression.store';
 import { useRouter } from '../../hooks/use-router';
 import { ApiSidebar } from './components/api-sidebar';
-import { ApiDetailPanel } from './components/api-detail-panel';
 
 const { Title, Text } = Typography;
 
@@ -37,21 +36,23 @@ export const ExpressionListPage: React.FC = () => {
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* 页面标题 */}
       <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--semi-color-border)' }}>
-        <Title heading={4} style={{ margin: 0 }}>
-          远程服务
-        </Title>
-        <Text type="secondary">管理远程服务接口</Text>
-        {/* 添加调试信息显示 */}
-        {selectedExpressionId && (
-          <Text type="tertiary" style={{ fontSize: '12px', marginLeft: '16px' }}>
-            当前选中: {selectedExpressionId}
-          </Text>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <Title heading={4} style={{ margin: 0 }}>
+              远程服务
+            </Title>
+            {/* 添加调试信息显示 */}
+            {selectedExpressionId && (
+              <Text type="tertiary" style={{ fontSize: '12px', marginTop: '4px' }}>
+                当前选中: {selectedExpressionId}
+              </Text>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* 主要内容区域 */}
       <div style={{ flex: 1 }}>
-        {/* Sidebar中已经包含了左侧列表和右侧详情 */}
         <ApiSidebar selectedExpressionId={selectedExpressionId} />
       </div>
     </div>

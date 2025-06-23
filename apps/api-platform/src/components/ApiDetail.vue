@@ -193,7 +193,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, watch } from "vue";
 import { Plus, Delete, Clock } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { nanoid } from "nanoid";

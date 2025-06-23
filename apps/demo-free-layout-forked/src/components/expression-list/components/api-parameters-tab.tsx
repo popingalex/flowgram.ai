@@ -142,18 +142,12 @@ export const ApiParametersTab: React.FC<ApiParametersTabProps> = ({
   // 表格列定义
   const columns = [
     // 第一列：展开按钮
-    {
-      key: 'expand',
-      title: '',
-      width: 40,
-      render: (_: any, record: any, index: number, { expandIcon }: any) => expandIcon,
-    },
     // 第二列：参数ID
     {
       title: '参数ID',
       dataIndex: 'id',
       key: 'id',
-      width: 150,
+      width: 180,
       render: (id: string, record: any) => {
         if (record._isGroup) {
           return (
@@ -184,41 +178,11 @@ export const ApiParametersTab: React.FC<ApiParametersTabProps> = ({
         );
       },
     },
-    // 第三列：参数名称
-    {
-      title: '参数名称',
-      dataIndex: 'name',
-      key: 'name',
-      width: 150,
-      render: (name: string, record: any) => {
-        if (record._isGroup) return null;
-
-        // 找到当前参数数据
-        const currentParam = editingExpression?.inputs?.find(
-          (param: any) => param._indexId === record._indexId
-        );
-
-        return (
-          <Input
-            key={record._indexId}
-            value={currentParam?.name || ''}
-            onChange={(value) => {
-              updateParameterProperty(record._indexId, 'name', value);
-            }}
-            onClick={(e) => e.stopPropagation()}
-            size="small"
-            placeholder="参数名称"
-            style={{ fontSize: '13px' }}
-          />
-        );
-      },
-    },
     // 第三列：类型
     {
-      title: '类型',
       dataIndex: 'type',
       key: 'type',
-      width: 120,
+      width: 40,
       render: (type: string, record: any) => {
         if (record._isGroup) return null;
 
@@ -239,13 +203,42 @@ export const ApiParametersTab: React.FC<ApiParametersTabProps> = ({
         );
       },
     },
+    // 第三列：参数名称
+    // {
+    //   title: '参数名称',
+    //   dataIndex: 'name',
+    //   key: 'name',
+    //   width: 150,
+    //   render: (name: string, record: any) => {
+    //     if (record._isGroup) return null;
+
+    //     // 找到当前参数数据
+    //     const currentParam = editingExpression?.inputs?.find(
+    //       (param: any) => param._indexId === record._indexId
+    //     );
+
+    //     return (
+    //       <Input
+    //         key={record._indexId}
+    //         value={currentParam?.name || ''}
+    //         onChange={(value) => {
+    //           updateParameterProperty(record._indexId, 'name', value);
+    //         }}
+    //         onClick={(e) => e.stopPropagation()}
+    //         size="small"
+    //         placeholder="参数名称"
+    //         style={{ fontSize: '13px' }}
+    //       />
+    //     );
+    //   },
+    // },
     // 第四列：描述
     // 第六列：默认值
     {
       title: '默认值',
       dataIndex: 'value',
       key: 'value',
-      width: 150,
+      width: 320,
       render: (value: any, record: any) => {
         if (record._isGroup) return null;
 
@@ -289,7 +282,6 @@ export const ApiParametersTab: React.FC<ApiParametersTabProps> = ({
     {
       title: '',
       key: 'actions',
-      width: 120,
       render: (_: any, record: any) => {
         if (record._isGroup) {
           return (
@@ -336,9 +328,8 @@ export const ApiParametersTab: React.FC<ApiParametersTabProps> = ({
           pagination={false}
           size="small"
           childrenRecordName="children"
-          expandIcon={false}
           expandRowByClick={true}
-          hideExpandedColumn={true}
+          hideExpandedColumn={false}
           indentSize={0}
           defaultExpandAllRows={true}
           className="api-parameters-table"

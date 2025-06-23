@@ -140,13 +140,15 @@ export const useModuleStore = create<ModuleStore>()(
             return {
               ...m,
               _indexId: m._indexId || nanoid(),
-              _originalId: m._originalId || m.id, // 🔑 保存原始业务ID用于API调用
+              ...((m as any)._originalId
+                ? { _originalId: (m as any)._originalId }
+                : { _originalId: m.id }), // 🔑 保存原始业务ID用于API调用
               attributes: (m.attributes || []).map((a) => ({
                 ...a,
                 _indexId: a._indexId || nanoid(),
                 displayId: a.displayId || a.id.split('/').pop() || a.id,
               })),
-            };
+            } as Module;
           });
 
           // 🎯 按id排序模块，确保id不为空
@@ -218,9 +220,9 @@ export const useModuleStore = create<ModuleStore>()(
           const moduleIndex = state.modules.findIndex((m) => m._indexId === indexId);
           if (moduleIndex !== -1) {
             (state.modules[moduleIndex] as any)[field] = value;
-            // 标记为dirty状态
+            // 标记为modified状态
             if (state.modules[moduleIndex]._status !== 'new') {
-              state.modules[moduleIndex]._status = 'dirty';
+              state.modules[moduleIndex]._status = 'modified';
             }
           }
         });
@@ -236,13 +238,13 @@ export const useModuleStore = create<ModuleStore>()(
             );
             if (attributeIndex !== -1) {
               (state.modules[moduleIndex].attributes[attributeIndex] as any)[field] = value;
-              // 标记属性为dirty状态
+              // 标记属性为modified状态
               if (state.modules[moduleIndex].attributes[attributeIndex]._status !== 'new') {
-                state.modules[moduleIndex].attributes[attributeIndex]._status = 'dirty';
+                state.modules[moduleIndex].attributes[attributeIndex]._status = 'modified';
               }
-              // 标记模块为dirty状态
+              // 标记模块为modified状态
               if (state.modules[moduleIndex]._status !== 'new') {
-                state.modules[moduleIndex]._status = 'dirty';
+                state.modules[moduleIndex]._status = 'modified';
               }
             }
           }
@@ -273,7 +275,7 @@ export const useModuleStore = create<ModuleStore>()(
             savedModule = await moduleApi.create(module);
           } else {
             // 🔑 修复：使用原始ID作为API参数，新ID在请求体中
-            const originalId = module._originalId || module.id;
+            const originalId = (module as any)._originalId || module.id;
             console.log('📝 更新模块:', { originalId, newId: module.id });
             savedModule = await moduleApi.update(originalId, module);
           }
@@ -460,7 +462,7 @@ export const useModuleStore = create<ModuleStore>()(
             console.log('✅ ModuleStore: 新增模块保存成功');
           } else {
             // 🔑 修复：修改模块时使用原始ID作为API参数
-            const originalId = module._originalId || module.id;
+            const originalId = (module as any)._originalId || module.id;
             console.log('📝 ModuleStore: 更新模块', { originalId, newId: module.id });
             await moduleApi.update(originalId, module);
             console.log('✅ ModuleStore: 更新模块保存成功');
@@ -472,7 +474,7 @@ export const useModuleStore = create<ModuleStore>()(
             if (moduleIndex > -1) {
               state.modules[moduleIndex] = {
                 ...state.modules[moduleIndex],
-                _status: undefined, // 清除状态标记，表示已保存
+                _status: 'saved', // 标记为已保存状态
               };
             }
           });
@@ -608,9 +610,9 @@ export const useModuleStore = create<ModuleStore>()(
 
           state.modules[moduleIndex].attributes.push(newAttribute);
 
-          // 标记模块为dirty（如果不是新增状态）
+          // 标记模块为modified（如果不是新增状态）
           if (state.modules[moduleIndex]._status !== 'new') {
-            state.modules[moduleIndex]._status = 'dirty';
+            state.modules[moduleIndex]._status = 'modified';
           }
 
           console.log('✅ 本地添加属性到模块:', moduleIndexId, newAttribute._indexId);
@@ -632,9 +634,9 @@ export const useModuleStore = create<ModuleStore>()(
           );
 
           if (state.modules[moduleIndex].attributes.length < originalLength) {
-            // 标记模块为dirty（如果不是新增状态）
+            // 标记模块为modified（如果不是新增状态）
             if (state.modules[moduleIndex]._status !== 'new') {
-              state.modules[moduleIndex]._status = 'dirty';
+              state.modules[moduleIndex]._status = 'modified';
             }
             console.log('✅ 本地删除模块属性:', moduleIndexId, attributeIndexId);
           } else {

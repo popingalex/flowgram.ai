@@ -248,7 +248,7 @@ export const InvokeFunctionSelector: React.FC<InvokeFunctionSelectorProps> = ({
             setExpandedKeys(filteredExpandedKeys);
             console.log('🔍 搜索关键词:', inputValue);
             console.log('🔍 自动展开的节点:', filteredExpandedKeys);
-            console.log('🔍 过滤后的节点数量:', filteredNodes?.length || 0);
+            console.log('🔍 过滤后的节点:', filteredNodes);
           } else if (!inputValue) {
             // 清空搜索时，恢复原来的展开状态
             setExpandedKeys([]);

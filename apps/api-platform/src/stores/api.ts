@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { nanoid } from 'nanoid'
-import type { ApiItem, ApiParameter, ApiTestResult } from '../types/api'
+import type { ApiItem, ApiTestResult } from '../types/api'
 
 export const useApiStore = defineStore('api', () => {
   // 状态
@@ -99,7 +99,7 @@ export const useApiStore = defineStore('api', () => {
     loading.value = false
   }
 
-  const testApi = async (api: ApiItem) => {
+  const testApi = async (_api: ApiItem) => {
     loading.value = true
     await new Promise(resolve => setTimeout(resolve, 1000))
     loading.value = false

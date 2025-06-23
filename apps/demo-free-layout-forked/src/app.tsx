@@ -45,16 +45,19 @@ import {
 } from './stores';
 import { toggleMockMode, getApiMode } from './services/api-service';
 import { useRouter, RouteType } from './hooks/use-router';
+import { RouterProvider } from './hooks/use-router';
 import { Editor } from './editor';
 import { TestNewArchitecture } from './components/test-new-architecture';
 // import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
 import { IndexedStoreTest } from './components/test/indexed-store-test';
+import { ModuleManagementPage } from './components/module-management';
 import { ModuleListPage } from './components/module-list-page';
 import { EnumStoreProvider } from './components/ext/type-selector-ext/enum-store';
 import { ExpressionListPage } from './components/expression-list';
 // import { BehaviorTestPage } from './components/ext/behavior-test'; // 已删除
 import { EntityWorkflowSyncer } from './components/entity-workflow-syncer';
 import { EntitySelector } from './components/entity-selector';
+import { EntityManagementPage } from './components/entity-management';
 import { EntityListPage } from './components/entity-list-page';
 import { ApiTestPanel } from './components/api-test-panel';
 // import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
@@ -230,6 +233,13 @@ const AppContent: React.FC = () => {
   // 移除独立的currentPage状态，直接使用routeState.route
   const currentPage: RouteType = routeState.route;
 
+  // 🔍 添加路由状态调试
+  console.log('🔍 [AppContent] 路由状态:', {
+    routeState,
+    currentPage,
+    url: window.location.href,
+  });
+
   const { entities, loading } = useEntityList();
   const { selectedEntityId } = useCurrentEntity();
   const { selectEntity } = useCurrentEntityActions();
@@ -254,11 +264,6 @@ const AppContent: React.FC = () => {
   const testEntitySwitch = React.useCallback(() => {
     console.log('=== 测试实体切换 ===');
     console.log('当前选中实体ID:', selectedEntityId);
-    console.log('可用实体数量:', entities.length);
-    console.log(
-      '所有实体:',
-      entities.map((e) => ({ id: e.id, name: e.name, _indexId: e._indexId }))
-    );
 
     // 查找task实体
     const taskEntity = entities.find((e) => e.id === 'task');
@@ -277,16 +282,24 @@ const AppContent: React.FC = () => {
     }
   }, [entities, selectedEntityId, selectEntity]);
 
-  // 自动选择第一个实体 - 只执行一次
+  // 自动选择第一个实体 - 只在实体工作流页面执行一次
   React.useEffect(() => {
-    if (!loading && entities.length > 0 && !selectedEntityId && !autoSelectedRef.current) {
+    // 🔑 修复：只在实体工作流页面执行自动选择，避免干扰其他页面
+    if (
+      !loading &&
+      entities.length > 0 &&
+      !selectedEntityId &&
+      !autoSelectedRef.current &&
+      currentPage === 'entity-workflow' // 🎯 关键修复：只在工作流页面执行
+    ) {
       // 优先选择vehicle实体，如果没有则选择第一个
       const vehicleEntity = entities.find(
         (e) => (e as any).$id === 'vehicle' || e.id === 'vehicle'
       );
       const defaultEntity = vehicleEntity || entities[0];
 
-      console.log('[App] 自动选择实体:', {
+      console.log('[App] 自动选择实体 (仅工作流页面):', {
+        currentPage,
         totalEntities: entities.length,
         selectedEntity: defaultEntity,
         entityBusinessId: (defaultEntity as any).$id || defaultEntity.id,
@@ -295,7 +308,7 @@ const AppContent: React.FC = () => {
       selectEntity(defaultEntity);
       autoSelectedRef.current = true;
     }
-  }, [entities.length, loading, selectedEntityId]); // 移除selectEntity依赖，只依赖数据状态
+  }, [entities.length, loading, selectedEntityId, currentPage]); // 添加currentPage依赖
 
   // 处理API模式切换
   const handleToggleApiMode = React.useCallback(() => {
@@ -368,11 +381,11 @@ const AppContent: React.FC = () => {
 
   // 渲染主要内容区域
   const renderMainContent = () => {
-    switch (currentPage) {
+    switch (routeState.route) {
       case 'entities':
-        return <EntityListPage onViewWorkflow={handleViewWorkflow} />;
+        return <EntityManagementPage />;
       case 'modules':
-        return <ModuleListPage />;
+        return <ModuleManagementPage />;
       case 'exp-remote':
         return <ExpressionListPage />;
       case 'exp-local':
@@ -389,14 +402,16 @@ const AppContent: React.FC = () => {
         return <div>测试页面已删除</div>;
       case 'test-variable-selector':
         return <div>VariableSelector测试页面</div>;
+      case 'test-properties':
+        return <div>属性测试页面</div>;
       default:
-        return <div>未知页面: {currentPage}</div>;
+        return <EntityManagementPage />;
     }
   };
 
   return (
-    <Layout style={{ height: '100vh' }}>
-      <Header style={{ backgroundColor: 'var(--semi-color-bg-1)' }}>
+    <Layout style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Header style={{ backgroundColor: 'var(--semi-color-bg-1)', flexShrink: 0 }}>
         <Nav
           mode="horizontal"
           selectedKeys={[currentPage]}
@@ -470,20 +485,22 @@ const AppContent: React.FC = () => {
           ]}
         />
       </Header>
-      <Content>{renderMainContent()}</Content>
+      <Content style={{ flex: 1, overflow: 'hidden' }}>{renderMainContent()}</Content>
     </Layout>
   );
 };
 
 export const App: React.FC = () => (
-  <EnumStoreProvider>
-    <ModuleStoreProvider>
-      <DataStoreInitializer>
-        <EntityWorkflowSyncer />
-        <AppContent />
-      </DataStoreInitializer>
-    </ModuleStoreProvider>
-  </EnumStoreProvider>
+  <RouterProvider>
+    <EnumStoreProvider>
+      <ModuleStoreProvider>
+        <DataStoreInitializer>
+          <EntityWorkflowSyncer />
+          <AppContent />
+        </DataStoreInitializer>
+      </ModuleStoreProvider>
+    </EnumStoreProvider>
+  </RouterProvider>
 );
 
 const app = createRoot(document.getElementById('root')!);

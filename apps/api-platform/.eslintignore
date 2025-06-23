@@ -1,0 +1,9 @@
+*.d.ts
+auto-imports.d.ts
+components.d.ts
+dist/
+node_modules/
+src/**/*.ts
+src/**/*.tsx
+src/**/*.vue
+package.json

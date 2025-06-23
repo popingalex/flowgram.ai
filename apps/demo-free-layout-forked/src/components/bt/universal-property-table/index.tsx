@@ -26,6 +26,7 @@ import {
   IconLink,
   IconSave,
   IconUndo,
+  IconSearch,
 } from '@douyinfe/semi-icons';
 
 // 移除外部组件引用，改为内联实现
@@ -33,6 +34,7 @@ import { EntityPropertyTypeSelector } from '../../ext/type-selector-ext';
 import { TypedParser } from '../../../typings/mas/typed';
 import { useModuleStore, useCurrentEntityActions, useCurrentEntityStore } from '../../../stores';
 import type { Attribute } from '../../../services/types';
+import { useRouter } from '../../../hooks/use-router';
 
 // 内联组件的类型定义
 export interface NodeModuleData {
@@ -223,7 +225,7 @@ const AttributeIdInput = React.memo(
     onFieldChange: (id: string, field: string, value: any) => void;
     readonly: boolean;
   }) => {
-    const value = (record as any).$id || record.id || '';
+    const value = record.id || '';
     const isModuleProperty = record.isModuleProperty || false;
 
     if (readonlyProp) {
@@ -243,7 +245,7 @@ const AttributeIdInput = React.memo(
     return (
       <Input
         value={value}
-        onChange={(newValue) => onFieldChange(record._indexId, '$id', newValue)}
+        onChange={(newValue) => onFieldChange(record._indexId, 'id', newValue)}
         size="small"
         readOnly={isModuleProperty}
         placeholder="属性ID"
@@ -267,7 +269,7 @@ const AttributeNameInput = React.memo(
     onFieldChange: (id: string, field: string, value: any) => void;
     readonly: boolean;
   }) => {
-    const value = (record as any).$name || record.name || '';
+    const value = record.name || '';
     const isModuleProperty = record.isModuleProperty || false;
 
     if (readonlyProp) {
@@ -286,7 +288,7 @@ const AttributeNameInput = React.memo(
     return (
       <Input
         value={value}
-        onChange={(newValue) => onFieldChange(record._indexId, '$name', newValue)}
+        onChange={(newValue) => onFieldChange(record._indexId, 'name', newValue)}
         size="small"
         readOnly={isModuleProperty}
         placeholder="属性名称"
@@ -454,6 +456,12 @@ export const ModulePropertyTreeTable: React.FC = () => {
   } = useModuleStore();
   const editingEntity = useCurrentEntityStore(useShallow((state) => state.editingEntity));
   const { updateEntity } = useCurrentEntityActions();
+
+  // 🔧 添加导航功能
+  const { navigate } = useRouter();
+
+  // 🔧 添加搜索功能
+  const [moduleSearchText, setModuleSearchText] = React.useState('');
 
   // 🎯 同步选中状态 - 根据实体的bundles字段
   React.useEffect(() => {
@@ -655,60 +663,154 @@ export const ModulePropertyTreeTable: React.FC = () => {
     [modules, deleteModule, setSelectedModules, selectedModules, updateEntity]
   );
 
-  // 只显示已关联的模块数据
-  const linkedModuleTreeData = React.useMemo(() => {
+  // 🎯 处理模块关联状态变化
+  const handleModuleAssociation = React.useCallback(
+    (moduleNanoid: string, checked: boolean) => {
+      if (!editingEntity) return;
+
+      const module = modules.find((m) => m._indexId === moduleNanoid);
+      if (!module) return;
+
+      const currentBundles = editingEntity.bundles || [];
+      let newBundles: string[];
+
+      if (checked) {
+        // 添加模块关联 - 使用模块的业务ID
+        newBundles = [...currentBundles, module.id];
+      } else {
+        // 移除模块关联 - 同时移除可能的不同格式ID
+        newBundles = currentBundles.filter(
+          (bundleId) => bundleId !== module.id && bundleId !== module._indexId
+        );
+      }
+
+      console.log('🔧 模块关联变更:', {
+        moduleId: module.id,
+        moduleNanoid,
+        checked,
+        oldBundles: currentBundles,
+        newBundles,
+      });
+
+      // 更新本地选中状态
+      const newSelectedModules = checked
+        ? [...selectedModules, moduleNanoid]
+        : selectedModules.filter((id) => id !== moduleNanoid);
+      setSelectedModules(newSelectedModules);
+
+      // 更新实体的bundles字段
+      updateEntity({ bundles: newBundles });
+    },
+    [editingEntity, modules, selectedModules, updateEntity]
+  );
+
+  // 显示所有模块数据，用于模块关联功能
+  const allModuleTreeData = React.useMemo(() => {
     const entityBundles = editingEntity?.bundles || [];
 
-    // 🎯 导入IdTransform工具
-    const { IdTransform } = require('../../../utils/id-transform');
+    // 🔧 添加搜索过滤逻辑
+    const filteredModules = moduleSearchText.trim()
+      ? modules.filter((module) => {
+          const searchLower = moduleSearchText.toLowerCase();
+          // 搜索模块ID、名称
+          const moduleMatch =
+            module.id.toLowerCase().includes(searchLower) ||
+            (module.name && module.name.toLowerCase().includes(searchLower));
+          // 搜索模块属性
+          const attrMatch = module.attributes.some(
+            (attr) =>
+              attr.id.toLowerCase().includes(searchLower) ||
+              (attr.name && attr.name.toLowerCase().includes(searchLower))
+          );
+          return moduleMatch || attrMatch;
+        })
+      : modules;
 
-    return modules
-      .filter((module) =>
-        // 🎯 使用统一的查找逻辑
-        entityBundles.some((bundleId) => bundleId === module.id || bundleId === module._indexId)
-      )
-      .map((module) => {
-        const moduleKey = `module_${module._indexId || module.id}`;
+    return filteredModules.map((module) => {
+      const moduleKey = `module_${module._indexId || module.id}`;
+      const isAssociated = entityBundles.includes(module.id);
 
-        const children: ModulePropertyData[] = module.attributes.map((attr) => ({
-          key: `${moduleKey}_${attr._indexId || attr.id}`,
-          id: `${module.id}/${attr.id}`,
-          name: attr.name || attr.id,
-          type: attr.type,
-          description: attr.description,
-          isAttribute: true,
-          parentKey: moduleKey,
-          _indexId: attr._indexId || nanoid(),
-          isSelected: true,
-          moduleId: module.id,
-          displayId: attr.displayId || attr.id,
-        }));
+      // 🔧 修复：所有模块都显示属性，无论是否关联
+      const children: ModulePropertyData[] = module.attributes.map((attr) => ({
+        key: `${moduleKey}_${attr._indexId || attr.id}`,
+        id: `${module.id}/${attr.id}`,
+        name: attr.name || attr.id,
+        type: attr.type,
+        description: attr.description,
+        isAttribute: true,
+        parentKey: moduleKey,
+        _indexId: attr._indexId || nanoid(),
+        isSelected: true,
+        moduleId: module.id,
+        displayId: attr.displayId || attr.id,
+      }));
 
-        return {
-          key: moduleKey,
-          id: module.id,
-          name: module.name,
-          attributeCount: module.attributes.length,
-          children,
-          isAttribute: false,
-          _indexId: module._indexId || nanoid(),
-          isSelected: true,
-        };
-      });
-  }, [modules, editingEntity?.bundles]);
+      return {
+        key: moduleKey,
+        id: module.id,
+        name: module.name,
+        attributeCount: module.attributes.length,
+        children,
+        isAttribute: false,
+        _indexId: module._indexId || nanoid(),
+        isSelected: isAssociated,
+      };
+    });
+  }, [modules, editingEntity?.bundles, moduleSearchText]);
 
-  // 边栏表格列配置
+  // 边栏表格列配置 - 支持模块关联/取消关联
   const sidebarColumns = React.useMemo(
     () => [
       {
+        // title: '选择',
+        key: 'select',
+        width: 40,
+        render: (_: any, record: ModuleTreeData | ModulePropertyData) => {
+          if (record.isAttribute) {
+            // 属性行：不显示checkbox
+            return null;
+          } else {
+            // 模块行：显示checkbox用于关联/取消关联
+            const moduleData = record as ModuleTreeData;
+            const isAssociated = editingEntity?.bundles?.includes(moduleData.id) || false;
+            return (
+              <Checkbox
+                checked={isAssociated}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  handleModuleAssociation(moduleData._indexId, e.target.checked || false);
+                }}
+              />
+            );
+          }
+        },
+      },
+      {
         title: 'ID',
         key: 'id',
-        width: 120,
+        width: 160,
         ellipsis: true,
         render: (_: any, record: ModuleTreeData | ModulePropertyData) => {
           const displayId = record.isAttribute
             ? (record as ModulePropertyData).displayId || record.id
             : record.id;
+
+          // 🔧 如果是模块行，让ID可以点击跳转
+          if (!record.isAttribute) {
+            const moduleData = record as ModuleTreeData;
+            return (
+              <Typography.Text
+                link={{ href: `/modules/${moduleData.id}` }}
+                style={{
+                  fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                  fontSize: '12px',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {displayId}
+              </Typography.Text>
+            );
+          }
 
           return (
             <span
@@ -725,30 +827,36 @@ export const ModulePropertyTreeTable: React.FC = () => {
       {
         title: '名称',
         key: 'name',
-        width: 200,
+        width: 180,
         ellipsis: true,
-        render: (_: any, record: ModuleTreeData | ModulePropertyData) => (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: '13px' }}>{record.name}</span>
-          </div>
-        ),
+        render: (_: any, record: ModuleTreeData | ModulePropertyData) => {
+          // 🔧 如果是模块行，让名称可以点击跳转
+          if (!record.isAttribute) {
+            const moduleData = record as ModuleTreeData;
+            return (
+              <Typography.Text
+                link={{ href: `/modules/${moduleData.id}` }}
+                style={{
+                  fontSize: '13px',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {record.name}
+              </Typography.Text>
+            );
+          }
+
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: '13px' }}>{record.name}</span>
+            </div>
+          );
+        },
       },
       {
-        title: () => (
-          <Button
-            size="small"
-            icon={<IconSetting />}
-            type="primary"
-            onClick={() => {
-              setFocusModuleId(undefined);
-              setConfigModalVisible(true);
-            }}
-          >
-            配置模块
-          </Button>
-        ),
+        // title: '操作',
         key: 'controls',
-        width: 150,
+        // width: 120,
         render: (_: any, record: ModuleTreeData | ModulePropertyData) => {
           if (record.isAttribute) {
             // 属性行：显示类型选择器（只读）
@@ -762,26 +870,13 @@ export const ModulePropertyTreeTable: React.FC = () => {
                 <Tag size="small" color="cyan">
                   {moduleData.attributeCount}
                 </Tag>
-                <Tooltip content="查看模块详情">
-                  <Button
-                    theme="borderless"
-                    type="tertiary"
-                    size="small"
-                    icon={<IconLink />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFocusModuleId(moduleData.id);
-                      setConfigModalVisible(true);
-                    }}
-                  />
-                </Tooltip>
               </Space>
             );
           }
         },
       },
     ],
-    []
+    [editingEntity?.bundles, handleModuleAssociation]
   );
 
   // 🎯 构建模块表格数据，包含选择状态，使用nanoid作为key
@@ -846,10 +941,7 @@ export const ModulePropertyTreeTable: React.FC = () => {
               <Checkbox
                 checked={selectedModules.includes(record._indexId)}
                 onChange={(e) => {
-                  const newSelectedModules = e.target.checked
-                    ? [...selectedModules, record._indexId]
-                    : selectedModules.filter((nanoid) => nanoid !== record._indexId);
-                  setSelectedModules(newSelectedModules);
+                  handleModuleAssociation(record._indexId, e.target.checked || false);
                 }}
               />
             );
@@ -1109,9 +1201,21 @@ export const ModulePropertyTreeTable: React.FC = () => {
 
   return (
     <div>
+      {/* 🔧 添加搜索框 */}
+      <div style={{ marginBottom: '12px' }}>
+        <Input
+          prefix={<IconSearch />}
+          placeholder="搜索模块ID、名称或属性..."
+          value={moduleSearchText}
+          onChange={setModuleSearchText}
+          showClear
+          style={{ width: '100%' }}
+        />
+      </div>
+
       <Table
         columns={sidebarColumns}
-        dataSource={linkedModuleTreeData}
+        dataSource={allModuleTreeData}
         rowKey="key"
         pagination={false}
         size="small"
@@ -1129,7 +1233,7 @@ export const ModulePropertyTreeTable: React.FC = () => {
           }
           return {};
         }}
-        indentSize={20}
+        indentSize={0}
         style={{
           borderRadius: '6px',
           border: '1px solid var(--semi-color-border)',
@@ -1207,6 +1311,9 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
   const isReadonly = readonly || mode === 'node';
   const isEditable = editable !== undefined ? editable : !isReadonly;
 
+  // 🔧 添加实体属性搜索功能
+  const [entitySearchText, setEntitySearchText] = React.useState('');
+
   const [descriptionEditModal, setDescriptionEditModal] = useState<{
     visible: boolean;
     attributeId: string;
@@ -1221,11 +1328,36 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
 
   const { updateAttributeProperty, addAttribute, removeAttribute } = useCurrentEntityActions();
 
-  const attributes = useCurrentEntityStore(
+  const allAttributes = useCurrentEntityStore(
     useShallow((state) => state.editingEntity?.attributes || [])
   );
 
+  // 🔧 实体属性搜索过滤
+  const attributes = React.useMemo(() => {
+    if (!entitySearchText.trim()) return allAttributes;
+
+    const searchLower = entitySearchText.toLowerCase();
+    return allAttributes.filter(
+      (attr) =>
+        attr.id.toLowerCase().includes(searchLower) ||
+        (attr.name && attr.name.toLowerCase().includes(searchLower)) ||
+        (attr.type && attr.type.toLowerCase().includes(searchLower))
+    );
+  }, [allAttributes, entitySearchText]);
+
   const editingEntity = useCurrentEntityStore(useShallow((state) => state.editingEntity));
+
+  // 🔍 调试：监控editingEntity变化
+  React.useEffect(() => {
+    console.log('🔍 [UniversalPropertyTable] editingEntity变化:', {
+      entityId: editingEntity?.id,
+      entityName: editingEntity?.name,
+      attributeCount: editingEntity?.attributes?.length || 0,
+      bundleCount: editingEntity?.bundles?.length || 0,
+      showEntityProperties,
+      showModuleProperties,
+    });
+  }, [editingEntity, showEntityProperties, showModuleProperties]);
 
   // 准备节点模块数据
   const nodeModuleData: NodeModuleData[] = React.useMemo(() => {
@@ -1389,7 +1521,15 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
       {
         title: () =>
           isEditable ? (
-            <Button size="small" icon={<IconPlus />} type="primary" onClick={handleAdd}>
+            <Button
+              size="small"
+              icon={<IconPlus />}
+              type="primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAdd();
+              }}
+            >
               添加属性
             </Button>
           ) : (
@@ -1418,7 +1558,10 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
                     theme="borderless"
                     size="small"
                     icon={<IconArticle />}
-                    onClick={() => handleDescriptionEdit(record)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDescriptionEdit(record);
+                    }}
                     disabled={isReadonly || record.isModuleProperty}
                     type={record.description ? 'primary' : 'tertiary'}
                   />
@@ -1428,7 +1571,10 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
                   <Popconfirm
                     title="确定删除此属性吗？"
                     content="删除后无法恢复"
-                    onConfirm={() => handleDelete(record._indexId)}
+                    onConfirm={(e) => {
+                      e?.stopPropagation?.();
+                      handleDelete(record._indexId);
+                    }}
                   >
                     <Tooltip content="删除属性">
                       <Button
@@ -1436,6 +1582,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
                         icon={<IconDelete />}
                         size="small"
                         disabled={isReadonly || record.isModuleProperty}
+                        onClick={(e) => e.stopPropagation()}
                       />
                     </Tooltip>
                   </Popconfirm>
@@ -1514,7 +1661,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
-              marginBottom: '0px',
+              marginBottom: '8px',
             }}
             onClick={() => setIsExpanded(!isExpanded)}
           >
@@ -1525,6 +1672,21 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
             </Typography.Text>
           </div>
 
+          {/* 🔧 实体属性搜索框 */}
+          {isExpanded && (
+            <div style={{ marginBottom: 8 }}>
+              <Input
+                prefix={<IconSearch />}
+                placeholder="搜索属性ID、名称或类型..."
+                value={entitySearchText}
+                onChange={setEntitySearchText}
+                size="small"
+                showClear
+                style={{ width: '100%' }}
+              />
+            </div>
+          )}
+
           {isExpanded && (
             <Table
               columns={columns}
@@ -1534,7 +1696,6 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
               size="small"
               expandedRowRender={expandedRowRender}
               expandedRowKeys={Array.from(expandedRows)}
-              hideExpandedColumn={false}
               indentSize={0}
               rowExpandable={(record) => {
                 if (!record) return false;

@@ -68,6 +68,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
 import { Plus, FolderAdd, Search, Document } from "@element-plus/icons-vue";
 import ApiTree from "../components/ApiTree.vue";
 import ApiDetail from "../components/ApiDetail.vue";

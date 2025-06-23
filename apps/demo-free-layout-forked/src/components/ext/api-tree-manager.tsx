@@ -27,6 +27,146 @@ interface ApiTreeManagerProps {
 // 生成API的URL路径
 const generateApiUrl = (expressionId: string): string => `/exp/remote/${expressionId}/`;
 
+// 创建分组节点的label
+const createGroupLabel = (
+  groupName: string,
+  onDeleteGroup: (groupKey: string) => void,
+  groupKey: string
+) => (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      width: '100%',
+      minWidth: 0, // 允许flex子元素收缩
+    }}
+  >
+    <div
+      style={{
+        flex: 1,
+        minWidth: 0, // 允许文本容器收缩
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <Text
+        style={{
+          display: 'block',
+          overflow: 'inherit',
+          textOverflow: 'inherit',
+          whiteSpace: 'inherit',
+        }}
+      >
+        {groupName}
+      </Text>
+    </div>
+    <div
+      style={{
+        flexShrink: 0, // 防止按钮被压缩
+        width: '32px', // 固定按钮区域宽度
+        display: 'flex',
+        justifyContent: 'flex-end',
+        marginLeft: '8px',
+      }}
+    >
+      <Tooltip content="删除分组">
+        <Button
+          size="small"
+          type="danger"
+          icon={<IconDelete />}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeleteGroup(groupKey);
+          }}
+          style={{ opacity: 0.7 }}
+        />
+      </Tooltip>
+    </div>
+  </div>
+);
+
+// 创建API节点的label
+const createApiLabel = (
+  exp: any,
+  handleApiClick: (expressionId: string, event: React.MouseEvent) => void,
+  getMethodColor: (method: string) => 'blue' | 'green' | 'orange' | 'red' | 'purple' | 'grey',
+  onDeleteExpression: (expressionId: string) => void
+) => (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      width: '100%',
+      minWidth: 0, // 允许flex子元素收缩
+    }}
+  >
+    <a
+      href={generateApiUrl(exp.id)}
+      onClick={(e) => handleApiClick(exp.id, e)}
+      onMouseDown={(e) => {
+        if (e.button === 1) {
+          console.log('🔍 [ApiTreeManager] 中键点击，允许浏览器默认行为');
+        }
+      }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        flex: 1,
+        minWidth: 0, // 允许链接容器收缩
+        textDecoration: 'none',
+        color: 'inherit',
+        cursor: 'pointer',
+        overflow: 'hidden', // 防止内容溢出
+      }}
+    >
+      {exp.method && (
+        <Tag
+          color={getMethodColor(exp.method)}
+          size="small"
+          style={{ flexShrink: 0 }} // 防止标签被压缩
+        >
+          {exp.method}
+        </Tag>
+      )}
+      <Text
+        style={{
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          flex: 1,
+          minWidth: 0,
+        }}
+      >
+        {exp.id}
+      </Text>
+    </a>
+    <div
+      style={{
+        flexShrink: 0, // 防止按钮被压缩
+        width: '32px', // 固定按钮区域宽度
+        display: 'flex',
+        justifyContent: 'flex-end',
+        marginLeft: '8px',
+      }}
+    >
+      <Tooltip content="删除API">
+        <Button
+          size="small"
+          type="danger"
+          icon={<IconDelete />}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDeleteExpression(exp.id);
+          }}
+          style={{ opacity: 0.7 }}
+        />
+      </Tooltip>
+    </div>
+  </div>
+);
+
 export const ApiTreeManager: React.FC<ApiTreeManagerProps> = ({
   expressions,
   selectedExpressionId,
@@ -116,7 +256,9 @@ export const ApiTreeManager: React.FC<ApiTreeManagerProps> = ({
   });
 
   // 获取HTTP方法标签颜色
-  const getMethodColor = (method: string) => {
+  const getMethodColor = (
+    method: string
+  ): 'blue' | 'green' | 'orange' | 'red' | 'purple' | 'grey' => {
     switch (method?.toUpperCase()) {
       case 'GET':
         return 'blue';
@@ -195,75 +337,12 @@ export const ApiTreeManager: React.FC<ApiTreeManagerProps> = ({
       data.push({
         key: `group-${group.id}`,
         value: group.id,
-        label: (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-            }}
-          >
-            <Text>{group.name}</Text>
-            <Tooltip content="删除分组">
-              <Button
-                size="small"
-                type="danger"
-                icon={<IconDelete />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteGroup?.(groupKey);
-                }}
-                style={{ opacity: 0.7 }}
-              />
-            </Tooltip>
-          </div>
-        ),
-        icon: <IconFolder />, // 分组节点有文件夹图标
+        label: createGroupLabel(group.name, onDeleteGroup!, groupKey),
+        icon: <IconFolder />,
         children: groupApis.map((exp) => ({
           key: `api-${exp.id}`,
           value: exp.id,
-          label: (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-              <a
-                href={generateApiUrl(exp.id)}
-                onClick={(e) => handleApiClick(exp.id, e)}
-                onMouseDown={(e) => {
-                  if (e.button === 1) {
-                    console.log('🔍 [ApiTreeManager] 中键点击，允许浏览器默认行为');
-                  }
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  flex: 1,
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  cursor: 'pointer',
-                }}
-              >
-                {exp.method && (
-                  <Tag color={getMethodColor(exp.method)} size="small">
-                    {exp.method}
-                  </Tag>
-                )}
-                <Text>{exp.id}</Text>
-              </a>
-              <Tooltip content="删除API">
-                <Button
-                  size="small"
-                  type="danger"
-                  icon={<IconDelete />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteExpression?.(exp.id);
-                  }}
-                  style={{ opacity: 0.7 }}
-                />
-              </Tooltip>
-            </div>
-          ),
+          label: createApiLabel(exp, handleApiClick, getMethodColor, onDeleteExpression!),
         })),
       });
 
@@ -278,75 +357,12 @@ export const ApiTreeManager: React.FC<ApiTreeManagerProps> = ({
       data.push({
         key: `group-${groupKey}`,
         value: groupKey,
-        label: (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-            }}
-          >
-            <Text>{groupName}</Text>
-            <Tooltip content="删除分组">
-              <Button
-                size="small"
-                type="danger"
-                icon={<IconDelete />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteGroup?.(groupKey);
-                }}
-                style={{ opacity: 0.7 }}
-              />
-            </Tooltip>
-          </div>
-        ),
-        icon: <IconFolder />, // 所有分组都有文件夹图标
+        label: createGroupLabel(groupName, onDeleteGroup!, groupKey),
+        icon: <IconFolder />,
         children: groupApis.map((exp) => ({
           key: `api-${exp.id}`,
           value: exp.id,
-          label: (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-              <a
-                href={generateApiUrl(exp.id)}
-                onClick={(e) => handleApiClick(exp.id, e)}
-                onMouseDown={(e) => {
-                  if (e.button === 1) {
-                    console.log('🔍 [ApiTreeManager] 中键点击，允许浏览器默认行为');
-                  }
-                }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  flex: 1,
-                  textDecoration: 'none',
-                  color: 'inherit',
-                  cursor: 'pointer',
-                }}
-              >
-                {exp.method && (
-                  <Tag color={getMethodColor(exp.method)} size="small">
-                    {exp.method}
-                  </Tag>
-                )}
-                <Text>{exp.id}</Text>
-              </a>
-              <Tooltip content="删除API">
-                <Button
-                  size="small"
-                  type="danger"
-                  icon={<IconDelete />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteExpression?.(exp.id);
-                  }}
-                  style={{ opacity: 0.7 }}
-                />
-              </Tooltip>
-            </div>
-          ),
+          label: createApiLabel(exp, handleApiClick, getMethodColor, onDeleteExpression!),
         })),
       });
     });

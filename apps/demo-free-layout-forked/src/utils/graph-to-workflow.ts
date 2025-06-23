@@ -495,7 +495,7 @@ function analyzePhaseStructure(graph: WorkflowGraph) {
       acc[phaseId] = phaseChildren[phaseId].map((n) => n.id);
       return acc;
     }, {} as Record<string, string[]>);
-    console.log('[GraphConverter] Phase结构分析完成:', phaseStructure);
+    // console.log('[GraphConverter] Phase结构分析完成:', phaseStructure);
   }
 
   return { phaseNodes, otherNodes, phaseChildren };
@@ -503,10 +503,10 @@ function analyzePhaseStructure(graph: WorkflowGraph) {
 
 // 将后台工作流图边转换为编辑器连线格式
 function convertGraphEdgesToWorkflowEdges(edges: WorkflowGraphEdge[], nodes?: any[]): any[] {
-  console.log('[GraphConverter] 开始转换edges:', {
-    inputEdgesCount: edges.length,
-    edges: edges.slice(0, 3), // 只显示前3条避免日志过多
-  });
+  // console.log('[GraphConverter] 开始转换edges:', {
+  //   inputEdgesCount: edges.length,
+  //   edges: edges.slice(0, 3), // 只显示前3条避免日志过多
+  // });
 
   // 🔧 新增：构建节点到条件key的映射，用于修复条件节点的端口ID
   const nodeToConditionKeyMap = new Map<string, string>();
@@ -550,14 +550,15 @@ function convertGraphEdgesToWorkflowEdges(edges: WorkflowGraphEdge[], nodes?: an
 
   // 聚合打印端口修复信息
   if (portFixLog.length > 0) {
-    console.log(`[GraphConverter] 修复了${portFixLog.length}个条件节点端口:`, portFixLog);
+    // 移除垃圾技术细节日志
+    // console.log(`[GraphConverter] 修复了${portFixLog.length}个条件节点端口:`, portFixLog);
   }
 
-  console.log('[GraphConverter] 转换完成edges:', {
-    outputEdgesCount: convertedEdges.length,
-    edges: convertedEdges.slice(0, 5), // 显示前5条
-    conditionPortMappings: Object.fromEntries(nodeToConditionKeyMap), // 显示条件节点端口映射
-  });
+  // console.log('[GraphConverter] 转换完成edges:', {
+  //   outputEdgesCount: convertedEdges.length,
+  //   edges: convertedEdges.slice(0, 5), // 显示前5条
+  //   conditionPortMappings: Object.fromEntries(nodeToConditionKeyMap), // 显示条件节点端口映射
+  // });
 
   return convertedEdges;
 }

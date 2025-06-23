@@ -68,6 +68,14 @@ export type {
   ModuleAttribute,
 } from './module.store';
 
+// 当前模块编辑管理
+export {
+  useCurrentModuleStore,
+  useCurrentModule,
+  useCurrentModuleActions,
+} from './current-module.store';
+export type { CurrentModuleState, CurrentModuleActions } from './current-module.store';
+
 // 兼容性导出 - 为了让现有代码能够正常工作
 // 将新的 hooks 映射到旧的命名
 export { useEntityList as useEntityStore } from './entity-list';

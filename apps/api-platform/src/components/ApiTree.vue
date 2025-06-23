@@ -19,7 +19,7 @@
       :highlight-current="true"
       node-key="_indexId"
       @node-click="handleNodeClick">
-      <template #default="{ node, data }">
+      <template #default="{ data }">
         <div class="tree-node flex items-center justify-between w-full">
           <!-- 左侧内容 -->
           <div class="flex items-center flex-1 min-w-0">
@@ -168,17 +168,17 @@ const filteredTreeData = computed(() => {
 });
 
 // 方法
-const getMethodTagType = (method?: HttpMethod) => {
-  const typeMap = {
+const getMethodTagType = (method?: HttpMethod): "success" | "primary" | "warning" | "info" | "danger" | undefined => {
+  const typeMap: Record<string, "success" | "primary" | "warning" | "info" | "danger" | undefined> = {
     GET: "success",
     POST: "primary",
     PUT: "warning",
     DELETE: "danger",
     PATCH: "info",
-    HEAD: "",
-    OPTIONS: "",
+    HEAD: undefined,
+    OPTIONS: undefined,
   };
-  return typeMap[method as keyof typeof typeMap] || "";
+  return typeMap[method as keyof typeof typeMap];
 };
 
 const handleNodeClick = (data: ApiItem) => {

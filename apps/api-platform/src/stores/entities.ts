@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { nanoid } from 'nanoid'
-import axios from 'axios'
+// import axios from 'axios' // 暂时未使用
 import type { Entity, Attribute, Module } from '../types/entities'
 
 // Mock数据导入

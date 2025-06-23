@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 
 export type RouteType =
   | 'entities'
@@ -19,8 +19,18 @@ export interface RouteState {
   expressionId?: string;
 }
 
+interface RouterContextType {
+  routeState: RouteState;
+  navigate: (newRouteState: RouteState) => void;
+  replace: (newRouteState: RouteState) => void;
+}
+
+const RouterContext = createContext<RouterContextType | null>(null);
+
 // 解析URL路径（支持hash和正常路径）
 const parseUrl = (pathname: string, hash?: string): RouteState => {
+  console.log('🔍 [parseUrl] 解析URL:', { pathname, hash });
+
   // 优先解析hash路径
   if (hash && hash.startsWith('#')) {
     const hashPath = hash.substring(1); // 移除#
@@ -139,31 +149,53 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
   }
 
   // 匹配 entities/{entityId}
-  const entityWorkflowMatch = path.match(/^entities\/([^/]+)\/?$/);
-  if (entityWorkflowMatch) {
+  const entityDetailMatch = path.match(/^entities\/([^/]+)\/?$/);
+  if (entityDetailMatch) {
     return {
-      route: 'entity-workflow',
-      entityId: entityWorkflowMatch[1],
+      route: 'entities',
+      entityId: entityDetailMatch[1],
     };
   }
 
+  // 匹配 modules/{moduleId}
+  const moduleDetailMatch = path.match(/^modules\/([^/]+)\/?$/);
+  if (moduleDetailMatch) {
+    return {
+      route: 'modules',
+      entityId: moduleDetailMatch[1], // 复用entityId字段
+    };
+  }
+
+  // 匹配 entity-workflow/{entityId}
+  const entityWorkflowPathMatch = path.match(/^entity-workflow\/([^/]+)\/?$/);
+  if (entityWorkflowPathMatch) {
+    const result = {
+      route: 'entity-workflow' as const,
+      entityId: entityWorkflowPathMatch[1],
+    };
+    console.log('🔍 [parseUrl] 匹配到entity-workflow路径:', result);
+    return result;
+  }
+
   // 默认返回实体列表
-  return { route: 'entities' };
+  const result = { route: 'entities' as const };
+  console.log('🔍 [parseUrl] 解析结果:', result);
+  return result;
 };
 
 // 生成URL路径
 const generateUrl = (routeState: RouteState): string => {
   switch (routeState.route) {
     case 'entities':
-      return '/entities/';
+      return routeState.entityId ? `/entities/${routeState.entityId}/` : '/entities/';
     case 'modules':
-      return '/modules/';
+      return routeState.entityId ? `/modules/${routeState.entityId}/` : '/modules/';
     case 'exp-remote':
       return routeState.expressionId ? `/exp/remote/${routeState.expressionId}/` : '/exp/remote/';
     case 'exp-local':
       return '/exp/local/';
     case 'entity-workflow':
-      return `/entities/${routeState.entityId}/`;
+      return routeState.entityId ? `/entity-workflow/${routeState.entityId}/` : '/entity-workflow/';
     case 'api-test':
       return '/api-test/';
     case 'test-new-architecture':
@@ -182,6 +214,15 @@ const generateUrl = (routeState: RouteState): string => {
 };
 
 export const useRouter = () => {
+  const context = useContext(RouterContext);
+  if (!context) {
+    throw new Error('useRouter must be used within a RouterProvider');
+  }
+  return context;
+};
+
+// Router Provider组件
+export const RouterProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [routeState, setRouteState] = useState<RouteState>(() =>
     parseUrl(window.location.pathname, window.location.hash)
   );
@@ -206,7 +247,9 @@ export const useRouter = () => {
   // 监听浏览器前进后退和hash变化
   useEffect(() => {
     const handleLocationChange = () => {
-      setRouteState(parseUrl(window.location.pathname, window.location.hash));
+      const newState = parseUrl(window.location.pathname, window.location.hash);
+      console.log('🔍 [RouterProvider] 浏览器URL变化:', newState);
+      setRouteState(newState);
     };
 
     window.addEventListener('popstate', handleLocationChange);
@@ -221,7 +264,9 @@ export const useRouter = () => {
   // 导航到指定路由
   const navigate = useCallback((newRouteState: RouteState) => {
     const url = generateUrl(newRouteState);
+    console.log('🔍 [RouterProvider] 导航到:', { newRouteState, url });
     window.history.pushState({}, '', url);
+    console.log('🔍 [RouterProvider] 更新路由状态:', newRouteState);
     setRouteState(newRouteState);
   }, []);
 
@@ -232,9 +277,9 @@ export const useRouter = () => {
     setRouteState(newRouteState);
   }, []);
 
-  return {
-    routeState,
-    navigate,
-    replace,
-  };
+  return (
+    <RouterContext.Provider value={{ routeState, navigate, replace }}>
+      {children}
+    </RouterContext.Provider>
+  );
 };

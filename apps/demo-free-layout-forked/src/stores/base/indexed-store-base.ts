@@ -70,7 +70,7 @@ export function createIndexedStore<T extends Indexed>(
               state.loading = false;
             });
 
-            console.log(`✅ [${storeName}] 加载完成，共 ${sortedItems.length} 个数据项`);
+            console.log(`✅ [${storeName}] 加载完成:`, sortedItems);
           } catch (error) {
             console.error(`❌ [${storeName}] 加载失败:`, error);
             set((state) => {

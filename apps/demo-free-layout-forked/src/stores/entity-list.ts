@@ -266,9 +266,10 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
         loading: false,
       });
 
-      console.log(
-        `✅ 加载完成，共 ${currentNewEntities.length + sortedLoadedEntities.length} 个实体`
-      );
+      console.log(`✅ 加载完成，实体数据:`, {
+        新增: currentNewEntities,
+        已加载: sortedLoadedEntities,
+      });
     } catch (error) {
       console.error('❌ 加载实体失败:', error);
       set({

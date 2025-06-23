@@ -5,25 +5,25 @@ import { create } from 'zustand';
 import { nanoid } from 'nanoid';
 import { cloneDeep, isEqual } from 'lodash-es';
 
-import type { Entity, ItemStatus } from '../services/types';
+import type { Module, ItemStatus } from '../services/types';
 
-// 深度比较实体数据，忽略状态字段
-const deepCompareEntities = (entity1: Entity | null, entity2: Entity | null): boolean => {
-  if (!entity1 && !entity2) return true;
-  if (!entity1 || !entity2) return false;
+// 深度比较模块数据，忽略状态字段
+const deepCompareModules = (module1: Module | null, module2: Module | null): boolean => {
+  if (!module1 && !module2) return true;
+  if (!module1 || !module2) return false;
 
   // 创建副本，移除状态字段进行比较
-  const clean1 = cleanEntityForComparison(entity1);
-  const clean2 = cleanEntityForComparison(entity2);
+  const clean1 = cleanModuleForComparison(module1);
+  const clean2 = cleanModuleForComparison(module2);
 
   return isEqual(clean1, clean2);
 };
 
-// 清理实体数据，移除状态字段和动态字段
-const cleanEntityForComparison = (entity: Entity): any => {
-  const cleaned = { ...entity };
+// 清理模块数据，移除状态字段和动态字段
+const cleanModuleForComparison = (module: Module): any => {
+  const cleaned = { ...module };
 
-  // 移除实体级别的状态字段
+  // 移除模块级别的状态字段
   delete (cleaned as any)._status;
   delete (cleaned as any)._editStatus;
   delete (cleaned as any)._originalId;
@@ -41,14 +41,14 @@ const cleanEntityForComparison = (entity: Entity): any => {
   return cleaned;
 };
 
-// 当前实体编辑状态
-export interface CurrentEntityState {
+// 当前模块编辑状态
+export interface CurrentModuleState {
   // 选择状态
-  selectedEntityId: string | null;
+  selectedModuleId: string | null;
 
   // 编辑状态
-  originalEntity: Entity | null;
-  editingEntity: Entity | null;
+  originalModule: Module | null;
+  editingModule: Module | null;
 
   // 状态标记
   isDirty: boolean;
@@ -56,14 +56,14 @@ export interface CurrentEntityState {
   error: string | null;
 }
 
-// 当前实体编辑操作
-export interface CurrentEntityActions {
-  // 选择实体（创建编辑副本）
-  selectEntity: (entity: Entity | null) => void;
+// 当前模块编辑操作
+export interface CurrentModuleActions {
+  // 选择模块（创建编辑副本）
+  selectModule: (module: Module | null) => void;
 
   // 编辑操作
   updateProperty: (path: string, value: any) => void;
-  updateEntity: (updates: Partial<Entity>) => void;
+  updateModule: (updates: Partial<Module>) => void;
 
   // 单个属性更新（使用Immer，安全的直接修改）
   updateAttributeProperty: (attributeIndexId: string, field: string, value: any) => void;
@@ -79,51 +79,51 @@ export interface CurrentEntityActions {
   setSaving: (saving: boolean) => void;
 }
 
-type CurrentEntityStore = CurrentEntityState & CurrentEntityActions;
+type CurrentModuleStore = CurrentModuleState & CurrentModuleActions;
 
-// 创建当前实体编辑store，使用Immer中间件
-export const useCurrentEntityStore = create<CurrentEntityStore>()(
+// 创建当前模块编辑store，使用Immer中间件
+export const useCurrentModuleStore = create<CurrentModuleStore>()(
   devtools(
     immer((set, get) => ({
       // 初始状态
-      selectedEntityId: null,
-      originalEntity: null,
-      editingEntity: null,
+      selectedModuleId: null,
+      originalModule: null,
+      editingModule: null,
       isDirty: false,
       isSaving: false,
       error: null,
 
-      // 选择实体（创建编辑副本）
-      selectEntity: (entity) => {
+      // 选择模块（创建编辑副本）
+      selectModule: (module) => {
         set((state) => {
-          if (!entity) {
-            state.selectedEntityId = null;
-            state.originalEntity = null;
-            state.editingEntity = null;
+          if (!module) {
+            state.selectedModuleId = null;
+            state.originalModule = null;
+            state.editingModule = null;
             state.isDirty = false;
             state.error = null;
             return;
           }
 
           // 🎯 优化：避免不必要的重新创建工作副本
-          if (state.selectedEntityId === entity._indexId) {
-            console.log('🔄 实体已选中，跳过重新创建工作副本:', entity.id);
+          if (state.selectedModuleId === module._indexId) {
+            console.log('🔄 模块已选中，跳过重新创建工作副本:', module.id);
             return;
           }
 
           // 创建副本，避免修改外部对象
-          const entityCopy = cloneDeep(entity);
+          const moduleCopy = cloneDeep(module);
 
-          // 🔑 实体应该在加载时就有_indexId，这里不应该重新生成
-          if (!entityCopy._indexId) {
-            console.error('[CurrentEntity] 实体缺少_indexId，这不应该发生！', entityCopy);
-            entityCopy._indexId = nanoid(); // 仅作为后备方案
+          // 🔑 模块应该在加载时就有_indexId，这里不应该重新生成
+          if (!moduleCopy._indexId) {
+            console.error('[CurrentModule] 模块缺少_indexId，这不应该发生！', moduleCopy);
+            moduleCopy._indexId = nanoid(); // 仅作为后备方案
           }
 
-          console.log('🔄 创建新的工作副本:', entity.id);
-          state.selectedEntityId = entityCopy._indexId;
-          state.originalEntity = cloneDeep(entityCopy);
-          state.editingEntity = cloneDeep(entityCopy);
+          console.log('🔄 创建新的模块工作副本:', module.id);
+          state.selectedModuleId = moduleCopy._indexId;
+          state.originalModule = cloneDeep(moduleCopy);
+          state.editingModule = cloneDeep(moduleCopy);
           state.isDirty = false;
           state.error = null;
         });
@@ -132,7 +132,7 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
       // 更新属性（支持深度路径）
       updateProperty: (path, value) => {
         set((state) => {
-          if (!state.editingEntity || !state.originalEntity) return;
+          if (!state.editingModule || !state.originalModule) return;
 
           // 简单路径处理，支持 "id", "name" 等
           if (path.includes('.')) {
@@ -141,23 +141,23 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
             return;
           }
 
-          (state.editingEntity as any)[path] = value;
+          (state.editingModule as any)[path] = value;
 
           // 🎯 修复：使用深度比较检查是否有变化
-          state.isDirty = !deepCompareEntities(state.editingEntity, state.originalEntity);
+          state.isDirty = !deepCompareModules(state.editingModule, state.originalModule);
           state.error = null;
         });
       },
 
-      // 更新整个实体的部分字段
-      updateEntity: (updates) => {
+      // 更新整个模块的部分字段
+      updateModule: (updates) => {
         set((state) => {
-          if (!state.editingEntity || !state.originalEntity) return;
+          if (!state.editingModule || !state.originalModule) return;
 
-          Object.assign(state.editingEntity, updates);
+          Object.assign(state.editingModule, updates);
 
           // 🎯 修复：使用深度比较检查是否有变化
-          state.isDirty = !deepCompareEntities(state.editingEntity, state.originalEntity);
+          state.isDirty = !deepCompareModules(state.editingModule, state.originalModule);
           state.error = null;
         });
       },
@@ -165,14 +165,14 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
       // 🎯 核心修复：使用Immer安全地直接修改属性
       updateAttributeProperty: (attributeIndexId, field, value) => {
         set((state) => {
-          console.log('🔍 使用Immer更新属性字段:', {
+          console.log('🔍 使用Immer更新模块属性字段:', {
             attributeIndexId,
             field,
             value,
           });
 
           // 找到目标属性
-          const targetAttribute = state.editingEntity!.attributes!.find(
+          const targetAttribute = state.editingModule!.attributes!.find(
             (attr: any) => attr._indexId === attributeIndexId
           );
 
@@ -186,10 +186,10 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
             }
 
             // 🎯 修复：使用深度比较检查是否有变化
-            state.isDirty = !deepCompareEntities(state.editingEntity, state.originalEntity);
+            state.isDirty = !deepCompareModules(state.editingModule, state.originalModule);
             state.error = null;
 
-            console.log('🔍 Immer属性字段更新完成:', {
+            console.log('🔍 Immer模块属性字段更新完成:', {
               属性ID: attributeIndexId,
               字段: field,
               新值: value,
@@ -203,10 +203,10 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
       // 添加新属性
       addAttribute: (attribute) => {
         set((state) => {
-          if (!state.editingEntity || !state.originalEntity) return;
+          if (!state.editingModule || !state.originalModule) return;
 
-          if (!state.editingEntity.attributes) {
-            state.editingEntity.attributes = [];
+          if (!state.editingModule.attributes) {
+            state.editingModule.attributes = [];
           }
 
           // 确保新属性有正确的状态
@@ -216,9 +216,9 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
           };
 
           // 🎯 修复1：新属性添加到顶部，保持新增在前的排序
-          state.editingEntity.attributes.unshift(newAttribute);
+          state.editingModule.attributes.unshift(newAttribute);
           // 🎯 修复：使用深度比较检查是否有变化
-          state.isDirty = !deepCompareEntities(state.editingEntity, state.originalEntity);
+          state.isDirty = !deepCompareModules(state.editingModule, state.originalModule);
           state.error = null;
         });
       },
@@ -226,32 +226,32 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
       // 删除属性
       removeAttribute: (attributeIndexId) => {
         set((state) => {
-          console.log('🗑️ Store: 开始删除属性:', {
+          console.log('🗑️ Store: 开始删除模块属性:', {
             attributeIndexId,
-            hasEditingEntity: !!state.editingEntity,
-            hasAttributes: !!state.editingEntity?.attributes,
-            attributesCount: state.editingEntity?.attributes?.length || 0,
+            hasEditingModule: !!state.editingModule,
+            hasAttributes: !!state.editingModule?.attributes,
+            attributesCount: state.editingModule?.attributes?.length || 0,
           });
 
-          if (!state.editingEntity || !state.originalEntity) {
-            console.error('🗑️ Store: 没有正在编辑的实体');
+          if (!state.editingModule || !state.originalModule) {
+            console.error('🗑️ Store: 没有正在编辑的模块');
             return;
           }
 
-          if (!state.editingEntity.attributes) {
-            console.error('🗑️ Store: 实体没有属性数组');
-            state.editingEntity.attributes = [];
+          if (!state.editingModule.attributes) {
+            console.error('🗑️ Store: 模块没有属性数组');
+            state.editingModule.attributes = [];
             return;
           }
 
-          const index = state.editingEntity.attributes.findIndex(
+          const index = state.editingModule.attributes.findIndex(
             (attr: any) => attr._indexId === attributeIndexId
           );
 
           console.log('🗑️ Store: 查找结果:', {
             attributeIndexId,
             foundIndex: index,
-            属性列表: state.editingEntity.attributes.map((attr: any) => ({
+            属性列表: state.editingModule.attributes.map((attr: any) => ({
               id: attr.id,
               name: attr.name,
               _indexId: attr._indexId,
@@ -259,13 +259,13 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
           });
 
           if (index !== -1) {
-            const deletedAttr = state.editingEntity.attributes[index];
+            const deletedAttr = state.editingModule.attributes[index];
 
             // 使用Immer的splice方法删除
-            state.editingEntity.attributes.splice(index, 1);
+            state.editingModule.attributes.splice(index, 1);
 
             // 🎯 修复：使用深度比较检查是否有变化
-            state.isDirty = !deepCompareEntities(state.editingEntity, state.originalEntity);
+            state.isDirty = !deepCompareModules(state.editingModule, state.originalModule);
             state.error = null;
 
             console.log('🗑️ Store: 删除成功:', {
@@ -274,13 +274,13 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
                 name: deletedAttr.name,
                 _indexId: deletedAttr._indexId,
               },
-              remainingCount: state.editingEntity.attributes.length,
+              remainingCount: state.editingModule.attributes.length,
               isDirty: state.isDirty,
             });
           } else {
             console.warn('🗑️ Store: 未找到要删除的属性:', {
               searchingFor: attributeIndexId,
-              availableIds: state.editingEntity.attributes.map((attr: any) => attr._indexId),
+              availableIds: state.editingModule.attributes.map((attr: any) => attr._indexId),
             });
           }
         });
@@ -289,9 +289,9 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
       // 重置更改
       resetChanges: () => {
         set((state) => {
-          if (!state.originalEntity) return;
+          if (!state.originalModule) return;
 
-          state.editingEntity = cloneDeep(state.originalEntity);
+          state.editingModule = cloneDeep(state.originalModule);
           state.isDirty = false;
           state.error = null;
         });
@@ -300,7 +300,7 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
       // 保存更改（调用实际的API）
       saveChanges: async () => {
         const currentState = get();
-        if (!currentState.editingEntity) return;
+        if (!currentState.editingModule) return;
 
         set((state) => {
           state.isSaving = true;
@@ -308,19 +308,19 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
         });
 
         try {
-          // 🎯 使用EntityListStore的saveEntity方法，它会处理ID转换
-          const { useEntityListStore } = require('./entity-list');
-          await useEntityListStore.getState().saveEntity(currentState.editingEntity);
+          // 🎯 使用ModuleStore的saveModule方法
+          const { useModuleStore } = require('./module.store');
+          await useModuleStore.getState().saveModule(currentState.editingModule);
 
           set((state) => {
-            state.originalEntity = cloneDeep(state.editingEntity);
+            state.originalModule = cloneDeep(state.editingModule);
             state.isDirty = false;
             state.isSaving = false;
           });
 
-          console.log('✅ 实体保存成功:', currentState.editingEntity.id);
+          console.log('✅ 模块保存成功:', currentState.editingModule.id);
         } catch (error) {
-          console.error('❌ 实体保存失败:', error);
+          console.error('❌ 模块保存失败:', error);
           set((state) => {
             state.isSaving = false;
             state.error = error instanceof Error ? error.message : 'Save failed';
@@ -328,43 +328,41 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
         }
       },
 
-      // 设置错误
+      // 设置错误状态
       setError: (error) => {
-        set((state) => {
-          state.error = error;
-        });
+        set({ error });
       },
 
       // 设置保存状态
       setSaving: (saving) => {
-        set((state) => {
-          state.isSaving = saving;
-        });
+        set({ isSaving: saving });
       },
     })),
-    { name: 'current-entity-store' }
+    {
+      name: 'current-module-store',
+    }
   )
 );
 
-// 便捷的选择器hooks - 使用useShallow避免无限重新渲染
-export const useCurrentEntity = () =>
-  useCurrentEntityStore(
+// Selector hooks for better performance
+export const useCurrentModule = () =>
+  useCurrentModuleStore(
     useShallow((state) => ({
-      selectedEntityId: state.selectedEntityId,
-      originalEntity: state.originalEntity,
-      editingEntity: state.editingEntity,
+      selectedModuleId: state.selectedModuleId,
+      originalModule: state.originalModule,
+      editingModule: state.editingModule,
       isDirty: state.isDirty,
       isSaving: state.isSaving,
       error: state.error,
     }))
   );
 
-export const useCurrentEntityActions = () =>
-  useCurrentEntityStore(
+export const useCurrentModuleActions = () =>
+  useCurrentModuleStore(
     useShallow((state) => ({
-      selectEntity: state.selectEntity,
+      selectModule: state.selectModule,
       updateProperty: state.updateProperty,
-      updateEntity: state.updateEntity,
+      updateModule: state.updateModule,
       updateAttributeProperty: state.updateAttributeProperty,
       addAttribute: state.addAttribute,
       removeAttribute: state.removeAttribute,

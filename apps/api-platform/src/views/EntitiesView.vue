@@ -253,7 +253,7 @@ const entitiesStore = useEntitiesStore();
 const searchText = ref("");
 
 // 计算属性
-const { entities, loading, currentEntity, entitiesWithStats } =
+const { loading, currentEntity, entitiesWithStats } =
   storeToRefs(entitiesStore);
 
 const filteredEntities = computed(() => {

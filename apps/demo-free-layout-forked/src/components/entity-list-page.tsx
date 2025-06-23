@@ -153,7 +153,7 @@ export const EntityListPage: React.FC<EntityListPageProps> = ({ onViewWorkflow }
   // 🔧 优化表格数据计算 - 减少复杂度和重新计算频率
   const tableData = useMemo(() => {
     // 🔧 减少日志频率，只在实体数量变化时输出
-    console.log('🔄 重新计算表格数据，实体数量:', entities.length);
+    console.log('🔄 重新计算表格数据，实体:', entities);
 
     const data: any[] = entities.map((entity) => {
       const entityRow: any = {
