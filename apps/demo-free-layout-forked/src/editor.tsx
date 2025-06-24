@@ -14,5 +14,5 @@ export const Editor: React.FC = () => {
     nodeCount: workflowData?.nodes?.length || 0,
   });
 
-  return <WorkflowEditor />;
+  return <WorkflowEditor data-testid="workflow-editor" />;
 };

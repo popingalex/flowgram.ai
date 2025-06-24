@@ -25,7 +25,11 @@
     "start": "cross-env NODE_ENV=development rsbuild dev --open",
     "test": "exit",
     "test:cov": "exit",
-    "watch": "exit 0"
+    "watch": "exit 0",
+    "preview": "rsbuild preview",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
     "@douyinfe/semi-icons": "^2.80.0",
@@ -45,7 +49,19 @@
     "styled-components": "^5",
     "@csstools/normalize.css": "~12.1.1",
     "zustand": "~5.0.5",
-    "immer": "~10.1.1"
+    "immer": "~10.1.1",
+    "@flowgram.ai/core": "workspace:*",
+    "@flowgram.ai/free-layout-core": "workspace:*",
+    "@flowgram.ai/renderer": "workspace:*",
+    "@flowgram.ai/editor": "workspace:*",
+    "@flowgram.ai/command": "workspace:*",
+    "@flowgram.ai/history": "workspace:*",
+    "@flowgram.ai/reactive": "workspace:*",
+    "@flowgram.ai/utils": "workspace:*",
+    "@flowgram.ai/form-core": "workspace:*",
+    "@flowgram.ai/node": "workspace:*",
+    "@flowgram.ai/variable-core": "workspace:*",
+    "lodash": "^4.17.21"
   },
   "devDependencies": {
     "@flowgram.ai/ts-config": "workspace:*",
@@ -59,7 +75,11 @@
     "@types/react-dom": "^18",
     "@types/styled-components": "^5",
     "eslint": "^8.54.0",
-    "cross-env": "~7.0.3"
+    "cross-env": "~7.0.3",
+    "@playwright/test": "^1.52.0",
+    "@rsbuild/plugin-styled-components": "^1.0.1",
+    "@types/lodash": "^4.14.137",
+    "typescript": "^5.0.4"
   },
   "publishConfig": {
     "access": "public",

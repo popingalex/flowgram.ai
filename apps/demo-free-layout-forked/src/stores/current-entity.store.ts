@@ -325,8 +325,8 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
             _status: attribute._status || 'new', // 默认为新增状态
           };
 
-          // 🎯 修复1：新属性添加到顶部，保持新增在前的排序
-          state.editingEntity.attributes.unshift(newAttribute);
+          // 🎯 修复：新属性添加到末尾，保持添加顺序的直觉性
+          state.editingEntity.attributes.push(newAttribute);
           // 🎯 修复：使用深度比较检查是否有变化
           state.isDirty = !deepCompareEntities(state.editingEntity, state.originalEntity);
           state.error = null;

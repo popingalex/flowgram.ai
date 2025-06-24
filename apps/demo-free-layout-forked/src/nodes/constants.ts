@@ -8,4 +8,6 @@ export enum WorkflowNodeType {
   Loop = 'loop',
   Comment = 'comment',
   Phase = 'phase',
+  EntityFilter = 'entity-filter',
+  SystemAction = 'system-action',
 }

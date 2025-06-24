@@ -3,6 +3,10 @@
     "id": "mountain_range",
     "name": "mountain_range",
     "type": "graph",
+    "moduleIds": [
+      "terrain",
+      "transform"
+    ],
     "nodes": [
       {
         "id": "mountain_range.simulate",
@@ -144,6 +148,10 @@
     "id": "barrier_lake",
     "name": "barrier_lake",
     "type": "graph",
+    "moduleIds": [
+      "terrain",
+      "transform"
+    ],
     "nodes": [
       {
         "id": "barrier_lake.simulate",
@@ -480,6 +488,12 @@
     "id": "vehicle",
     "name": "vehicle",
     "type": "graph",
+    "moduleIds": [
+      "mobile",
+      "controlled",
+      "container",
+      "vehicle"
+    ],
     "nodes": [
       {
         "id": "vehicle.phase.2",

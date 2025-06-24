@@ -35,6 +35,7 @@ interface DataListSidebarProps<T extends DataListItem> {
   // 选择
   selectedId?: string;
   onItemSelect: (item: T) => void;
+  selectedIdField?: keyof T; // 新增：指定用于选中比较的字段
 
   // 操作
   onAdd?: () => void;
@@ -50,8 +51,9 @@ interface DataListSidebarProps<T extends DataListItem> {
   // 行为树数据（用于实体管理）
   graphs?: Array<{ id: string; _indexId?: string; nodes?: any[]; [key: string]: any }>;
 
-  // 样式
+  // 样式和测试
   style?: React.CSSProperties;
+  testId?: string; // 自定义测试ID
 }
 
 export function DataListSidebar<T extends DataListItem>({
@@ -62,6 +64,7 @@ export function DataListSidebar<T extends DataListItem>({
   searchPlaceholder = '搜索...',
   selectedId,
   onItemSelect,
+  selectedIdField = 'id', // 默认使用id字段
   onAdd,
   onRefresh,
   renderItem,
@@ -69,29 +72,29 @@ export function DataListSidebar<T extends DataListItem>({
   modules,
   graphs,
   style,
+  testId = 'entity-sidebar', // 默认值为entity-sidebar，保持向后兼容
 }: DataListSidebarProps<T>) {
   // 渲染统计信息 - 垂直分布
   const renderStats = (item: T) => {
-    // 🔑 计算行为树节点数量 - 使用_indexId进行关联
-    let behaviorNodeCount = 0;
-    if (graphs && item._indexId) {
-      const graph = graphs.find((g) => g._indexId === item._indexId);
-      behaviorNodeCount = graph?.nodes?.length || 0;
-    }
+    // 🔑 计算模块数量
+    const moduleCount = item.bundles?.length || 0;
+
+    // 🔑 计算属性数量
+    const attributeCount = item.attributes?.length || 0;
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
-        {/* 属性数量 - 只有当有属性时才显示 */}
-        {item.attributes && item.attributes.length > 0 && (
-          <Tag size="small" color="blue">
-            属：{item.attributes.length}
+        {/* 模块统计 - 只有当有模块时才显示 */}
+        {moduleCount > 0 && (
+          <Tag size="small" color="green">
+            模：{moduleCount}
           </Tag>
         )}
 
-        {/* 行为树节点数量统计 - 只有当有节点时才显示 */}
-        {behaviorNodeCount > 0 && (
-          <Tag size="small" color="orange">
-            行：{behaviorNodeCount}
+        {/* 属性统计 - 只有当有属性时才显示 */}
+        {attributeCount > 0 && (
+          <Tag size="small" color="blue">
+            属：{attributeCount}
           </Tag>
         )}
       </div>
@@ -130,64 +133,81 @@ export function DataListSidebar<T extends DataListItem>({
   };
 
   // 默认渲染函数 - 新的两行布局
-  const defaultRenderItem = (item: T, isSelected: boolean) => (
-    <List.Item
-      onClick={() => onItemSelect(item)}
-      style={{
-        backgroundColor: isSelected ? 'var(--semi-color-primary-light-default)' : undefined,
-        padding: '12px 16px',
-        cursor: 'pointer',
-      }}
-      className="data-list-item"
-    >
-      <div style={{ width: '100%' }}>
-        {/* 第一行：左侧实体信息 + 右侧统计 */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Text
-              style={{
-                color: isSelected ? 'var(--semi-color-primary)' : 'var(--semi-color-text-0)',
-                fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-                fontSize: '13px',
-                display: 'block',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}
-            >
-              <Highlight
-                sourceString={item.id || ''}
-                searchWords={searchText.trim() ? [searchText.trim()] : []}
-              />
-            </Text>
-            {item.name && (
+  const defaultRenderItem = (item: T, isSelected: boolean) => {
+    console.log('🔍 [DataListSidebar] 渲染项目:', {
+      itemId: item.id,
+      itemIndexId: item._indexId,
+      selectedId,
+      selectedIdField,
+      compareValue: item[selectedIdField],
+      isSelected,
+      comparison: `${item[selectedIdField]} === ${selectedId} = ${
+        item[selectedIdField] === selectedId
+      }`,
+    });
+
+    return (
+      <List.Item
+        onClick={() => onItemSelect(item)}
+        style={{
+          backgroundColor: isSelected ? 'var(--semi-color-primary-light-default)' : undefined,
+          padding: '12px 16px',
+          cursor: 'pointer',
+        }}
+        className="data-list-item"
+        data-testid={`${testId.replace('-sidebar', '')}-item-${item.id || item._indexId}`}
+      >
+        <div style={{ width: '100%' }}>
+          {/* 第一行：左侧实体信息 + 右侧统计 */}
+          <div
+            style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
               <Text
-                type="secondary"
-                size="small"
                 style={{
-                  color: 'var(--semi-color-text-1)',
+                  color: isSelected ? 'var(--semi-color-primary)' : 'var(--semi-color-text-0)',
+                  fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                  fontSize: '13px',
                   display: 'block',
-                  margin: '2px 0 0 0',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                 }}
               >
                 <Highlight
-                  sourceString={item.name}
+                  sourceString={item.id || ''}
                   searchWords={searchText.trim() ? [searchText.trim()] : []}
                 />
               </Text>
-            )}
+              {item.name && (
+                <Text
+                  type="secondary"
+                  size="small"
+                  style={{
+                    color: 'var(--semi-color-text-1)',
+                    display: 'block',
+                    margin: '2px 0 0 0',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  <Highlight
+                    sourceString={item.name}
+                    searchWords={searchText.trim() ? [searchText.trim()] : []}
+                  />
+                </Text>
+              )}
+            </div>
+            <div style={{ flexShrink: 0, marginLeft: '8px' }}>{renderStats(item)}</div>
           </div>
-          <div style={{ flexShrink: 0, marginLeft: '8px' }}>{renderStats(item)}</div>
-        </div>
 
-        {/* 第二行：模块标签 */}
-        {renderModuleTags(item)}
-      </div>
-    </List.Item>
-  );
+          {/* 第二行：模块标签 */}
+          {renderModuleTags(item)}
+        </div>
+      </List.Item>
+    );
+  };
 
   return (
     <div
@@ -198,6 +218,7 @@ export function DataListSidebar<T extends DataListItem>({
         overflow: 'hidden', // 防止整个容器滚动
         ...style,
       }}
+      data-testid={testId}
     >
       <style>
         {`
@@ -226,8 +247,17 @@ export function DataListSidebar<T extends DataListItem>({
             onChange={onSearchChange}
             style={{ flex: 1 }}
             size="small"
+            data-testid={`${testId.replace('-sidebar', '')}-search-input`}
           />
-          {onAdd && <Button icon={<IconPlus />} type="primary" size="small" onClick={onAdd} />}
+          {onAdd && (
+            <Button
+              icon={<IconPlus />}
+              type="primary"
+              size="small"
+              onClick={onAdd}
+              data-testid={`add-${testId.replace('-sidebar', '')}-btn`}
+            />
+          )}
           {onRefresh && (
             <Button
               icon={<IconRefresh />}
@@ -271,8 +301,8 @@ export function DataListSidebar<T extends DataListItem>({
               />
             }
             renderItem={(item) => {
-              // 🔑 修复：使用原始ID进行匹配，而不是nanoid
-              const isSelected = selectedId === item.id;
+              // 🔑 修复：使用id进行匹配，而不是_indexId
+              const isSelected = selectedId === item[selectedIdField];
               return renderItem
                 ? renderItem(item, isSelected)
                 : defaultRenderItem(item, isSelected);

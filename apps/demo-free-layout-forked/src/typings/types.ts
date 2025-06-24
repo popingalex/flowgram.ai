@@ -17,7 +17,7 @@ export interface BaseAttribute extends EditableIndexed {
   id: string;
   name: string;
   type: string;
-  description?: string;
+  desc?: string;
   enumClassId?: string;
   enum?: any;
   // 表达式参数专用字段
@@ -34,7 +34,7 @@ export interface BaseAttribute extends EditableIndexed {
 export interface BaseEntity extends EditableIndexed {
   id: string;
   name: string;
-  description?: string;
+  desc?: string;
   attributes: BaseAttribute[];
   moduleIds: string[]; // 关联的模块_indexId数组
   bundles?: string[]; // 完整关联的模块ID（业务ID，不是_indexId）
@@ -44,7 +44,7 @@ export interface BaseEntity extends EditableIndexed {
 export interface BaseModule extends EditableIndexed {
   id: string;
   name: string;
-  description?: string;
+  desc?: string;
   category?: string;
   attributes: BaseAttribute[];
   deprecated?: boolean;
@@ -53,7 +53,7 @@ export interface BaseModule extends EditableIndexed {
 export interface BaseExpression extends EditableIndexed {
   id: string;
   name: string;
-  description?: string;
+  desc?: string;
   type?: string;
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   url?: string;
@@ -74,7 +74,7 @@ export interface BaseExpression extends EditableIndexed {
   tags?: string[];
   examples?: Array<{
     name: string;
-    description: string;
+    desc: string;
     input: Record<string, any>;
     output: any;
   }>;
@@ -83,8 +83,9 @@ export interface BaseExpression extends EditableIndexed {
 export interface BaseGraph extends EditableIndexed {
   id: string;
   name: string;
-  description?: string;
-  entityId?: string; // 关联的实体_indexId
+  desc?: string;
+  entityId?: string; // 关联的实体_indexId（保留向后兼容）
+  moduleIds?: string[]; // 新增：关联的模块ID列表（ECS架构）
   nodes?: any[]; // 图节点数据
   edges?: any[]; // 图边数据
 }
@@ -93,7 +94,7 @@ export interface BaseGraph extends EditableIndexed {
 export interface BaseEnum extends EditableIndexed {
   id: string;
   name: string;
-  description: string;
+  desc: string;
   values: string[];
   createdAt?: string;
   updatedAt?: string;

@@ -1,24 +1,11 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, ReactNode } from 'react';
 
-import {
-  Button,
-  Space,
-  Typography,
-  Input,
-  Card,
-  Popconfirm,
-  Badge,
-  Toast,
-} from '@douyinfe/semi-ui';
-import { IconSave, IconUndo, IconDelete, IconBranch } from '@douyinfe/semi-icons';
+import { Typography, Input, Button, Badge, Form } from '@douyinfe/semi-ui';
 
 import { UniversalPropertyTable } from '../bt/universal-property-table';
-import { useGraphActions } from '../../stores/graph.store';
-import { useCurrentEntity, useCurrentEntityActions } from '../../stores/current-entity.store';
-import { useModuleStore, useGraphList } from '../../stores';
-import { useRouter } from '../../hooks/use-router';
+import { useCurrentEntity, useCurrentEntityActions } from '../../stores';
 
-const { Text, Title } = Typography;
+const { Title } = Typography;
 
 interface EntityDetailProps {
   selectedEntity: any;
@@ -28,6 +15,9 @@ interface EntityDetailProps {
   onSave: () => void;
   onUndo: () => void;
   onDelete: () => void;
+  // 新增参数
+  actionButtons?: ReactNode;
+  statusInfo?: ReactNode;
 }
 
 export const EntityDetail: React.FC<EntityDetailProps> = ({
@@ -36,39 +26,15 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
   onSave,
   onUndo,
   onDelete,
+  actionButtons,
+  statusInfo,
 }) => {
   // 🔑 使用CurrentEntityStore的数据和状态
   const { editingEntity, isDirty, isSaving } = useCurrentEntity();
-  const { updateProperty, saveChanges, resetChanges } = useCurrentEntityActions();
-  const { modules } = useModuleStore();
-  const { graphs } = useGraphList();
-  const { createGraph } = useGraphActions();
-  const { navigate } = useRouter();
-
-  // 防抖时间戳
-  const lastNavigationTime = useRef<number>(0);
+  const { updateProperty } = useCurrentEntityActions();
 
   // 🔑 使用CurrentEntityStore的editingEntity作为数据源
   const currentEntity = editingEntity || selectedEntity;
-
-  // 🔑 计算工作流统计信息 - 修改逻辑，始终显示工作流按钮
-  const workflowStats = useMemo(() => {
-    if (!currentEntity) return { hasWorkflow: false, nodeCount: 0, showBadge: false };
-
-    // 使用稳定的原始业务ID查找对应的工作流图
-    const stableBusinessId = currentEntity._originalId || currentEntity.id;
-    const entityGraph = graphs.find(
-      (graph: any) =>
-        graph.id === stableBusinessId || graph.id.toLowerCase() === stableBusinessId.toLowerCase()
-    );
-
-    const nodeCount = entityGraph?.nodes?.length || 0;
-    return {
-      hasWorkflow: nodeCount > 0,
-      nodeCount,
-      showBadge: nodeCount > 1, // 只有多于1个节点才显示徽章
-    };
-  }, [currentEntity, graphs]);
 
   // 🔑 字段更新 - 直接使用CurrentEntityStore的updateProperty
   const handleFieldChange = useCallback(
@@ -79,249 +45,89 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
     [updateProperty]
   );
 
-  // 🔑 保存 - 使用CurrentEntityStore的saveChanges
-  const handleSave = useCallback(async () => {
-    try {
-      await saveChanges();
-      onSave(); // 通知父组件
-    } catch (error) {
-      console.error('保存失败:', error);
-    }
-  }, [saveChanges, onSave]);
-
-  // 🔑 撤销 - 使用CurrentEntityStore的resetChanges
-  const handleUndo = useCallback(() => {
-    resetChanges();
-    onUndo(); // 通知父组件
-  }, [resetChanges, onUndo]);
-
-  // 跳转到工作流页面或创建新工作流
-  const handleNavigateToWorkflow = useCallback(async () => {
-    if (currentEntity) {
-      const entityId = currentEntity._originalId || currentEntity.id;
-
-      // 如果没有工作流，先创建一个空的工作流图
-      if (!workflowStats.hasWorkflow) {
-        try {
-          console.log('🔍 [EntityDetail] 创建新工作流图:', { entityId });
-
-          // 创建空的工作流图
-          const newGraph = {
-            id: entityId,
-            name: `${currentEntity.name || entityId}的工作流`,
-            type: 'graph',
-            nodes: [],
-            edges: [],
-            description: `实体 ${currentEntity.name || entityId} 的工作流图`,
-          };
-
-          await createGraph(newGraph);
-
-          Toast.success('已创建新工作流，正在跳转...');
-        } catch (error) {
-          console.error('创建工作流失败:', error);
-          Toast.error('创建工作流失败: ' + (error instanceof Error ? error.message : '未知错误'));
-          return;
-        }
-      }
-
-      console.log('🔍 [EntityDetail] 跳转到工作流页面:', {
-        currentEntity,
-        entityId,
-        route: 'entity-workflow',
-        timestamp: Date.now(),
-      });
-      navigate({ route: 'entity-workflow', entityId });
-    }
-  }, [currentEntity, workflowStats.hasWorkflow, createGraph, navigate]);
-
-  // 防抖版本的跳转函数
-  const debouncedNavigateToWorkflow = useCallback(() => {
-    // 简单的防抖：检查是否在很短时间内重复调用
-    const now = Date.now();
-    if (lastNavigationTime.current && now - lastNavigationTime.current < 1000) {
-      console.log('🚫 [EntityDetail] 防抖：跳过重复调用');
-      return;
-    }
-    lastNavigationTime.current = now;
-    handleNavigateToWorkflow();
-  }, [handleNavigateToWorkflow]);
-
-  // 跳转到模块编辑页面
-  const handleNavigateToModule = useCallback(
-    (moduleId: string) => {
-      const module = modules.find((m) => m.id === moduleId);
-      if (module) {
-        navigate({ route: 'modules', entityId: module.id });
-      }
-    },
-    [modules, navigate]
-  );
-
   return (
-    <Card
-      style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-      bodyStyle={{ padding: 0, flex: 1, overflow: 'hidden' }}
-    >
-      <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-        {/* 基本信息表单 */}
-        <div style={{ padding: '24px', borderBottom: '1px solid var(--semi-color-border)' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '16px',
-            }}
-          >
-            <Title heading={5} style={{ margin: 0 }}>
-              基本信息
-            </Title>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {isDirty && (
-                <Text type="warning" size="small">
-                  • 有未保存的修改
-                </Text>
-              )}
-              {isSaving && (
-                <Text type="secondary" size="small">
-                  正在保存...
-                </Text>
-              )}
-              <Space>
-                <Button
-                  icon={<IconSave />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSave();
-                  }}
-                  disabled={!canSave || !isDirty}
-                  loading={isSaving}
-                  type="primary"
-                  size="small"
-                >
-                  保存
-                </Button>
-                <Button
-                  icon={<IconUndo />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleUndo();
-                  }}
-                  disabled={!isDirty}
-                  size="small"
-                >
-                  撤销
-                </Button>
-                {/* 🔑 修改：所有实体都显示工作流按钮，节点数>1时才显示Badge */}
-                {workflowStats.showBadge ? (
-                  <Badge count={workflowStats.nodeCount} type="primary">
-                    <Button
-                      icon={<IconBranch />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        debouncedNavigateToWorkflow();
-                      }}
-                      size="small"
-                    >
-                      工作流
-                    </Button>
-                  </Badge>
-                ) : (
-                  <Button
-                    icon={<IconBranch />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      debouncedNavigateToWorkflow();
-                    }}
-                    size="small"
-                  >
-                    工作流
-                  </Button>
-                )}
-                <Popconfirm
-                  title="确定删除这个实体吗？"
-                  content="删除后将无法恢复"
-                  onConfirm={(e) => {
-                    e?.stopPropagation?.();
-                    onDelete();
-                  }}
-                >
-                  <Button
-                    icon={<IconDelete />}
-                    type="danger"
-                    theme="borderless"
-                    size="small"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    删除
-                  </Button>
-                </Popconfirm>
-              </Space>
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* 实体配置表单 */}
+      <div style={{ padding: '24px', borderBottom: '1px solid var(--semi-color-border)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div
+              style={{ width: '80px', textAlign: 'right', marginRight: '12px', fontSize: '14px' }}
+            >
+              实体ID *
             </div>
+            <Input
+              value={currentEntity.id || ''}
+              onChange={(value) => handleFieldChange('id', value)}
+              placeholder="实体ID（必填）"
+              validateStatus={!currentEntity.id?.trim() ? 'error' : undefined}
+              style={{
+                flex: 1,
+                fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                fontSize: '12px',
+              }}
+              data-testid="entity-id-input"
+            />
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div
-                style={{ width: '80px', textAlign: 'right', marginRight: '12px', fontSize: '14px' }}
-              >
-                实体ID *
-              </div>
-              <Input
-                value={currentEntity.id || ''}
-                onChange={(value) => handleFieldChange('id', value)}
-                placeholder="实体ID（必填）"
-                style={{
-                  flex: 1,
-                  fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-                  fontSize: '12px',
-                }}
-              />
-            </div>
 
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div
-                style={{ width: '80px', textAlign: 'right', marginRight: '12px', fontSize: '14px' }}
-              >
-                实体名称
-              </div>
-              <Input
-                value={currentEntity.name || ''}
-                onChange={(value) => handleFieldChange('name', value)}
-                placeholder="实体名称"
-                style={{ flex: 1 }}
-              />
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div
+              style={{ width: '80px', textAlign: 'right', marginRight: '12px', fontSize: '14px' }}
+            >
+              实体名称
             </div>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div
-                style={{ width: '80px', textAlign: 'right', marginRight: '12px', fontSize: '14px' }}
-              >
-                描述
-              </div>
-              <Input
-                value={currentEntity.description || ''}
-                onChange={(value) => handleFieldChange('description', value)}
-                placeholder="实体描述"
-                style={{ flex: 1 }}
-              />
+            <Input
+              value={currentEntity.name || ''}
+              onChange={(value) => handleFieldChange('name', value)}
+              placeholder="实体名称"
+              style={{ flex: 1 }}
+              data-testid="entity-name-input"
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div
+              style={{ width: '80px', textAlign: 'right', marginRight: '12px', fontSize: '14px' }}
+            >
+              描述
             </div>
+            <Input
+              value={currentEntity.description || ''}
+              onChange={(value) => handleFieldChange('description', value)}
+              placeholder="实体描述"
+              style={{ flex: 1 }}
+              data-testid="entity-description-input"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 属性表格区域 */}
+      <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+        {/* 实体属性表格 */}
+        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+          <div style={{ width: '80px', textAlign: 'right', marginRight: '12px', fontSize: '14px' }}>
+            实体属性
+          </div>
+          <div style={{ flex: 1 }}>
+            <UniversalPropertyTable
+              mode="sidebar"
+              editable={true}
+              showEntityProperties={true}
+              showModuleProperties={false}
+              entityTitle="实体属性"
+              moduleTitle="模块属性"
+              hideInternalTitles={true}
+            />
           </div>
         </div>
 
-        {/* 属性表格区域 */}
-        <div style={{ flex: 1, overflow: 'hidden', padding: '16px' }}>
-          {/* 实体属性表格 */}
-          <UniversalPropertyTable
-            mode="sidebar"
-            editable={true}
-            showEntityProperties={true}
-            showModuleProperties={false}
-            entityTitle="实体属性"
-            moduleTitle="模块属性"
-          />
-
-          {/* 模块关联表格 - 使用checkbox方式关联模块 */}
-          <div style={{ marginTop: '16px' }}>
+        {/* 模块关联表格 */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', marginTop: '16px' }}>
+          <div style={{ width: '80px', textAlign: 'right', marginRight: '12px', fontSize: '14px' }}>
+            关联模块
+          </div>
+          <div style={{ flex: 1 }}>
             <UniversalPropertyTable
               mode="sidebar"
               editable={false}
@@ -329,10 +135,11 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
               showModuleProperties={true}
               entityTitle="实体属性"
               moduleTitle="模块关联"
+              hideInternalTitles={true}
             />
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };

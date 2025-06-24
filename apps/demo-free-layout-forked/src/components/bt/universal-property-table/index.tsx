@@ -212,6 +212,7 @@ export interface UniversalPropertyTableProps {
   // 标题配置
   entityTitle?: string;
   moduleTitle?: string;
+  hideInternalTitles?: boolean; // 隐藏内部标题，避免与外部label重复
 }
 
 // 独立的属性字段组件
@@ -264,17 +265,23 @@ const AttributeIdInput = React.memo(
       );
     }
 
+    // 🎯 必填项验证：ID不能为空
+    const hasError = !value.trim();
+    const isRequired = !isModuleProperty; // 模块属性不需要用户填写
+
     return (
       <Input
         value={value}
         onChange={(newValue) => onFieldChange(record._indexId, 'id', newValue)}
         size="small"
         readOnly={isModuleProperty}
-        placeholder="属性ID"
+        placeholder={isRequired ? '属性ID（必填）' : '属性ID'}
+        validateStatus={hasError && isRequired ? 'error' : undefined}
         style={{
           fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
           fontSize: '12px',
         }}
+        data-testid="property-id-input"
       />
     );
   }
@@ -338,6 +345,7 @@ const AttributeNameInput = React.memo(
         style={{
           fontSize: '13px',
         }}
+        data-testid="property-name-input"
       />
     );
   }
@@ -472,8 +480,6 @@ const NodeModuleDisplay: React.FC<{ modules: NodeModuleData[] }> = ({ modules })
         },
       })}
       style={{
-        borderRadius: '6px',
-        border: '1px solid var(--semi-color-border)',
         overflow: 'hidden',
       }}
     />
@@ -869,6 +875,7 @@ export const ModulePropertyTreeTable: React.FC = () => {
                   e.stopPropagation();
                   handleModuleAssociation(moduleData._indexId, e.target.checked || false);
                 }}
+                data-testid={`module-checkbox-${moduleData.id}`}
               />
             );
           }
@@ -941,17 +948,6 @@ export const ModulePropertyTreeTable: React.FC = () => {
             </div>
           );
         },
-      },
-      {
-        title: '描述',
-        key: 'description',
-        width: 200,
-        render: (_: any, record: ModuleTreeData | ModulePropertyData) => (
-          <AttributeDescriptionDisplay
-            record={record as ExtendedAttribute}
-            readonly={record.isAttribute}
-          />
-        ),
       },
       {
         // title: '操作',
@@ -1346,8 +1342,6 @@ export const ModulePropertyTreeTable: React.FC = () => {
         }}
         indentSize={0}
         style={{
-          borderRadius: '6px',
-          border: '1px solid var(--semi-color-border)',
           overflow: 'hidden',
         }}
       />
@@ -1417,6 +1411,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
   showModuleProperties = false,
   entityTitle = '实体属性',
   moduleTitle = '实体模块',
+  hideInternalTitles = false,
 }) => {
   // 兼容处理：如果传了readonly，则以readonly为准；否则根据mode判断
   const isReadonly = readonly || mode === 'node';
@@ -1541,15 +1536,18 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
   };
 
   const handleAdd = () => {
+    console.log('🔍 添加新属性');
     const newAttribute: Attribute = {
       _indexId: nanoid(),
-      id: '',
-      name: '新属性',
+      id: '', // 🎯 统一策略：不提供默认值，用户必须手动填写
+      name: '', // 🎯 统一策略：不提供默认值，用户必须手动填写
       type: 'string',
       description: '',
       isEntityProperty: true,
+      _status: 'new', // 标记为新增状态
     };
     addAttribute(newAttribute);
+    console.log('✅ 新属性已添加:', newAttribute);
   };
 
   const handleDescriptionEdit = React.useCallback((property: Attribute) => {
@@ -1640,6 +1638,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
                 e.stopPropagation();
                 handleAdd();
               }}
+              data-testid="add-property-btn"
             >
               添加属性
             </Button>
@@ -1657,9 +1656,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
               }}
               onChange={(typeInfo: any) => handleTypeChange(record._indexId, typeInfo)}
               disabled={isReadonly || record.isModuleProperty}
-              onDataRestrictionClick={() => {
-                console.log('打开数据限制弹窗:', record);
-              }}
+              data-testid="property-type-selector"
             />
 
             {isEditable && (
@@ -1694,6 +1691,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
                         size="small"
                         disabled={isReadonly || record.isModuleProperty}
                         onClick={(e) => e.stopPropagation()}
+                        data-testid="delete-property-btn"
                       />
                     </Tooltip>
                   </Popconfirm>
@@ -1765,26 +1763,28 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
       {showEntityProperties && (
         <>
           {/* 组件标题 */}
-          <div
-            className="property-table-title"
-            style={{
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              marginBottom: '8px',
-            }}
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? <IconChevronDown size="small" /> : <IconChevronRight size="small" />}
-            <Typography.Text strong>{entityTitle}</Typography.Text>
-            <Typography.Text type="tertiary" size="small">
-              ({attributes.length})
-            </Typography.Text>
-          </div>
+          {!hideInternalTitles && (
+            <div
+              className="property-table-title"
+              style={{
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                marginBottom: '8px',
+              }}
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? <IconChevronDown size="small" /> : <IconChevronRight size="small" />}
+              <Typography.Text strong>{entityTitle}</Typography.Text>
+              <Typography.Text type="tertiary" size="small">
+                ({attributes.length})
+              </Typography.Text>
+            </div>
+          )}
 
           {/* 🔧 实体属性搜索框 */}
-          {isExpanded && (
+          {(hideInternalTitles || isExpanded) && (
             <div style={{ marginBottom: 8 }}>
               <Input
                 prefix={<IconSearch />}
@@ -1798,7 +1798,7 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
             </div>
           )}
 
-          {isExpanded && (
+          {(hideInternalTitles || isExpanded) && (
             <Table
               columns={columns}
               dataSource={attributes}
@@ -1824,9 +1824,10 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
                   });
                 }
               }}
+              onRow={(record, index) => ({
+                'data-testid': `property-row-${index}`,
+              })}
               style={{
-                borderRadius: '6px',
-                border: '1px solid var(--semi-color-border)',
                 overflow: 'hidden',
                 // width: '290',
                 tableLayout: 'fixed',
@@ -1864,22 +1865,28 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
       {/* 模块属性部分 */}
       {showModuleProperties && (
         <div style={{ marginTop: showEntityProperties ? 16 : 0 }}>
-          <div
-            className="property-table-title"
-            style={{
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              marginBottom: '0px',
-            }}
-            onClick={() => setModuleExpanded(!moduleExpanded)}
-          >
-            {moduleExpanded ? <IconChevronDown size="small" /> : <IconChevronRight size="small" />}
-            <Typography.Text strong>{moduleTitle}</Typography.Text>
-          </div>
+          {!hideInternalTitles && (
+            <div
+              className="property-table-title"
+              style={{
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                marginBottom: '0px',
+              }}
+              onClick={() => setModuleExpanded(!moduleExpanded)}
+            >
+              {moduleExpanded ? (
+                <IconChevronDown size="small" />
+              ) : (
+                <IconChevronRight size="small" />
+              )}
+              <Typography.Text strong>{moduleTitle}</Typography.Text>
+            </div>
+          )}
 
-          {moduleExpanded && (
+          {(hideInternalTitles || moduleExpanded) && (
             <div style={{ marginTop: 8 }}>
               {mode === 'sidebar' ? (
                 <ModulePropertyTreeTable />

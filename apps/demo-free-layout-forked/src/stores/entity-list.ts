@@ -253,7 +253,17 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
 
       // 保留当前新增的实体，合并到加载的实体中
       const currentNewEntities = get().entities.filter((e) => e._status === 'new');
-      const sortedLoadedEntities = entitiesWithIndex.sort((a, b) => a.id.localeCompare(b.id));
+
+      // 🔑 修复：检查并过滤掉没有id的实体，避免localeCompare错误
+      const validEntities = entitiesWithIndex.filter((entity) => {
+        if (!entity.id) {
+          console.warn('⚠️ 发现无效实体（缺少id）:', entity);
+          return false;
+        }
+        return true;
+      });
+
+      const sortedLoadedEntities = validEntities.sort((a, b) => a.id.localeCompare(b.id));
 
       // 🔑 保存原始版本用于撤销
       const originalEntities = new Map<string, Entity>();

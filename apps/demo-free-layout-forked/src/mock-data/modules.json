@@ -2,6 +2,7 @@
   {
     "id": "container",
     "name": "容器",
+    "desc": "提供容器功能的模块，支持内容物管理和容量控制",
     "deprecated": false,
     "attributes": [
       {
@@ -24,6 +25,7 @@
   {
     "id": "mobile",
     "name": "移动的",
+    "desc": "提供移动功能的模块，支持路径规划和位置管理",
     "deprecated": false,
     "attributes": [
       {
@@ -66,6 +68,7 @@
   {
     "id": "terrain",
     "name": "地形通用",
+    "desc": "提供地形功能的模块，支持地貌和水文数据管理",
     "deprecated": false,
     "attributes": [
       {
@@ -93,6 +96,7 @@
   {
     "id": "controlled",
     "name": "可控制的",
+    "desc": "提供控制功能的模块，支持指令管理和状态控制",
     "deprecated": false,
     "attributes": [
       {
@@ -145,6 +149,7 @@
   {
     "id": "vehicle",
     "name": "载具",
+    "desc": "提供载具功能的模块，支持装卸货和类型管理",
     "deprecated": false,
     "attributes": [
       {
@@ -167,6 +172,7 @@
   {
     "id": "transform",
     "name": "变换",
+    "desc": "提供变换功能的模块，支持坐标、位置和旋转管理",
     "deprecated": false,
     "attributes": [
       {

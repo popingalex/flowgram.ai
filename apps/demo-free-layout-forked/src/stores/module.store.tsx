@@ -58,7 +58,7 @@ export interface ModuleActions {
     field: string,
     value: any
   ) => void; // 直接更新store中的模块属性字段
-  saveModule: (module: Module) => Promise<void>; // 保存完整的模块对象（参考saveEntity）
+  saveModule: (module: Module) => Promise<Module>; // 保存完整的模块对象，返回保存后的数据
   createModule: (
     module: Omit<Module, '_indexId' | 'attributes'> & {
       attributes?: Omit<ModuleAttribute, '_indexId'>[];
@@ -298,6 +298,7 @@ export const useModuleStore = create<ModuleStore>()(
           });
 
           console.log('✅ 模块保存成功:', module.id);
+          return savedModule; // 🔑 返回保存后的模块数据
         } catch (error) {
           console.error('❌ 模块保存失败:', error);
           // 恢复原状态

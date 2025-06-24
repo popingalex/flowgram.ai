@@ -10,7 +10,75 @@
 rush dev:demo-free-layout-forked
 ```
 
-服务器将在 http://localhost:3000 启动
+服务器将在 http://localhost:13000 启动
+
+## 🧪 测试
+
+### 运行E2E测试
+```bash
+# 进入项目目录
+cd apps/demo-free-layout-forked
+
+# 🚀 运行所有E2E测试并生成HTML报告（推荐）
+npx playwright test --reporter=html
+
+# 运行所有测试（简单模式）
+npx playwright test
+
+# 运行特定测试文件
+npx playwright test e2e/entity-management.spec.ts
+npx playwright test e2e/module-management.spec.ts
+
+# 运行测试并显示浏览器界面（调试模式）
+npx playwright test --headed
+
+# 运行特定测试用例
+npx playwright test -g "验证错误Badge"
+
+# 运行测试并生成详细报告
+npx playwright test --reporter=list
+
+# 并行运行测试（更快）
+npx playwright test --workers=3
+```
+
+### 查看测试报告
+```bash
+# 🎯 查看最新的HTML测试报告（推荐）
+npx playwright show-report
+
+# 测试报告将在浏览器中自动打开，包含：
+# - 测试执行结果和统计
+# - 失败测试的详细错误信息
+# - 测试执行时的截图和视频
+# - 测试执行时间分析
+```
+
+### 测试执行完整流程
+```bash
+# 1️⃣ 确保开发服务器运行
+rush dev:demo-free-layout-forked
+
+# 2️⃣ 在新终端中执行全部测试并生成报告
+cd apps/demo-free-layout-forked
+npx playwright test --reporter=html
+
+# 3️⃣ 查看测试报告
+npx playwright show-report
+```
+
+### 测试覆盖范围
+- ✅ **实体管理功能**: 创建、编辑、删除实体
+- ✅ **属性管理功能**: 添加、编辑、删除属性
+- ✅ **验证Badge功能**: 表单验证和错误提示
+- ✅ **搜索功能**: 实体和模块搜索
+- ⚠️ **模块绑定功能**: 实体与模块关联
+- ⚠️ **数据持久化**: 跨页面数据保存验证
+
+### 服务依赖
+测试需要以下服务运行：
+- **前端服务**: http://localhost:13000 (开发服务器)
+- **后端API**: http://localhost:9999 (数据清理API)
 
 ## 📱 页面结构
 

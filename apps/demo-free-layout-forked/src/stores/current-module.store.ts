@@ -215,8 +215,8 @@ export const useCurrentModuleStore = create<CurrentModuleStore>()(
             _status: attribute._status || 'new', // 默认为新增状态
           };
 
-          // 🎯 修复1：新属性添加到顶部，保持新增在前的排序
-          state.editingModule.attributes.unshift(newAttribute);
+          // 🎯 修复：新属性添加到末尾，符合用户直觉
+          state.editingModule.attributes.push(newAttribute);
           // 🎯 修复：使用深度比较检查是否有变化
           state.isDirty = !deepCompareModules(state.editingModule, state.originalModule);
           state.error = null;
@@ -302,6 +302,13 @@ export const useCurrentModuleStore = create<CurrentModuleStore>()(
         const currentState = get();
         if (!currentState.editingModule) return;
 
+        console.log('💾 开始保存模块:', {
+          id: currentState.editingModule.id,
+          name: currentState.editingModule.name,
+          desc: currentState.editingModule.desc,
+          attributesCount: currentState.editingModule.attributes?.length || 0,
+        });
+
         set((state) => {
           state.isSaving = true;
           state.error = null;
@@ -310,21 +317,53 @@ export const useCurrentModuleStore = create<CurrentModuleStore>()(
         try {
           // 🎯 使用ModuleStore的saveModule方法
           const { useModuleStore } = require('./module.store');
-          await useModuleStore.getState().saveModule(currentState.editingModule);
+          const savedModule = await useModuleStore
+            .getState()
+            .saveModule(currentState.editingModule);
+
+          console.log('💾 模块保存API返回结果:', {
+            id: savedModule?.id,
+            name: savedModule?.name,
+            desc: savedModule?.desc,
+            attributesCount: savedModule?.attributes?.length || 0,
+          });
+
+          // 🎯 保存成功后重新加载模块列表，确保新模块出现在列表中
+          await useModuleStore.getState().loadModules();
+
+          // 🎯 关键修复：从ModuleStore获取最新的模块数据，而不是使用旧的editingModule
+          const moduleStore = useModuleStore.getState();
+          const latestModule = moduleStore.modules.find(
+            (m: any) =>
+              m._indexId === currentState.editingModule!._indexId ||
+              m.id === currentState.editingModule!.id
+          );
+
+          console.log('💾 从ModuleStore获取的最新模块数据:', {
+            found: !!latestModule,
+            id: latestModule?.id,
+            name: latestModule?.name,
+            desc: latestModule?.desc,
+            attributesCount: latestModule?.attributes?.length || 0,
+          });
 
           set((state) => {
-            state.originalModule = cloneDeep(state.editingModule);
+            // 使用从ModuleStore获取的最新数据，而不是旧的editingModule
+            const moduleToUse = latestModule || state.editingModule;
+            state.originalModule = cloneDeep(moduleToUse);
+            state.editingModule = cloneDeep(moduleToUse);
             state.isDirty = false;
             state.isSaving = false;
           });
 
-          console.log('✅ 模块保存成功:', currentState.editingModule.id);
+          console.log('✅ 模块保存成功，状态已同步:', currentState.editingModule.id);
         } catch (error) {
           console.error('❌ 模块保存失败:', error);
           set((state) => {
             state.isSaving = false;
             state.error = error instanceof Error ? error.message : 'Save failed';
           });
+          throw error; // 重新抛出错误，让调用者知道保存失败
         }
       },
 

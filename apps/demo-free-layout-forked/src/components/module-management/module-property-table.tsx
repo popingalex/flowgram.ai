@@ -56,7 +56,7 @@ export const ModulePropertyTable: React.FC = () => {
         attr.displayId?.toLowerCase().includes(searchLower) ||
         attr.name?.toLowerCase().includes(searchLower) ||
         attr.type?.toLowerCase().includes(searchLower) ||
-        attr.description?.toLowerCase().includes(searchLower)
+        attr.desc?.toLowerCase().includes(searchLower)
     );
   }, [editingModule?.attributes, searchText]);
 
@@ -86,15 +86,15 @@ export const ModulePropertyTable: React.FC = () => {
   // 添加属性
   const handleAddAttribute = useCallback(() => {
     const newAttribute: Omit<ModuleAttribute, '_indexId'> = {
-      id: editingModule?.id ? `${editingModule.id}/` : '', // 预设模块前缀
-      name: '新属性',
+      id: '', // 空ID，触发验证错误
+      name: '', // 空名称，让用户填写
       type: 'string',
-      description: '',
+      desc: '',
       displayId: '', // 无前缀ID
       _status: 'new',
     };
     addAttribute({ ...newAttribute, _indexId: nanoid() });
-  }, [addAttribute, editingModule?.id]);
+  }, [addAttribute]);
 
   // 删除属性
   const handleDeleteAttribute = useCallback(
@@ -110,17 +110,13 @@ export const ModulePropertyTable: React.FC = () => {
       visible: true,
       attributeId: attribute._indexId,
       attributeName: attribute.name || attribute.id || '未命名属性',
-      description: attribute.description || '',
+      description: attribute.desc || '',
     });
   }, []);
 
   // 保存描述
   const handleDescriptionSave = useCallback(() => {
-    handleFieldChange(
-      descriptionEditModal.attributeId,
-      'description',
-      descriptionEditModal.description
-    );
+    handleFieldChange(descriptionEditModal.attributeId, 'desc', descriptionEditModal.description);
     setDescriptionEditModal((prev) => ({ ...prev, visible: false }));
   }, [handleFieldChange, descriptionEditModal.attributeId, descriptionEditModal.description]);
 
@@ -150,7 +146,7 @@ export const ModulePropertyTable: React.FC = () => {
         title: 'ID',
         key: 'id',
         width: 150,
-        render: (_: any, record: any) => (
+        render: (_: any, record: any, index: number) => (
           <Input
             value={record.displayId || record.id?.split('/').pop() || ''}
             onChange={(value) => handleDisplayIdChange(record._indexId, value)}
@@ -160,6 +156,7 @@ export const ModulePropertyTable: React.FC = () => {
               fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
               fontSize: '12px',
             }}
+            data-testid="property-id-input"
           />
         ),
       },
@@ -167,20 +164,20 @@ export const ModulePropertyTable: React.FC = () => {
         title: '名称',
         key: 'name',
         width: 200,
-        render: (_: any, record: any) => (
+        render: (_: any, record: any, index: number) => (
           <Input
             value={record.name || ''}
             onChange={(value) => handleFieldChange(record._indexId, 'name', value)}
             size="small"
             placeholder="属性名称"
             style={{ fontSize: '13px' }}
+            data-testid="property-name-input"
           />
         ),
       },
       {
-        title: '类型',
         key: 'type',
-        width: 150,
+        width: 40,
         render: (_: any, record: any) => (
           <EntityPropertyTypeSelector
             value={{
@@ -201,15 +198,15 @@ export const ModulePropertyTable: React.FC = () => {
               e.stopPropagation();
               handleAddAttribute();
             }}
+            data-testid="add-property-btn"
           >
             添加属性
           </Button>
         ),
         key: 'operations',
-        width: 120,
-        render: (_: any, record: any) => (
+        render: (_: any, record: any, index: number) => (
           <Space>
-            <Tooltip content={record.description || '点击编辑描述'}>
+            <Tooltip content={record.desc || '点击编辑描述'}>
               <Button
                 theme="borderless"
                 size="small"
@@ -218,7 +215,7 @@ export const ModulePropertyTable: React.FC = () => {
                   e.stopPropagation();
                   handleDescriptionEdit(record);
                 }}
-                type={record.description ? 'primary' : 'tertiary'}
+                type={record.desc ? 'primary' : 'tertiary'}
               />
             </Tooltip>
 
@@ -236,6 +233,7 @@ export const ModulePropertyTable: React.FC = () => {
                   icon={<IconDelete />}
                   size="small"
                   onClick={(e) => e.stopPropagation()}
+                  data-testid="delete-property-btn"
                 />
               </Tooltip>
             </Popconfirm>
@@ -284,11 +282,12 @@ export const ModulePropertyTable: React.FC = () => {
         pagination={false}
         size="small"
         style={{
-          borderRadius: '6px',
-          border: '1px solid var(--semi-color-border)',
           overflow: 'hidden',
           width: '100%',
         }}
+        onRow={(record, index) => ({
+          'data-testid': `property-row-${index}`,
+        })}
         empty={
           <div style={{ padding: '24px', textAlign: 'center' }}>
             <Text type="tertiary">

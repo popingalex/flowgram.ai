@@ -351,6 +351,18 @@ importers:
       '@douyinfe/semi-ui':
         specifier: ^2.80.0
         version: 2.80.0(acorn@8.14.0)(react-dom@18.3.1)(react@18.3.1)
+      '@flowgram.ai/command':
+        specifier: workspace:*
+        version: link:../../packages/common/command
+      '@flowgram.ai/core':
+        specifier: workspace:*
+        version: link:../../packages/canvas-engine/core
+      '@flowgram.ai/editor':
+        specifier: workspace:*
+        version: link:../../packages/client/editor
+      '@flowgram.ai/form-core':
+        specifier: workspace:*
+        version: link:../../packages/node-engine/form-core
       '@flowgram.ai/form-materials':
         specifier: workspace:*
         version: link:../../packages/materials/form-materials
@@ -360,6 +372,9 @@ importers:
       '@flowgram.ai/free-group-plugin':
         specifier: workspace:*
         version: link:../../packages/plugins/free-group-plugin
+      '@flowgram.ai/free-layout-core':
+        specifier: workspace:*
+        version: link:../../packages/canvas-engine/free-layout-core
       '@flowgram.ai/free-layout-editor':
         specifier: workspace:*
         version: link:../../packages/client/free-layout-editor
@@ -372,12 +387,33 @@ importers:
       '@flowgram.ai/free-snap-plugin':
         specifier: workspace:*
         version: link:../../packages/plugins/free-snap-plugin
+      '@flowgram.ai/history':
+        specifier: workspace:*
+        version: link:../../packages/common/history
       '@flowgram.ai/minimap-plugin':
         specifier: workspace:*
         version: link:../../packages/plugins/minimap-plugin
+      '@flowgram.ai/node':
+        specifier: workspace:*
+        version: link:../../packages/node-engine/node
+      '@flowgram.ai/reactive':
+        specifier: workspace:*
+        version: link:../../packages/common/reactive
+      '@flowgram.ai/renderer':
+        specifier: workspace:*
+        version: link:../../packages/canvas-engine/renderer
+      '@flowgram.ai/utils':
+        specifier: workspace:*
+        version: link:../../packages/common/utils
+      '@flowgram.ai/variable-core':
+        specifier: workspace:*
+        version: link:../../packages/variable-engine/variable-core
       immer:
         specifier: ~10.1.1
         version: 10.1.1
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -403,6 +439,9 @@ importers:
       '@flowgram.ai/ts-config':
         specifier: workspace:*
         version: link:../../config/ts-config
+      '@playwright/test':
+        specifier: ^1.48.0
+        version: 1.52.0
       '@rsbuild/core':
         specifier: ^1.2.16
         version: 1.2.19
@@ -412,6 +451,12 @@ importers:
       '@rsbuild/plugin-react':
         specifier: ^1.1.1
         version: 1.1.1(@rsbuild/core@1.2.19)
+      '@rsbuild/plugin-styled-components':
+        specifier: ^1.0.1
+        version: 1.4.0(@rsbuild/core@1.2.19)
+      '@types/lodash':
+        specifier: ^4.17.10
+        version: 4.17.13
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
@@ -433,6 +478,9 @@ importers:
       eslint:
         specifier: ^8.54.0
         version: 8.57.1
+      typescript:
+        specifier: ^5.6.3
+        version: 5.8.3
 
   ../../apps/demo-free-layout-simple:
     dependencies:
@@ -8041,7 +8089,6 @@ packages:
     hasBin: true
     dependencies:
       playwright: 1.52.0
-    dev: false
 
   /@polka/url@1.0.0-next.29:
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
@@ -8431,6 +8478,19 @@ packages:
       postcss: 8.5.3
       reduce-configs: 1.1.0
       sass-embedded: 1.83.0
+
+  /@rsbuild/plugin-styled-components@1.4.0(@rsbuild/core@1.2.19):
+    resolution: {integrity: sha512-1G7IYz3eLKPfRAye9zjlPDzIgdtk+4ECB9Op9thVDWd2q/qs3BGb+tt+nn+J7Vsb/jA4k3OLMnt6AYEIdYwxlw==}
+    peerDependencies:
+      '@rsbuild/core': ^1.4.0-beta.4 || ^1.4.0
+    peerDependenciesMeta:
+      '@rsbuild/core':
+        optional: true
+    dependencies:
+      '@rsbuild/core': 1.2.19
+      '@swc/plugin-styled-components': 8.0.2
+      reduce-configs: 1.1.0
+    dev: true
 
   /@rspack/binding-darwin-arm64@1.1.8:
     resolution: {integrity: sha512-I7avr471ghQ3LAqKm2fuXuJPLgQ9gffn5Q4nHi8rsukuZUtiLDPfYzK1QuupEp2JXRWM1gG5lIbSUOht3cD6Ug==}
@@ -8968,6 +9028,12 @@ packages:
     resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}
     dependencies:
       tslib: 2.8.1
+
+  /@swc/plugin-styled-components@8.0.2:
+    resolution: {integrity: sha512-JNDeeSZd8EQFCO013QNY+WXdeu/Gwu2vG0uJssEqVSzoz+HoHhNaPz5yvN4psor/6VXAY6LKCTqDfrsrfA6pXA==}
+    dependencies:
+      '@swc/counter': 0.1.3
+    dev: true
 
   /@sxzz/popperjs-es@2.11.7:
     resolution: {integrity: sha512-Ccy0NlLkzr0Ex2FKvh2X+OyERHXJ88XJ1MXtsI9y9fGexlaXaVTPzBCRBwIxFkORuOb+uBqeu+RqnpgYTEZRUQ==}
@@ -13332,7 +13398,6 @@ packages:
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
     requiresBuild: true
-    dev: false
     optional: true
 
   /fsevents@2.3.3:
@@ -16927,7 +16992,6 @@ packages:
     resolution: {integrity: sha512-l2osTgLXSMeuLZOML9qYODUQoPPnUsKsb5/P6LJ2e6uPKXUdPK5WYhN4z03G+YNbWmGDY4YENauNu4ZKczreHg==}
     engines: {node: '>=18'}
     hasBin: true
-    dev: false
 
   /playwright@1.52.0:
     resolution: {integrity: sha512-JAwMNMBlxJ2oD1kce4KPtMkDeKGHQstdpFPcPH3maElAXon/QZeTvtsfXmTMRyO9TslfoYOXkSsvao2nE1ilTw==}
@@ -16937,7 +17001,6 @@ packages:
       playwright-core: 1.52.0
     optionalDependencies:
       fsevents: 2.3.2
-    dev: false
 
   /possible-typed-array-names@1.0.0:
     resolution: {integrity: sha512-d7Uw+eZoloe0EHDIYoe+bQ5WXnGMOpmiZFTuMWCwpjzzkL2nTjcKiAk4hh8TjnGye2TwWOk3UXucZ+3rbmBa8Q==}
