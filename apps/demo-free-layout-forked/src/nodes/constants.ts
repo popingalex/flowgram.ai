@@ -5,9 +5,8 @@ export enum WorkflowNodeType {
   Action = 'action',
   Invoke = 'invoke',
   Condition = 'condition',
+  Filter = 'filter',
   Loop = 'loop',
   Comment = 'comment',
   Phase = 'phase',
-  EntityFilter = 'entity-filter',
-  SystemAction = 'system-action',
 }

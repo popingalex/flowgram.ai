@@ -15,9 +15,16 @@ interface PropTypes {
   onChange: (value?: ConditionRowValueType) => void;
   style?: React.CSSProperties;
   readonly?: boolean;
+  selectedModuleIds?: string[];
 }
 
-export function EnhancedConditionRow({ style, value, onChange, readonly }: PropTypes) {
+export function EnhancedConditionRow({
+  style,
+  value,
+  onChange,
+  readonly,
+  selectedModuleIds,
+}: PropTypes) {
   const { left, operator, right } = value || {};
   const { rule } = useRule(left);
   const { renderOpSelect, opConfig } = useOp({
@@ -42,6 +49,7 @@ export function EnhancedConditionRow({ style, value, onChange, readonly }: PropT
             readonly={readonly}
             style={{ width: '100%' }}
             value={left?.content}
+            selectedModuleIds={selectedModuleIds}
             onChange={(v) =>
               onChange({
                 ...value,

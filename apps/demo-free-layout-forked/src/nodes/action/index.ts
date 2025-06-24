@@ -7,7 +7,7 @@ import { invokeFormMeta } from './form-meta';
 
 let index = 0;
 
-// Action节点注册（新名称）
+// Action节点注册（统一的动作节点）
 export const ActionNodeRegistry: FlowNodeRegistry = {
   type: WorkflowNodeType.Action,
   info: {
@@ -43,26 +43,16 @@ export const ActionNodeRegistry: FlowNodeRegistry = {
   },
 };
 
-// Invoke节点注册（保持向后兼容）
+// Invoke节点注册（向后兼容，指向Action）
 export const InvokeNodeRegistry: FlowNodeRegistry = {
+  ...ActionNodeRegistry,
   type: WorkflowNodeType.Invoke,
-  info: {
-    icon: iconInvoke,
-    description: '调用函数或远程API，支持参数映射和结果输出到工作流。',
-  },
-  meta: {
-    size: {
-      width: 400,
-      height: 350,
-    },
-  },
-  formMeta: invokeFormMeta,
   onAdd() {
     return {
-      id: `invoke_${nanoid(5)}`,
-      type: 'invoke',
+      id: `action_${nanoid(5)}`, // 统一使用action前缀
+      type: 'action', // 统一使用action类型
       data: {
-        title: `Invoke_${++index}`,
+        title: `Action_${++index}`, // 统一使用Action标题
         inputsValues: {},
         inputs: {
           type: 'object',

@@ -6,6 +6,7 @@ export type RouteType =
   | 'exp-remote'
   | 'exp-local'
   | 'entity-workflow'
+  | 'ecs-behavior'
   | 'api-test'
   | 'test-new-architecture'
   | 'test-indexed-store'
@@ -93,6 +94,11 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
         entityId: entityWorkflowMatch[1],
       };
     }
+
+    // ECS行为编辑器路由
+    if (hashPath === 'ecs-behavior') {
+      return { route: 'ecs-behavior' };
+    }
   }
 
   // 解析正常路径
@@ -177,6 +183,11 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
     return result;
   }
 
+  // ECS行为编辑器路由
+  if (path === 'ecs-behavior') {
+    return { route: 'ecs-behavior' };
+  }
+
   // 默认返回实体列表
   const result = { route: 'entities' as const };
   console.log('🔍 [parseUrl] 解析结果:', result);
@@ -196,6 +207,8 @@ const generateUrl = (routeState: RouteState): string => {
       return '/exp/local/';
     case 'entity-workflow':
       return routeState.entityId ? `/entity-workflow/${routeState.entityId}/` : '/entity-workflow/';
+    case 'ecs-behavior':
+      return '/ecs-behavior/';
     case 'api-test':
       return '/api-test/';
     case 'test-new-architecture':

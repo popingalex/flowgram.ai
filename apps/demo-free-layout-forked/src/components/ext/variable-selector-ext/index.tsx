@@ -17,6 +17,7 @@ interface PropTypes {
   onChange: (value?: string[]) => void;
   includeSchema?: IJsonSchema | IJsonSchema[];
   excludeSchema?: IJsonSchema | IJsonSchema[];
+  selectedModuleIds?: string[];
   readonly?: boolean;
   hasError?: boolean;
   style?: React.CSSProperties;
@@ -33,10 +34,11 @@ export const EnhancedVariableSelector = ({
   readonly = false,
   includeSchema,
   excludeSchema,
+  selectedModuleIds,
   hasError,
   triggerRender,
 }: PropTypes) => {
-  const treeData = useEnhancedVariableTree({ includeSchema, excludeSchema });
+  const treeData = useEnhancedVariableTree({ includeSchema, excludeSchema, selectedModuleIds });
 
   const treeValue = useMemo(() => {
     if (typeof value === 'string') {

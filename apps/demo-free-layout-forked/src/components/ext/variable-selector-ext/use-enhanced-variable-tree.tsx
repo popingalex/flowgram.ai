@@ -12,10 +12,25 @@ type VariableField = BaseVariableField<{ icon?: string | JSX.Element; title?: st
 export function useEnhancedVariableTree(params: {
   includeSchema?: IJsonSchema | IJsonSchema[];
   excludeSchema?: IJsonSchema | IJsonSchema[];
+  selectedModuleIds?: string[];
 }): TreeNodeData[] {
-  const { includeSchema, excludeSchema } = params;
+  const { includeSchema, excludeSchema, selectedModuleIds } = params;
+
+  // 🎯 添加调试信息，确认参数传递
+  console.log('[变量树] useEnhancedVariableTree 参数:', {
+    selectedModuleIds,
+    hasSelectedModuleIds: !!selectedModuleIds,
+    selectedModuleIdsLength: selectedModuleIds?.length || 0,
+  });
 
   const available = useScopeAvailable();
+
+  // 🎯 调试变量数据
+  console.log('[变量树] 可用变量数据:', {
+    available,
+    variablesCount: available?.variables?.length || 0,
+    variables: available?.variables?.map((v) => ({ key: v.key, type: v.type })) || [],
+  });
 
   const getVariableTypeIcon = useCallback((variable: VariableField) => {
     const type = variable?.type;
@@ -99,6 +114,24 @@ export function useEnhancedVariableTree(params: {
         // 添加模块分组
         Object.entries(moduleGroups).forEach(([moduleId, moduleProps]) => {
           if (moduleProps.length > 0) {
+            // 🎯 如果指定了selectedModuleIds，只显示选中的模块
+            if (selectedModuleIds && selectedModuleIds.length > 0) {
+              // 🎯 调试信息
+              console.log('[变量树] 模块过滤调试:', {
+                currentModuleId: moduleId,
+                selectedModuleIds,
+                moduleProps: moduleProps.map((p) => p.key),
+              });
+
+              // 检查当前模块是否在选中列表中
+              const isModuleSelected = selectedModuleIds.includes(moduleId);
+              console.log('[变量树] 模块匹配结果:', { moduleId, isModuleSelected });
+
+              if (!isModuleSelected) {
+                return; // 跳过未选中的模块
+              }
+            }
+
             // 🎯 使用moduleId作为显示名称，因为meta信息不可用
             const moduleName = moduleId;
 

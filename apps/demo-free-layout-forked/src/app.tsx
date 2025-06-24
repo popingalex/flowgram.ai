@@ -62,6 +62,7 @@ import { EntityWorkflowSyncer } from './components/entity-workflow-syncer';
 import { EntitySelector } from './components/entity-selector';
 import { EntityManagementPage } from './components/entity-management';
 import { EntityListPage } from './components/entity-list-page';
+import { EcsBehaviorEditor } from './components/ecs-behavior-editor';
 import { DebugPanel } from './components/debug-panel';
 import { ApiTestPanel } from './components/api-test-panel';
 // import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
@@ -452,6 +453,16 @@ const AppContent: React.FC = () => {
           },
         };
 
+      case 'ecs-behavior':
+        return {
+          pageType: 'ecs-behavior',
+          systems: [], // TODO: 添加ECS系统数据
+          routeState,
+          metadata: {
+            note: 'ECS行为系统管理',
+          },
+        };
+
       case 'api-test':
         return {
           pageType: 'api-test',
@@ -520,7 +531,7 @@ const AppContent: React.FC = () => {
           { itemKey: 'exp-local', text: '本地行为函数', link: '/#exp/local' },
         ],
       },
-      { itemKey: 'entity-workflow', text: '实体工作流', link: '/#entity-workflow' },
+      { itemKey: 'ecs-behavior', text: '行为编辑', link: '/#ecs-behavior' },
     ],
     []
   );
@@ -579,6 +590,8 @@ const AppContent: React.FC = () => {
         return <ExpressionListPage />;
       case 'exp-local':
         return <ExpressionListPage />;
+      case 'ecs-behavior':
+        return <EcsBehaviorEditor />;
       case 'entity-workflow':
         return <WorkflowEditPage />;
       case 'api-test':

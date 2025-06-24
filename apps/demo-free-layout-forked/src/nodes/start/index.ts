@@ -31,4 +31,24 @@ export const StartNodeRegistry: FlowNodeRegistry = {
   canAdd() {
     return false;
   },
+  /**
+   * Initialize start node with basic outputs
+   */
+  onAdd() {
+    return {
+      id: 'start',
+      type: 'start',
+      data: {
+        title: 'Start',
+        id: '',
+        description: '',
+        outputs: {
+          type: 'object',
+          properties: {
+            // 初始为空，将在表单中动态生成
+          },
+        },
+      },
+    };
+  },
 };

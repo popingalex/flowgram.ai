@@ -47,6 +47,7 @@ export interface EnhancedVariableSelectorProps {
   onChange: (value?: string[]) => void;
   includeSchema?: IJsonSchema | IJsonSchema[];
   excludeSchema?: IJsonSchema | IJsonSchema[];
+  selectedModuleIds?: string[]; // 新增：选中的模块ID列表
   readonly?: boolean;
   hasError?: boolean;
   style?: React.CSSProperties;
@@ -61,11 +62,12 @@ export const EnhancedVariableSelector: React.FC<EnhancedVariableSelectorProps> =
   readonly = false,
   includeSchema,
   excludeSchema,
+  selectedModuleIds,
   hasError,
   triggerRender,
 }) => {
   // 使用增强的变量树，支持模块分组
-  const treeData = useEnhancedVariableTree({ includeSchema, excludeSchema });
+  const treeData = useEnhancedVariableTree({ includeSchema, excludeSchema, selectedModuleIds });
 
   const treeValue = useMemo(() => {
     if (typeof value === 'string') {
