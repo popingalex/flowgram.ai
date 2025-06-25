@@ -457,9 +457,9 @@ const useGraphStoreBase = create<GraphStore>()(
         const startNodeId = nanoid();
         const newBehavior: WorkflowGraph = {
           id: '', // 空ID，用户需要填写
-          name: '新建行为',
+          name: '新建一个行为',
           type: 'behavior',
-          desc: '新建行为',
+          desc: '新建两个行为',
           moduleIds: [], // 空数组，不预设模块
           priority: get().graphs.filter((g) => g.type === 'behavior').length,
           nodes: [

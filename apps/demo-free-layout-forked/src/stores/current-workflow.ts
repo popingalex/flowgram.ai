@@ -158,7 +158,9 @@ export const useCurrentBehaviorStore = create<CurrentBehaviorStore>()(
           console.log('📝 [CurrentBehaviorStore] 选择行为，创建工作副本:', {
             behaviorId: behavior.id,
             behaviorName: behavior.name,
+            behaviorDesc: behavior.desc,
             isNew: (behavior as any).isNew,
+            fullBehaviorData: behavior,
           });
 
           state.selectedBehaviorId = behavior._indexId || behavior.id;

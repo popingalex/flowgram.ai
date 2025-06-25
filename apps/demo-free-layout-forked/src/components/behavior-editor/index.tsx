@@ -113,10 +113,20 @@ export const BehaviorEditor: React.FC = () => {
   // 🔑 新增：行为列表数据，支持拖拽排序
   const [behaviorList, setBehaviorList] = useState<any[]>([]);
 
-  // 🔑 简化：直接基于store数据展示，不重复添加
+  // 🔑 修改：新建行为使用工作副本数据，其他行为使用Store数据
   useEffect(() => {
-    // 直接使用Store中的数据，不做重复处理
-    let filtered = [...filteredGraphs];
+    // 处理数据源：新建行为使用工作副本，其他使用Store数据
+    let filtered = filteredGraphs.map((behavior) => {
+      // 如果是新建行为且有工作副本，使用工作副本数据
+      if ((behavior as any).isNew && editingBehavior && routeState.entityId === 'new') {
+        console.log('🔄 [BehaviorEditor] 新建行为使用工作副本数据:', {
+          storeData: { id: behavior.id, name: behavior.name },
+          editingData: { id: editingBehavior.id, name: editingBehavior.name },
+        });
+        return editingBehavior;
+      }
+      return behavior;
+    });
 
     if (searchText.trim()) {
       const searchLower = searchText.toLowerCase();
@@ -142,7 +152,7 @@ export const BehaviorEditor: React.FC = () => {
       }));
 
     setBehaviorList(sortedBehaviors);
-  }, [filteredGraphs, searchText]);
+  }, [filteredGraphs, searchText, editingBehavior, routeState.entityId]);
 
   // 🔑 新增：拖拽排序处理函数
   const handleDragSort = useCallback(
@@ -325,7 +335,7 @@ export const BehaviorEditor: React.FC = () => {
                     searchWords={searchWords}
                   />
                 </Text>
-                {item.name && (
+                {item.desc && (
                   <Text
                     type="secondary"
                     size="small"
@@ -338,7 +348,7 @@ export const BehaviorEditor: React.FC = () => {
                       textOverflow: 'ellipsis',
                     }}
                   >
-                    <Highlight sourceString={item.name} searchWords={searchWords} />
+                    <Highlight sourceString={item.desc} searchWords={searchWords} />
                   </Text>
                 )}
               </div>
