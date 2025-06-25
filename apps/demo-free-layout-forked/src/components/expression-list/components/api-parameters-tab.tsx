@@ -5,10 +5,7 @@ import { Table, Input, Button, Space, Checkbox, Typography, Dropdown } from '@do
 import { IconPlus, IconDelete, IconMore } from '@douyinfe/semi-icons';
 
 import { EntityPropertyTypeSelector } from '../../ext/type-selector-ext';
-import {
-  useCurrentExpression,
-  useCurrentExpressionActions,
-} from '../../../stores/current-expression.store';
+import { useCurrentExpression, useCurrentExpressionActions } from '../../../stores/current-api';
 
 const { Title, Text } = Typography;
 

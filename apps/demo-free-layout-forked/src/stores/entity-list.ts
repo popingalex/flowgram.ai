@@ -115,16 +115,7 @@ export const useEntityListStore = create<EntityListState>((set, get) => ({
       );
 
       // 🔗 如果更新的是实体ID，需要同步更新映射关系
-      if (field === 'id') {
-        const updatedEntity = updatedEntities.find((e) => e._indexId === indexId);
-        if (updatedEntity) {
-          // 导入映射store并更新
-          import('./entity-graph-mapping.store').then(({ useEntityGraphMappingActions }) => {
-            const { updateEntityBusinessId } = useEntityGraphMappingActions();
-            updateEntityBusinessId(indexId, value as string);
-          });
-        }
-      }
+      // 注：entity-graph映射功能已移除，不再需要同步更新
 
       return { entities: updatedEntities };
     }),

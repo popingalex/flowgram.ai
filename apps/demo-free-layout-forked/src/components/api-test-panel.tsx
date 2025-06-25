@@ -87,8 +87,6 @@ export const ApiTestPanel: React.FC = () => {
   const runAllTests = async () => {
     for (const test of tests) {
       await runTest(test.name, test.fn);
-      // 添加小延迟避免并发过多
-      await new Promise((resolve) => setTimeout(resolve, 200));
     }
   };
 

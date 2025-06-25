@@ -6,7 +6,7 @@ export type RouteType =
   | 'exp-remote'
   | 'exp-local'
   | 'entity-workflow'
-  | 'ecs-behavior'
+  | 'behavior'
   | 'api-test'
   | 'test-new-architecture'
   | 'test-indexed-store'
@@ -30,7 +30,10 @@ const RouterContext = createContext<RouterContextType | null>(null);
 
 // 解析URL路径（支持hash和正常路径）
 const parseUrl = (pathname: string, hash?: string): RouteState => {
-  console.log('🔍 [parseUrl] 解析URL:', { pathname, hash });
+  const urlObj = new URL(pathname, window.location.origin);
+  const url = urlObj.href;
+
+  // console.log('🔍 [parseUrl] 解析URL:', { pathname, hash });
 
   // 优先解析hash路径
   if (hash && hash.startsWith('#')) {
@@ -95,9 +98,9 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
       };
     }
 
-    // ECS行为编辑器路由
-    if (hashPath === 'ecs-behavior') {
-      return { route: 'ecs-behavior' };
+    // 行为编辑器路由
+    if (hashPath === 'behavior') {
+      return { route: 'behavior' };
     }
   }
 
@@ -183,9 +186,18 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
     return result;
   }
 
-  // ECS行为编辑器路由
-  if (path === 'ecs-behavior') {
-    return { route: 'ecs-behavior' };
+  // 行为编辑器路由
+  if (path === 'behavior') {
+    return { route: 'behavior' };
+  }
+
+  // 匹配 behavior/{entityId}
+  const behaviorDetailMatch = path.match(/^behavior\/([^/]+)\/?$/);
+  if (behaviorDetailMatch) {
+    return {
+      route: 'behavior',
+      entityId: behaviorDetailMatch[1],
+    };
   }
 
   // 默认返回实体列表
@@ -207,8 +219,8 @@ const generateUrl = (routeState: RouteState): string => {
       return '/exp/local/';
     case 'entity-workflow':
       return routeState.entityId ? `/entity-workflow/${routeState.entityId}/` : '/entity-workflow/';
-    case 'ecs-behavior':
-      return '/ecs-behavior/';
+    case 'behavior':
+      return routeState.entityId ? `/behavior/${routeState.entityId}/` : '/behavior/';
     case 'api-test':
       return '/api-test/';
     case 'test-new-architecture':
@@ -261,7 +273,7 @@ export const RouterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     const handleLocationChange = () => {
       const newState = parseUrl(window.location.pathname, window.location.hash);
-      console.log('🔍 [RouterProvider] 浏览器URL变化:', newState);
+      // console.log('🔍 [RouterProvider] 浏览器URL变化:', newState);
       setRouteState(newState);
     };
 
@@ -277,9 +289,9 @@ export const RouterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // 导航到指定路由
   const navigate = useCallback((newRouteState: RouteState) => {
     const url = generateUrl(newRouteState);
-    console.log('🔍 [RouterProvider] 导航到:', { newRouteState, url });
-    window.history.pushState({}, '', url);
-    console.log('🔍 [RouterProvider] 更新路由状态:', newRouteState);
+    // console.log('🔍 [RouterProvider] 导航到:', { newRouteState, url });
+    window.history.pushState(null, '', url);
+    // console.log('🔍 [RouterProvider] 更新路由状态:', newRouteState);
     setRouteState(newRouteState);
   }, []);
 

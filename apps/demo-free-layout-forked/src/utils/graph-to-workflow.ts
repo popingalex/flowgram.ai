@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 
-import type { WorkflowGraph, WorkflowGraphNode, WorkflowGraphEdge } from '../stores/graph.store';
+import type { WorkflowGraph, WorkflowGraphNode, WorkflowGraphEdge } from '../stores/workflow-list';
 
 // 节点类型映射：后台类型 -> 编辑器类型
 const NODE_TYPE_MAPPING: Record<string, string> = {

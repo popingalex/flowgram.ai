@@ -57,11 +57,11 @@ const useBehaviorStoreBase = create<BehaviorStore>()(
 
         try {
           const behaviors = await behaviorApi.getAll();
-          console.log('🔍 [BehaviorStore] API返回的原始数据:', {
-            behaviorsCount: behaviors.length,
-            firstBehavior: behaviors[0],
-            behaviors: behaviors.slice(0, 3),
-          });
+          // console.log('🔍 [BehaviorStore] API返回的原始数据:', {
+          //   behaviorsCount: behaviors.length,
+          //   firstBehavior: behaviors[0],
+          //   behaviors: behaviors.slice(0, 3),
+          // });
 
           // 为每个behavior添加稳定的索引ID (如果没有)
           const behaviorsWithIndex = behaviors.map((behavior) => ({

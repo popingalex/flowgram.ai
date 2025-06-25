@@ -1455,20 +1455,20 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
 
   // 🔍 调试：监控editingEntity变化
   React.useEffect(() => {
-    console.log('🔍 [UniversalPropertyTable] editingEntity变化:', {
-      entityId: editingEntity?.id,
-      entityName: editingEntity?.name,
-      attributeCount: editingEntity?.attributes?.length || 0,
-      bundleCount: editingEntity?.bundles?.length || 0,
-      showEntityProperties,
-      showModuleProperties,
-    });
+    // console.log('🔍 [UniversalPropertyTable] editingEntity变化:', {
+    //   entityId: editingEntity?.id,
+    //   entityName: editingEntity?.name,
+    //   attributeCount: editingEntity?.attributes?.length || 0,
+    //   bundleCount: editingEntity?.bundles?.length || 0,
+    //   showEntityProperties,
+    //   showModuleProperties,
+    // });
   }, [editingEntity, showEntityProperties, showModuleProperties]);
 
   // 准备节点模块数据
   const nodeModuleData: NodeModuleData[] = React.useMemo(() => {
     if (!showModuleProperties) {
-      console.log('🔍 模块属性显示被禁用:', { showModuleProperties });
+      // console.log('🔍 模块属性显示被禁用:', { showModuleProperties });
       return [];
     }
 
@@ -1481,11 +1481,11 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
     }
 
     const { modules } = useModuleStore.getState();
-    console.log(
-      '🔍 所有模块数据:',
-      modules.map((m) => ({ id: m.id, _indexId: m._indexId, name: m.name }))
-    );
-    console.log('🔍 实体关联的模块ID:', editingEntity.bundles);
+    // console.log(
+    //   '🔍 所有模块数据:',
+    //   modules.map((m) => ({ id: m.id, _indexId: m._indexId, name: m.name }))
+    // );
+    // console.log('🔍 实体关联的模块ID:', editingEntity.bundles);
 
     // 🎯 导入IdTransform工具
     const { IdTransform } = require('../../../utils/id-transform');

@@ -11,7 +11,13 @@ import {
   Typography,
   Highlight,
 } from '@douyinfe/semi-ui';
-import { IconSearch, IconPlus, IconRefresh } from '@douyinfe/semi-icons';
+import {
+  IconSearch,
+  IconPlus,
+  IconRefresh,
+  IconChevronUp,
+  IconChevronDown,
+} from '@douyinfe/semi-icons';
 
 const { Text } = Typography;
 
@@ -40,9 +46,14 @@ interface DataListSidebarProps<T extends DataListItem> {
   // 操作
   onAdd?: () => void;
   onRefresh?: () => void;
+  addDisabled?: boolean; // 新增：是否禁用新建按钮
+
+  // 🔑 新增：拖拽排序
+  enableDragSort?: boolean; // 是否启用拖拽排序
+  onDragSort?: (oldIndex: number, newIndex: number) => void; // 拖拽排序回调
 
   // 渲染
-  renderItem?: (item: T, isSelected: boolean) => ReactNode;
+  renderItem?: (item: T, isSelected: boolean, index?: number) => ReactNode; // 🔑 添加index参数
   emptyText?: string;
 
   // 模块数据（用于实体管理）
@@ -67,6 +78,9 @@ export function DataListSidebar<T extends DataListItem>({
   selectedIdField = 'id', // 默认使用id字段
   onAdd,
   onRefresh,
+  addDisabled = false, // 默认不禁用
+  enableDragSort = false, // 🔑 新增：默认不启用拖拽排序
+  onDragSort, // 🔑 新增：拖拽排序回调
   renderItem,
   emptyText = '暂无数据',
   modules,
@@ -132,82 +146,120 @@ export function DataListSidebar<T extends DataListItem>({
     );
   };
 
-  // 默认渲染函数 - 新的两行布局
-  const defaultRenderItem = (item: T, isSelected: boolean) => {
-    console.log('🔍 [DataListSidebar] 渲染项目:', {
-      itemId: item.id,
-      itemIndexId: item._indexId,
-      selectedId,
-      selectedIdField,
-      compareValue: item[selectedIdField],
-      isSelected,
-      comparison: `${item[selectedIdField]} === ${selectedId} = ${
-        item[selectedIdField] === selectedId
-      }`,
-    });
+  // 🔑 新增：处理拖拽排序
+  const handleMoveBehavior = (index: number, direction: 'up' | 'down') => {
+    if (!onDragSort) return;
 
-    return (
-      <List.Item
-        onClick={() => onItemSelect(item)}
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= items.length) return;
+
+    onDragSort(index, newIndex);
+  };
+
+  // 默认渲染函数 - 新的两行布局
+  const defaultRenderItem = (item: T, isSelected: boolean, index?: number) => (
+    <List.Item
+      style={{
+        backgroundColor: isSelected ? 'var(--semi-color-primary-light-default)' : undefined,
+        padding: '12px 16px',
+        position: 'relative',
+      }}
+      className="data-list-item"
+      data-testid={`${testId.replace('-sidebar', '')}-item-${item.id || item._indexId}`}
+    >
+      {/* 🔑 拖拽排序按钮 */}
+      {enableDragSort && typeof index === 'number' && (
+        <div
+          style={{
+            position: 'absolute',
+            right: '8px',
+            top: '8px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px',
+            zIndex: 10,
+          }}
+        >
+          <Button
+            icon={<IconChevronUp />}
+            size="small"
+            theme="borderless"
+            disabled={index === 0 || (item as any).isNew}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMoveBehavior(index, 'up');
+            }}
+            style={{ width: '24px', height: '20px', padding: 0 }}
+          />
+          <Button
+            icon={<IconChevronDown />}
+            size="small"
+            theme="borderless"
+            disabled={index === items.length - 1 || (item as any).isNew}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMoveBehavior(index, 'down');
+            }}
+            style={{ width: '24px', height: '20px', padding: 0 }}
+          />
+        </div>
+      )}
+
+      <div
         style={{
-          backgroundColor: isSelected ? 'var(--semi-color-primary-light-default)' : undefined,
-          padding: '12px 16px',
+          width: '100%',
           cursor: 'pointer',
+          paddingRight: enableDragSort ? '40px' : '0',
         }}
-        className="data-list-item"
-        data-testid={`${testId.replace('-sidebar', '')}-item-${item.id || item._indexId}`}
+        onClick={() => onItemSelect(item)}
       >
-        <div style={{ width: '100%' }}>
-          {/* 第一行：左侧实体信息 + 右侧统计 */}
-          <div
-            style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
+        {/* 第一行：左侧实体信息 + 右侧统计 */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Text
+              style={{
+                color: isSelected ? 'var(--semi-color-primary)' : 'var(--semi-color-text-0)',
+                fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                fontSize: '13px',
+                display: 'block',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              <Highlight
+                sourceString={item.id || ''}
+                searchWords={searchText.trim() ? [searchText.trim()] : []}
+              />
+            </Text>
+            {item.name && (
               <Text
+                type="secondary"
+                size="small"
                 style={{
-                  color: isSelected ? 'var(--semi-color-primary)' : 'var(--semi-color-text-0)',
-                  fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-                  fontSize: '13px',
+                  color: 'var(--semi-color-text-1)',
                   display: 'block',
+                  margin: '2px 0 0 0',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                 }}
               >
                 <Highlight
-                  sourceString={item.id || ''}
+                  sourceString={item.name}
                   searchWords={searchText.trim() ? [searchText.trim()] : []}
                 />
               </Text>
-              {item.name && (
-                <Text
-                  type="secondary"
-                  size="small"
-                  style={{
-                    color: 'var(--semi-color-text-1)',
-                    display: 'block',
-                    margin: '2px 0 0 0',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  <Highlight
-                    sourceString={item.name}
-                    searchWords={searchText.trim() ? [searchText.trim()] : []}
-                  />
-                </Text>
-              )}
-            </div>
-            <div style={{ flexShrink: 0, marginLeft: '8px' }}>{renderStats(item)}</div>
+            )}
           </div>
-
-          {/* 第二行：模块标签 */}
-          {renderModuleTags(item)}
+          <div style={{ flexShrink: 0, marginLeft: '8px' }}>{renderStats(item)}</div>
         </div>
-      </List.Item>
-    );
-  };
+
+        {/* 第二行：模块标签 */}
+        {renderModuleTags(item)}
+      </div>
+    </List.Item>
+  );
 
   return (
     <div
@@ -255,6 +307,7 @@ export function DataListSidebar<T extends DataListItem>({
               type="primary"
               size="small"
               onClick={onAdd}
+              disabled={addDisabled}
               data-testid={`add-${testId.replace('-sidebar', '')}-btn`}
             />
           )}
@@ -300,12 +353,12 @@ export function DataListSidebar<T extends DataListItem>({
                 style={{ padding: '32px' }}
               />
             }
-            renderItem={(item) => {
+            renderItem={(item, index) => {
               // 🔑 修复：使用id进行匹配，而不是_indexId
               const isSelected = selectedId === item[selectedIdField];
               return renderItem
-                ? renderItem(item, isSelected)
-                : defaultRenderItem(item, isSelected);
+                ? renderItem(item, isSelected, index)
+                : defaultRenderItem(item, isSelected, index);
             }}
           />
         )}

@@ -100,24 +100,21 @@ export const EntityWorkflowSyncer: React.FC = () => {
       return;
     }
 
-    // 设置loading状态
+    // 设置loading状态并直接处理
     setLoading(true);
 
-    // 使用setTimeout确保loading状态能正确显示，并避免阻塞UI
-    setTimeout(async () => {
-      try {
-        // 转换为工作流数据
-        const convertedData = convertGraphToWorkflowData(entityGraph);
+    try {
+      // 转换为工作流数据
+      const convertedData = convertGraphToWorkflowData(entityGraph);
 
-        // 设置到当前图存储
-        setGraph(convertedData, selectedEntityId, entityGraph.id);
-      } catch (error) {
-        console.error('[EntityWorkflowSyncer] 转换失败:', error);
-        clearGraph();
-      } finally {
-        setLoading(false);
-      }
-    }, 100); // 100ms延迟，确保loading状态能显示
+      // 设置到当前图存储
+      setGraph(convertedData, selectedEntityId, entityGraph.id);
+    } catch (error) {
+      console.error('[EntityWorkflowSyncer] 转换失败:', error);
+      clearGraph();
+    } finally {
+      setLoading(false);
+    }
   }, [
     selectedEntityId,
     editingEntity,

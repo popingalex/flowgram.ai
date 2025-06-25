@@ -12,6 +12,7 @@ import {
   useEntityListActions,
   useCurrentEntity,
   useCurrentEntityActions,
+  useModuleStore,
 } from '../../stores';
 import { useRouter } from '../../hooks/use-router';
 import { EntityDetail } from './entity-detail';
@@ -23,9 +24,10 @@ export { EntityDetail };
 
 export const EntityManagementPage: React.FC = () => {
   const { entities, loading } = useEntityList();
-  const { addEntity, saveEntity, deleteEntity } = useEntityListActions();
+  const { addEntity, saveEntity, deleteEntity, loadEntities } = useEntityListActions();
   const { editingEntity, isDirty, isSaving } = useCurrentEntity();
   const { selectEntity, resetChanges } = useCurrentEntityActions();
+  const { modules } = useModuleStore();
   const { routeState, navigate } = useRouter();
 
   // 搜索状态
@@ -73,22 +75,11 @@ export const EntityManagementPage: React.FC = () => {
     }
   }, [selectedEntity, selectEntity]);
 
-  // 🎯 默认选中第一个实体（延迟执行，确保路由状态完全恢复）
+  // 🎯 默认选中第一个实体
   useEffect(() => {
     if (!loading && entities.length > 0 && !routeState.entityId) {
-      // 延迟检查，给路由状态恢复留出时间
-      const timer = setTimeout(() => {
-        // 再次检查路由状态，确保不是正在恢复中，也不是新建模式
-        if (!routeState.entityId) {
-          const firstEntity = entities[0];
-          console.log('🎯 默认选中第一个实体:', firstEntity.id);
-          navigate({ route: 'entities', entityId: firstEntity.id });
-        } else {
-          console.log('🔄 路由状态已恢复，跳过默认选中:', routeState.entityId);
-        }
-      }, 100); // 100ms延迟
-
-      return () => clearTimeout(timer);
+      const firstEntity = entities[0];
+      navigate({ route: 'entities', entityId: firstEntity.id });
     }
   }, [loading, entities, routeState.entityId, navigate]);
 
@@ -127,18 +118,22 @@ export const EntityManagementPage: React.FC = () => {
     [navigate]
   );
 
-  // 添加实体
+  // 检查是否有未保存的新建元素
+  const hasUnsavedNew = useMemo(
+    () =>
+      // 🔑 修复：检查当前是否处于新建模式
+      routeState.entityId === 'new',
+    [routeState.entityId]
+  );
+
+  // 添加实体 - 创建新建模式
   const handleAddEntity = useCallback(async () => {
-    try {
-      // 🔑 直接跳转到新建页面，不预先创建实体对象
-      console.log('🔍 点击新建实体按钮，准备跳转');
-      navigate({ route: 'entities', entityId: 'new' });
-      console.log('✅ 跳转到新建实体页面');
-    } catch (error) {
-      console.error('❌ 跳转失败:', error);
-      Toast.error('跳转失败');
-    }
-  }, [navigate]);
+    // 如果已经有未保存的新建元素，禁用新建
+    if (hasUnsavedNew) return;
+
+    // 🔑 修复：直接导航到新建模式，不要预先创建实体对象
+    navigate({ route: 'entities', entityId: 'new' });
+  }, [navigate, hasUnsavedNew]);
 
   // 刷新数据
   const handleRefresh = useCallback(async () => {
@@ -169,6 +164,10 @@ export const EntityManagementPage: React.FC = () => {
         await saveEntity(entityToSave);
         console.log('✅ 新实体创建并保存成功:', entityToSave.id);
 
+        // 🔑 修复：保存成功后刷新实体列表
+        await loadEntities();
+        console.log('🔄 实体列表已刷新');
+
         // 跳转到新实体的编辑页面
         if (entityToSave.id) {
           navigate({ route: 'entities', entityId: entityToSave.id });
@@ -177,6 +176,10 @@ export const EntityManagementPage: React.FC = () => {
         // 🔑 已有实体：直接保存
         await saveEntity(entityToSave);
         console.log('✅ 实体保存成功:', entityToSave.id);
+
+        // 🔑 修复：保存成功后刷新实体列表
+        await loadEntities();
+        console.log('🔄 实体列表已刷新');
       }
 
       Toast.success('实体保存成功');
@@ -184,7 +187,7 @@ export const EntityManagementPage: React.FC = () => {
       console.error('❌ 实体保存失败:', error);
       Toast.error('实体保存失败');
     }
-  }, [editingEntity, selectedEntity, selectEntity, saveEntity, navigate]);
+  }, [editingEntity, selectedEntity, selectEntity, saveEntity, navigate, loadEntities]);
 
   // 撤销修改
   const handleUndo = useCallback(() => {
@@ -362,15 +365,18 @@ export const EntityManagementPage: React.FC = () => {
                 保存
               </Button>
             )}
-            <Button
-              icon={<IconUndo />}
-              onClick={handleUndo}
-              disabled={!currentEntityDirty}
-              size="small"
-              data-testid="undo-entity-btn"
-            >
-              撤销
-            </Button>
+            {/* 🔑 修复：新建状态下不显示撤销按钮 */}
+            {selectedEntity?._status !== 'new' && (
+              <Button
+                icon={<IconUndo />}
+                onClick={handleUndo}
+                disabled={!currentEntityDirty}
+                size="small"
+                data-testid="undo-entity-btn"
+              >
+                撤销
+              </Button>
+            )}
             <Popconfirm
               title="确定删除这个实体吗？"
               content="删除后将无法恢复，相关配置也会丢失"
@@ -402,6 +408,7 @@ export const EntityManagementPage: React.FC = () => {
           onAdd={handleAddEntity}
           onRefresh={handleRefresh}
           emptyText="暂无实体"
+          modules={modules}
         />
       }
       detailContent={

@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 
 import { Input } from '@douyinfe/semi-ui';
 
-import { useCurrentExpressionActions } from '../../../stores/current-expression.store';
+import { useCurrentExpressionActions } from '../../../stores/current-api';
 
 interface ApiHeaderProps {
   apiName: string;

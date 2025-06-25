@@ -29,8 +29,7 @@ import {
 
 // 现有的组件
 
-import { ModuleStoreProvider } from './stores/module.store';
-import { useEntityGraphMappingActions } from './stores/entity-graph-mapping.store';
+import { ModuleStoreProvider } from './stores/module-list';
 import {
   useEntityStore,
   EntityEditProvider,
@@ -52,18 +51,18 @@ import { useDebugPanel } from './hooks/use-debug-panel';
 import { Editor } from './editor';
 import { TestNewArchitecture } from './components/test-new-architecture';
 // import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
-import { IndexedStoreTest } from './components/test/indexed-store-test';
+// import { IndexedStoreTest } from './components/test/indexed-store-test'; // 已移除
 import { ModuleManagementPage } from './components/module-management';
 import { ModuleListPage } from './components/module-list-page';
 import { EnumStoreProvider } from './components/ext/type-selector-ext/enum-store';
 import { ExpressionListPage } from './components/expression-list';
 // import { BehaviorTestPage } from './components/ext/behavior-test'; // 已删除
-import { EntityWorkflowSyncer } from './components/entity-workflow-syncer';
+// import { EntityWorkflowSyncer } from './components/entity-workflow-syncer'; // 已移除
 import { EntitySelector } from './components/entity-selector';
 import { EntityManagementPage } from './components/entity-management';
 import { EntityListPage } from './components/entity-list-page';
-import { EcsBehaviorEditor } from './components/ecs-behavior-editor';
 import { DebugPanel } from './components/debug-panel';
+import { BehaviorEditor } from './components/behavior-editor';
 import { ApiTestPanel } from './components/api-test-panel';
 // import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
 
@@ -77,7 +76,7 @@ const DataStoreInitializer: React.FC<{ children: React.ReactNode }> = ({ childre
   const { loadEntities, clearNewEntities } = useEntityListActions();
   const { loadBehaviors } = useBehaviorActions();
   const { loadGraphs, updateEntityIdMapping, updateGraphs } = useGraphActions();
-  const { initializeMappings } = useEntityGraphMappingActions();
+  // const { initializeMappings } = useEntityGraphMappingActions(); // 已移除entity-graph映射功能
 
   const [entitiesLoaded, setEntitiesLoaded] = React.useState(false);
   const [behaviorsLoaded, setBehaviorsLoaded] = React.useState(false);
@@ -144,7 +143,7 @@ const DataStoreInitializer: React.FC<{ children: React.ReactNode }> = ({ childre
       updateGraphs(updatedGraphs);
 
       // 🔗 建立映射关系（现在实体和行为树有相同的_indexId了）
-      initializeMappings(entities, updatedGraphs);
+      // initializeMappings(entities, updatedGraphs); // 已移除entity-graph映射功能
 
       nanoidSharingCompletedRef.current = true;
       console.log('✅ [DataInit] nanoid共享完成');
@@ -242,11 +241,11 @@ const AppContent: React.FC = () => {
   const { debugState, toggleDebugPanel, hideDebugPanel, updateDebugData } = useDebugPanel();
 
   // 🔍 添加路由状态调试
-  console.log('🔍 [AppContent] 路由状态:', {
-    routeState,
-    currentPage,
-    url: window.location.href,
-  });
+  // console.log('🔍 [AppContent] 路由状态:', {
+  //   routeState,
+  //   currentPage,
+  //   url: window.location.href,
+  // });
 
   const { entities, loading } = useEntityList();
   const { selectedEntityId, originalEntity, editingEntity, isDirty, isSaving } = useCurrentEntity();
@@ -330,13 +329,13 @@ const AppContent: React.FC = () => {
 
   // 获取当前页面的数据，用于debug面板显示
   const getCurrentPageData = React.useCallback(() => {
-    console.log('🔍 [Debug] 获取页面数据:', {
-      currentPage,
-      hasOriginalEntity: !!originalEntity,
-      hasEditingEntity: !!editingEntity,
-      isDirty,
-      isSaving,
-    });
+    // console.log('🔍 [Debug] 获取页面数据:', {
+    //   currentPage,
+    //   hasOriginalEntity: !!originalEntity,
+    //   hasEditingEntity: !!editingEntity,
+    //   isDirty,
+    //   isSaving,
+    // });
 
     switch (currentPage) {
       case 'entities':
@@ -453,13 +452,13 @@ const AppContent: React.FC = () => {
           },
         };
 
-      case 'ecs-behavior':
+      case 'behavior':
         return {
-          pageType: 'ecs-behavior',
-          systems: [], // TODO: 添加ECS系统数据
+          pageType: 'behavior',
+          systems: [], // TODO: 添加行为系统数据
           routeState,
           metadata: {
-            note: 'ECS行为系统管理',
+            note: '行为系统管理',
           },
         };
 
@@ -523,6 +522,7 @@ const AppContent: React.FC = () => {
     () => [
       { itemKey: 'entities', text: '实体列表', link: '/#entities' },
       { itemKey: 'modules', text: '模块列表', link: '/#modules' },
+      { itemKey: 'behavior', text: '行为编辑', link: '/#behavior' },
       {
         itemKey: 'expressions',
         text: '表达式管理',
@@ -531,7 +531,6 @@ const AppContent: React.FC = () => {
           { itemKey: 'exp-local', text: '本地行为函数', link: '/#exp/local' },
         ],
       },
-      { itemKey: 'ecs-behavior', text: '行为编辑', link: '/#ecs-behavior' },
     ],
     []
   );
@@ -590,8 +589,8 @@ const AppContent: React.FC = () => {
         return <ExpressionListPage />;
       case 'exp-local':
         return <ExpressionListPage />;
-      case 'ecs-behavior':
-        return <EcsBehaviorEditor />;
+      case 'behavior':
+        return <BehaviorEditor />;
       case 'entity-workflow':
         return <WorkflowEditPage />;
       case 'api-test':
@@ -599,7 +598,7 @@ const AppContent: React.FC = () => {
       case 'test-new-architecture':
         return <TestNewArchitecture />;
       case 'test-indexed-store':
-        return <IndexedStoreTest />;
+        return <div>IndexedStoreTest 已移除</div>;
       case 'test-behavior':
         return <div>测试页面已删除</div>;
       case 'test-variable-selector':
@@ -610,6 +609,15 @@ const AppContent: React.FC = () => {
         return <EntityManagementPage />;
     }
   };
+
+  // 路由状态日志 - 只在路由变化时输出
+  useEffect(() => {
+    // console.log('🔍 [AppContent] 路由状态:', {
+    //   routeState,
+    //   currentPage,
+    //   url: window.location.href,
+    // });
+  }, [routeState.route, routeState.entityId]); // 只监听关键变化
 
   return (
     <Layout style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -634,8 +642,8 @@ const AppContent: React.FC = () => {
                 Debug
               </Button>
 
-              {/* 只在实体工作流页面显示实体相关控件 */}
-              {currentPage === 'entity-workflow' && (
+              {/* 在实体工作流页面和行为编辑页面显示实体相关控件 */}
+              {(currentPage === 'entity-workflow' || currentPage === 'behavior') && (
                 <>
                   <EntitySelector />
                   <Button
@@ -726,7 +734,7 @@ export const App: React.FC = () => (
     <EnumStoreProvider>
       <ModuleStoreProvider>
         <DataStoreInitializer>
-          <EntityWorkflowSyncer />
+          {/* <EntityWorkflowSyncer /> 已移除 */}
           <AppContent />
         </DataStoreInitializer>
       </ModuleStoreProvider>

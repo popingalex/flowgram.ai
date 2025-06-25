@@ -3,11 +3,8 @@ import React, { useEffect, useCallback } from 'react';
 import { Layout, Typography, Input, Button, Space, Popconfirm } from '@douyinfe/semi-ui';
 import { IconUndo, IconSave, IconDelete } from '@douyinfe/semi-icons';
 
-import { useExpressionStore } from '../../../stores/expression.store';
-import {
-  useCurrentExpression,
-  useCurrentExpressionActions,
-} from '../../../stores/current-expression.store';
+import { useCurrentExpression, useCurrentExpressionActions } from '../../../stores/current-api';
+import { useExpressionStore } from '../../../stores/api-list';
 import { ApiUrlToolbar } from './api-url-toolbar';
 import { ApiTabs } from './api-tabs';
 

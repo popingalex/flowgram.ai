@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Card, Button, Space, Typography, Spin, Empty, Tag, Table } from '@douyinfe/semi-ui';
 import { IconRefresh, IconCode } from '@douyinfe/semi-icons';
 
-import { useBehaviorList, useBehaviorActions } from '../../stores/behavior.store';
+import { useBehaviorList, useBehaviorActions } from '../../stores/function-list';
 
 const { Title, Text } = Typography;
 

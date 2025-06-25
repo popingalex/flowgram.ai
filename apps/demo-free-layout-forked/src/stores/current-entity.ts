@@ -275,11 +275,11 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
       // 🎯 核心修复：使用Immer安全地直接修改属性
       updateAttributeProperty: (attributeIndexId, field, value) => {
         set((state) => {
-          console.log('🔍 使用Immer更新属性字段:', {
-            attributeIndexId,
-            field,
-            value,
-          });
+          // console.log('🔍 使用Immer更新属性字段:', {
+          //   attributeIndexId,
+          //   field,
+          //   value,
+          // });
 
           // 找到目标属性
           const targetAttribute = state.editingEntity!.attributes!.find(

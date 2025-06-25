@@ -63,12 +63,12 @@ export const IndexedInput = React.memo(
 
     // 更新处理
     const handleChange = (newValue: string) => {
-      console.log(`🔍 ${debugName} 字段更新:`, {
-        indexPath,
-        field,
-        oldValue: value,
-        newValue,
-      });
+      // console.log(`🔍 ${debugName} 字段更新:`, {
+      //   indexPath,
+      //   field,
+      //   oldValue: value,
+      //   newValue,
+      // });
 
       updateField(indexPath, field as keyof T, newValue);
     };

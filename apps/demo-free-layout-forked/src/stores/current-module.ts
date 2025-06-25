@@ -316,7 +316,7 @@ export const useCurrentModuleStore = create<CurrentModuleStore>()(
 
         try {
           // 🎯 使用ModuleStore的saveModule方法
-          const { useModuleStore } = require('./module.store');
+          const { useModuleStore } = require('./module-list');
           const savedModule = await useModuleStore
             .getState()
             .saveModule(currentState.editingModule);

@@ -133,7 +133,7 @@ export const DetailPanel: React.FC<DetailPanelProps> = ({
           </Button>
         ))}
 
-      {onUndo && (
+      {onUndo && selectedItem._status !== 'new' && (
         <Button
           icon={<IconUndo />}
           onClick={onUndo}

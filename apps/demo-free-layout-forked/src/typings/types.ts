@@ -85,7 +85,8 @@ export interface BaseGraph extends EditableIndexed {
   name: string;
   desc?: string;
   entityId?: string; // 关联的实体_indexId（保留向后兼容）
-  moduleIds?: string[]; // 新增：关联的模块ID列表（ECS架构）
+  moduleIds?: string[]; // 关联的模块ID列表
+  priority?: number; // 优先级，数值越小优先级越高
   nodes?: any[]; // 图节点数据
   edges?: any[]; // 图边数据
 }

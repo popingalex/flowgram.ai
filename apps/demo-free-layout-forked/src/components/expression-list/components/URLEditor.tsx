@@ -3,7 +3,7 @@ import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { Input, Select, Space } from '@douyinfe/semi-ui';
 
-import { useCurrentExpressionActions } from '../../../stores/current-expression.store';
+import { useCurrentExpressionActions } from '../../../stores/current-api';
 
 interface URLEditorProps {
   currentEditingApi: any;

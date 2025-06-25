@@ -25,12 +25,14 @@ import {
 let mockEntities: Entity[] = [...REAL_ENTITIES];
 let mockModules: Module[] = [...REAL_MODULES];
 let mockEnums: EnumClass[] = Array.isArray(REAL_ENUMS) ? [...REAL_ENUMS] : [];
+let mockGraphs: any[] = [...REAL_GRAPHS]; // 添加可变的图数据副本
 
 // 重置 mock 数据的函数（可用于测试或重新加载）
 export const resetMockData = () => {
   mockEntities = [...REAL_ENTITIES];
   mockModules = [...REAL_MODULES];
   mockEnums = Array.isArray(REAL_ENUMS) ? [...REAL_ENUMS] : [];
+  mockGraphs = [...REAL_GRAPHS]; // 重置图数据
   console.log('🔄 Mock 数据已重置');
 };
 
@@ -118,25 +120,12 @@ export const getApiMode = () => ({
 // 构建完整的API URL
 const buildApiUrl = (endpoint: string) => `${API_CONFIG.BASE_URL}${endpoint}`;
 
-// 带超时的fetch请求 - 🔧 优化超时机制，移除setTimeout
+// 简化的fetch请求，不使用定时器
 const fetchWithTimeout = async (url: string, options?: RequestInit): Promise<Response> => {
   const controller = new AbortController();
 
-  // 🔧 使用Promise.race替代setTimeout进行超时控制
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-      reject(new Error('Request timeout'));
-    }, API_CONFIG.TIMEOUT);
-
-    // 确保在请求完成或中止时清理定时器
-    controller.signal.addEventListener('abort', () => {
-      clearTimeout(timeoutId);
-    });
-  });
-
   try {
-    const fetchPromise = fetch(url, {
+    const response = await fetch(url, {
       ...options,
       signal: controller.signal,
       headers: {
@@ -144,8 +133,6 @@ const fetchWithTimeout = async (url: string, options?: RequestInit): Promise<Res
         ...options?.headers,
       },
     });
-
-    const response = await Promise.race([fetchPromise, timeoutPromise]);
     return response;
   } catch (error) {
     throw error;
@@ -203,7 +190,7 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
   // 行为树图数据 - 支持 CRUD
   if (url.includes('/hub/graphs/')) {
     if (method === 'GET') {
-      return REAL_GRAPHS;
+      return [...mockGraphs]; // 返回可变副本
     }
 
     if (method === 'POST') {
@@ -213,8 +200,8 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-      // 注意：REAL_GRAPHS是只读的，这里模拟创建操作
-      console.log('✅ Mock API: 创建行为树图', newGraph.id);
+      mockGraphs.push(newGraph); // 真正添加到数组中
+      console.log('✅ Mock API: 创建行为树图', newGraph.id, newGraph);
       return newGraph;
     }
 
@@ -223,14 +210,18 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
       const graphId = graphIdMatch?.[1];
 
       if (graphId) {
-        // 模拟更新操作
-        const updatedGraph = {
-          ...body,
-          id: graphId,
-          updatedAt: new Date().toISOString(),
-        };
-        console.log('✅ Mock API: 更新行为树图', graphId, updatedGraph);
-        return updatedGraph;
+        const index = mockGraphs.findIndex((g) => g.id === graphId || g._indexId === graphId);
+        if (index !== -1) {
+          const updatedGraph = {
+            ...mockGraphs[index],
+            ...body,
+            _indexId: mockGraphs[index]._indexId, // 保持原有索引ID
+            updatedAt: new Date().toISOString(),
+          };
+          mockGraphs[index] = updatedGraph; // 真正更新数组中的数据
+          console.log('✅ Mock API: 更新行为树图', graphId, updatedGraph);
+          return updatedGraph;
+        }
       }
       throw new Error(`行为树图未找到: ${graphId}`);
     }
@@ -240,13 +231,17 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
       const graphId = graphIdMatch?.[1];
 
       if (graphId) {
-        console.log('✅ Mock API: 删除行为树图', graphId);
-        return;
+        const index = mockGraphs.findIndex((g) => g.id === graphId || g._indexId === graphId);
+        if (index !== -1) {
+          mockGraphs.splice(index, 1); // 真正从数组中删除
+          console.log('✅ Mock API: 删除行为树图', graphId);
+          return;
+        }
       }
       throw new Error(`行为树图未找到: ${graphId}`);
     }
 
-    return REAL_GRAPHS;
+    return [...mockGraphs];
   }
 
   // 实体数据 - 支持 CRUD

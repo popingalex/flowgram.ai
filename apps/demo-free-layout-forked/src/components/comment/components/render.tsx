@@ -45,11 +45,8 @@ export const CommentRender: FC<{
       data-node-selected={String(focused)}
       onMouseEnter={updateOverflow}
       onMouseDown={(e) => {
-        setTimeout(() => {
-          // 防止 selectNode 拦截事件，导致 slate 编辑器无法聚焦
-          selectNode(e);
-          // eslint-disable-next-line @typescript-eslint/no-magic-numbers -- delay
-        }, 20);
+        // 直接调用selectNode，不使用定时器
+        selectNode(e);
       }}
     >
       <Form control={formControl}>

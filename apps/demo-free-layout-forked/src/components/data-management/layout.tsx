@@ -1,41 +1,30 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
 
 import { Layout, Typography } from '@douyinfe/semi-ui';
 
-const { Sider, Content, Header } = Layout;
+const { Header, Content, Sider } = Layout;
 const { Title } = Typography;
 
-interface DataManagementLayoutProps {
-  // 页面标题
+export interface DataManagementLayoutProps {
   title: string;
-  // 操作按钮
-  headerActions?: ReactNode;
-
-  // 左侧面板
-  sidebarWidth?: number;
-  sidebarContent: ReactNode;
-
-  // 右侧面板
-  detailContent: ReactNode;
-
-  // 额外的样式
-  style?: React.CSSProperties;
+  headerActions?: React.ReactNode;
+  sidebarContent: React.ReactNode;
+  detailContent: React.ReactNode;
 }
 
 export const DataManagementLayout: React.FC<DataManagementLayoutProps> = ({
   title,
   headerActions,
-  sidebarWidth = 320,
   sidebarContent,
   detailContent,
-  style,
 }) => (
-  <Layout style={{ height: '100%', display: 'flex', flexDirection: 'column', ...style }}>
+  <Layout style={{ height: '100%' }}>
     <Header
       style={{
-        padding: '16px 24px',
         backgroundColor: 'var(--semi-color-bg-1)',
-        flexShrink: 0,
+        padding: '0 24px',
+        height: '48px',
+        borderBottom: '1px solid var(--semi-color-border)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -46,28 +35,19 @@ export const DataManagementLayout: React.FC<DataManagementLayoutProps> = ({
       </Title>
       {headerActions && <div>{headerActions}</div>}
     </Header>
-
     <Layout style={{ flex: 1, overflow: 'hidden' }}>
       <Sider
         style={{
-          width: sidebarWidth,
-          minWidth: sidebarWidth,
-          maxWidth: sidebarWidth,
-          flexShrink: 0,
           backgroundColor: 'var(--semi-color-bg-1)',
-        }}
-      >
-        {sidebarContent}
-      </Sider>
-      <Content
-        style={{
-          flex: 1,
-          backgroundColor: 'var(--semi-color-bg-0)',
+          borderRight: '1px solid var(--semi-color-border)',
+          width: 350,
+          height: '100%',
           overflow: 'hidden',
         }}
       >
-        {detailContent}
-      </Content>
+        <div style={{ height: '100%', overflow: 'hidden' }}>{sidebarContent}</div>
+      </Sider>
+      <Content style={{ flex: 1, overflow: 'hidden' }}>{detailContent}</Content>
     </Layout>
   </Layout>
 );

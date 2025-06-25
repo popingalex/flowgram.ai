@@ -24,6 +24,8 @@ export function useEditorProps(
   initialData: FlowDocumentJSON,
   nodeRegistries: FlowNodeRegistry[]
 ): FreeLayoutProps {
+  // 初始化数据检查
+
   return useMemo<FreeLayoutProps>(
     () => ({
       /**
@@ -181,32 +183,8 @@ export function useEditorProps(
       onAllLayersRendered(ctx) {
         const data = ctx.document.toJSON() as any;
 
-        if (data._needsAutoLayout) {
-          // 如果标记需要自动布局，则触发自动布局
-          console.log('🎯 触发自动布局: _needsAutoLayout = true');
-          setTimeout(() => {
-            const autoLayoutButton = document.querySelector(
-              '[data-auto-layout-button]'
-            ) as HTMLButtonElement;
-            if (autoLayoutButton) {
-              autoLayoutButton.click();
-              console.log('✅ 自动布局已触发');
-
-              // 布局完成后适应视图
-              setTimeout(() => {
-                ctx.document.fitView(false);
-                console.log('✅ 布局完成后适应视图');
-              }, 800);
-            } else {
-              console.warn('⚠️ 找不到自动布局按钮，直接fitView');
-              ctx.document.fitView(false);
-            }
-          }, 500);
-        } else {
-          // 不需要自动布局时直接fitView
-          ctx.document.fitView(false);
-          console.log('--- Playground rendered (fitView only) ---');
-        }
+        // 直接适应视图，不使用定时器
+        ctx.document.fitView(false);
       },
       /**
        * Playground dispose

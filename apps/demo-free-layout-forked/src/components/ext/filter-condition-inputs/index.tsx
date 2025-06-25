@@ -8,7 +8,7 @@ import { IconPlus, IconCrossCircleStroked, IconDelete } from '@douyinfe/semi-ico
 
 import { EnhancedVariableSelector } from '../variable-selector-ext';
 import { EnhancedConditionRow } from '../condition-row-ext';
-import { useModuleStore } from '../../../stores/module.store';
+import { useModuleStore } from '../../../stores/module-list';
 import { useNodeRenderContext } from '../../../hooks';
 import { FormItem } from '../../../form-components';
 import { Feedback } from '../../../form-components';
@@ -201,9 +201,30 @@ export function FilterConditionInputs() {
                 )}
 
                 {(!field.value || field.value.length === 0) && (
-                  <Text type="tertiary" style={{ fontSize: '12px' }}>
-                    暂无模块过滤条件
-                  </Text>
+                  <div>
+                    <Text
+                      type="tertiary"
+                      style={{ fontSize: '12px', marginBottom: '8px', display: 'block' }}
+                    >
+                      暂无模块过滤条件
+                    </Text>
+                    {!readonly && (
+                      <Button
+                        theme="light"
+                        icon={<IconPlus />}
+                        onClick={() =>
+                          field.append({
+                            moduleId: '',
+                            operator: 'contains',
+                          })
+                        }
+                        size="small"
+                        style={{ marginTop: '4px' }}
+                      >
+                        添加默认模块条件
+                      </Button>
+                    )}
+                  </div>
                 )}
               </>
             );
@@ -266,9 +287,30 @@ export function FilterConditionInputs() {
               )}
 
               {(!field.value || field.value.length === 0) && (
-                <Text type="tertiary" style={{ fontSize: '12px' }}>
-                  暂无属性过滤条件
-                </Text>
+                <div>
+                  <Text
+                    type="tertiary"
+                    style={{ fontSize: '12px', marginBottom: '8px', display: 'block' }}
+                  >
+                    暂无属性过滤条件
+                  </Text>
+                  {!readonly && (
+                    <Button
+                      theme="light"
+                      icon={<IconPlus />}
+                      onClick={() =>
+                        field.append({
+                          key: `property_${nanoid(6)}`,
+                          value: { type: 'expression', content: '' },
+                        })
+                      }
+                      size="small"
+                      style={{ marginTop: '4px' }}
+                    >
+                      添加默认属性条件
+                    </Button>
+                  )}
+                </div>
               )}
 
               {selectedModuleIds.length > 0 && (

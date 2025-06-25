@@ -1,33 +1,44 @@
 import { useState, useEffect, useCallback } from 'react';
 
 import { useClientContext, getNodeForm, FlowNodeEntity } from '@flowgram.ai/free-layout-editor';
-import { Button, Badge, Toast } from '@douyinfe/semi-ui';
+import { Button, Badge, Toast, Popover, List } from '@douyinfe/semi-ui';
 
-import { useGraphActions } from '../../stores/graph.store';
-import { useCurrentGraph, useCurrentGraphActions } from '../../stores/current-graph.store';
+import { useGraphActions } from '../../stores/workflow-list';
+import { useCurrentBehavior, useCurrentBehaviorActions } from '../../stores/current-workflow';
 
 export function Save(props: { disabled: boolean }) {
   const [errorCount, setErrorCount] = useState(0);
+  const [errorDetails, setErrorDetails] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const clientContext = useClientContext();
 
-  // 获取当前图形状态和操作
-  const { entityId, graphId } = useCurrentGraph();
-  const { updateWorkflowData } = useCurrentGraphActions();
+  // 获取当前行为状态和操作
+  const { editingBehavior } = useCurrentBehavior();
+  const { updateWorkflowData } = useCurrentBehaviorActions();
   const { saveGraph } = useGraphActions();
 
   const updateValidateData = useCallback(() => {
     const allForms = clientContext.document.getAllNodes().map((node) => getNodeForm(node));
-    const count = allForms.filter((form) => form?.state.invalid).length;
+    const invalidForms = allForms.filter((form) => form?.state.invalid);
+    const count = invalidForms.length;
+
+    // 收集错误详情
+    const errors = invalidForms.map((form, index) => {
+      const node = clientContext.document.getAllNodes().find((n) => getNodeForm(n) === form);
+      const nodeName = (node as any)?.data?.title || (node as any)?.name || `节点${index + 1}`;
+      return `${nodeName}: 表单验证失败`;
+    });
+
     setErrorCount(count);
+    setErrorDetails(errors);
   }, [clientContext]);
 
   /**
    * Validate all node and Save
    */
   const onSave = useCallback(async () => {
-    if (!entityId || !graphId) {
-      Toast.error('无法保存：缺少实体ID或图形ID');
+    if (!editingBehavior?.id) {
+      Toast.error('无法保存：缺少行为ID');
       return;
     }
 
@@ -46,14 +57,13 @@ export function Save(props: { disabled: boolean }) {
     try {
       // 获取当前工作流数据
       const workflowData = clientContext.document.toJSON();
-      console.log('💾 保存工作流数据:', { entityId, graphId, workflowData });
+      console.log('💾 保存工作流数据:', { behaviorId: editingBehavior.id, workflowData });
 
       // 构造图形数据结构 - 使用spread先展开，再覆盖必要字段
       const graphData = {
-        ...workflowData, // 先展开所有工作流数据
-        id: graphId, // 覆盖ID
-        name: graphId, // 覆盖名称
-        type: 'graph', // 确保类型正确
+        ...editingBehavior, // 使用当前编辑的行为数据
+        ...workflowData, // 覆盖工作流数据
+        id: editingBehavior.id, // 确保ID正确
       };
 
       // 保存到后台 - 使用类型断言，因为运行时数据结构是兼容的
@@ -69,7 +79,7 @@ export function Save(props: { disabled: boolean }) {
     } finally {
       setSaving(false);
     }
-  }, [clientContext, entityId, graphId, saveGraph, updateWorkflowData]);
+  }, [clientContext, editingBehavior, saveGraph, updateWorkflowData]);
 
   /**
    * Listen single node validate
@@ -89,29 +99,46 @@ export function Save(props: { disabled: boolean }) {
     return () => dispose.dispose();
   }, [clientContext]);
 
+  // 错误详情弹窗
+  const errorPopover = (
+    <div style={{ maxWidth: '300px' }}>
+      <div style={{ fontWeight: 600, marginBottom: '8px' }}>发现 {errorCount} 个问题：</div>
+      <List
+        size="small"
+        dataSource={errorDetails}
+        renderItem={(error) => (
+          <List.Item style={{ padding: '4px 0' }}>
+            <span style={{ color: 'var(--semi-color-danger)' }}>• {error}</span>
+          </List.Item>
+        )}
+      />
+    </div>
+  );
+
+  const saveButton = (
+    <Button
+      disabled={props.disabled || saving || errorCount > 0}
+      loading={saving}
+      onClick={onSave}
+      type={errorCount > 0 ? 'danger' : 'primary'}
+      style={{
+        backgroundColor: errorCount > 0 ? 'rgba(255, 179, 171, 0.3)' : 'rgba(171,181,255,0.3)',
+        borderRadius: '8px',
+      }}
+    >
+      {saving ? '保存中...' : 'Save'}
+    </Button>
+  );
+
   if (errorCount === 0) {
-    return (
-      <Button
-        disabled={props.disabled || saving}
-        loading={saving}
-        onClick={onSave}
-        style={{ backgroundColor: 'rgba(171,181,255,0.3)', borderRadius: '8px' }}
-      >
-        {saving ? '保存中...' : 'Save'}
-      </Button>
-    );
+    return saveButton;
   }
+
   return (
-    <Badge count={errorCount} position="rightTop" type="danger">
-      <Button
-        type="danger"
-        disabled={props.disabled || saving}
-        loading={saving}
-        onClick={onSave}
-        style={{ backgroundColor: 'rgba(255, 179, 171, 0.3)', borderRadius: '8px' }}
-      >
-        {saving ? '保存中...' : 'Save'}
-      </Button>
-    </Badge>
+    <Popover content={errorPopover} trigger="hover" position="bottom" showArrow>
+      <Badge count={errorCount} position="rightTop" type="danger">
+        {saveButton}
+      </Badge>
+    </Popover>
   );
 }

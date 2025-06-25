@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 
 import { Typography } from '@douyinfe/semi-ui';
 
-import { useExpressionStore } from '../../stores/expression.store';
+import { useExpressionStore } from '../../stores/api-list';
 import { useRouter } from '../../hooks/use-router';
 import { ApiSidebar } from './components/api-sidebar';
 

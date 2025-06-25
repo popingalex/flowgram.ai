@@ -5,7 +5,7 @@ import { Layout, Input, Button, Space, Tooltip, Spin, Modal, Form, Toast } from 
 import { IconSearch, IconPlus, IconFolder, IconGlobe, IconDelete } from '@douyinfe/semi-icons';
 
 import { ApiTreeManager } from '../../ext/api-tree-manager';
-import { useExpressionStore } from '../../../stores/expression.store';
+import { useExpressionStore } from '../../../stores/api-list';
 import { useRouter } from '../../../hooks/use-router';
 import { ApiDetailPanel } from './api-detail-panel';
 

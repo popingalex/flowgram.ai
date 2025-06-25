@@ -22,8 +22,8 @@ import {
   hasWorkflowGraphForEntity,
 } from '../../utils/graph-to-workflow';
 import { entityToWorkflowData } from '../../utils/entity-to-workflow';
-import { useModuleStore } from '../../stores/module.store';
-import { useGraphActions, useGraphList } from '../../stores/graph.store';
+import { useGraphActions, useGraphList } from '../../stores/workflow-list';
+import { useModuleStore } from '../../stores/module-list';
 import { useEntityList, useEntityListActions } from '../../stores';
 import { useCurrentEntity, useCurrentGraph, useCurrentGraphActions } from '../../stores';
 

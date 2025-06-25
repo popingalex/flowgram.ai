@@ -3,6 +3,7 @@
     "id": "mountain_range",
     "name": "mountain_range",
     "type": "graph",
+    "priority": 1,
     "moduleIds": [
       "terrain",
       "transform"
@@ -94,6 +95,7 @@
     "id": "river_node",
     "name": "river_node",
     "type": "graph",
+    "priority": 2,
     "nodes": [
       {
         "id": "river_node.riverNodeBehavior",
@@ -148,6 +150,7 @@
     "id": "barrier_lake",
     "name": "barrier_lake",
     "type": "graph",
+    "priority": 3,
     "moduleIds": [
       "terrain",
       "transform"
@@ -488,6 +491,7 @@
     "id": "vehicle",
     "name": "vehicle",
     "type": "graph",
+    "priority": 0,
     "moduleIds": [
       "mobile",
       "controlled",

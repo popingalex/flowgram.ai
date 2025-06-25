@@ -14,7 +14,7 @@ import { useRouter } from '../../hooks/use-router';
 import { ModuleDetail } from './module-detail';
 
 export const ModuleManagementPage: React.FC = () => {
-  const { modules, loading } = useModuleStore();
+  const { modules, loading, loadModules } = useModuleStore();
   const { addModule, updateModule, deleteModule } = useModuleStore();
   const { routeState, navigate } = useRouter();
 
@@ -124,18 +124,22 @@ export const ModuleManagementPage: React.FC = () => {
     [navigate]
   );
 
-  // 添加模块
+  // 检查是否有未保存的新建元素
+  const hasUnsavedNew = useMemo(
+    () =>
+      // 🔑 修复：检查当前是否处于新建模式
+      routeState.entityId === 'new',
+    [routeState.entityId]
+  );
+
+  // 添加模块 - 创建新建模式
   const handleAddModule = useCallback(async () => {
-    try {
-      // 🔑 直接跳转到新建页面，不预先创建模块对象
-      console.log('🔍 点击新建模块按钮，准备跳转');
-      navigate({ route: 'modules', entityId: 'new' });
-      console.log('✅ 跳转到新建模块页面');
-    } catch (error) {
-      console.error('❌ 跳转失败:', error);
-      Toast.error('跳转失败');
-    }
-  }, [navigate]);
+    // 如果已经有未保存的新建元素，禁用新建
+    if (hasUnsavedNew) return;
+
+    // 🔑 修复：直接导航到新建模式，不要预先创建模块对象
+    navigate({ route: 'modules', entityId: 'new' });
+  }, [navigate, hasUnsavedNew]);
 
   // 刷新数据
   const handleRefresh = useCallback(async () => {
@@ -153,6 +157,11 @@ export const ModuleManagementPage: React.FC = () => {
 
       await saveChanges();
       console.log('✅ 模块保存成功:', moduleId);
+
+      // 🔑 修复：保存成功后刷新模块列表
+      await loadModules();
+      console.log('🔄 模块列表已刷新');
+
       Toast.success('模块保存成功');
 
       // 🎯 如果是新建模块，保存成功后跳转到该模块的详情页面
@@ -164,7 +173,7 @@ export const ModuleManagementPage: React.FC = () => {
       console.error('❌ 模块保存失败:', error);
       Toast.error('模块保存失败');
     }
-  }, [editingModule, saveChanges, navigate]);
+  }, [editingModule, saveChanges, navigate, loadModules]);
 
   // 🔑 撤销修改 - 使用CurrentModuleStore
   const handleUndo = useCallback(() => {
@@ -183,6 +192,10 @@ export const ModuleManagementPage: React.FC = () => {
       await deleteModule(selectedModule._indexId);
       console.log('🗑️ 模块删除成功:', selectedModule.id);
 
+      // 🔑 修复：删除成功后刷新模块列表
+      await loadModules();
+      console.log('🔄 模块列表已刷新');
+
       // 删除后清空选择
       navigate({ route: 'modules' });
 
@@ -191,7 +204,7 @@ export const ModuleManagementPage: React.FC = () => {
       console.error('❌ 模块删除失败:', error);
       Toast.error('模块删除失败');
     }
-  }, [selectedModule, deleteModule, navigate]);
+  }, [selectedModule, deleteModule, navigate, loadModules]);
 
   // 🎯 验证逻辑：生成详细的异常信息列表
   const validationErrors = useMemo(() => {
@@ -305,15 +318,18 @@ export const ModuleManagementPage: React.FC = () => {
                 保存
               </Button>
             )}
-            <Button
-              icon={<IconUndo />}
-              onClick={handleUndo}
-              disabled={!isDirty}
-              size="small"
-              data-testid="undo-module-btn"
-            >
-              撤销
-            </Button>
+            {/* 🔑 修复：新建状态下不显示撤销按钮 */}
+            {selectedModule?._status !== 'new' && (
+              <Button
+                icon={<IconUndo />}
+                onClick={handleUndo}
+                disabled={!isDirty}
+                size="small"
+                data-testid="undo-module-btn"
+              >
+                撤销
+              </Button>
+            )}
             <Popconfirm
               title="确定删除这个模块吗？"
               content="删除后将无法恢复，相关配置也会丢失"
