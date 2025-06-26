@@ -2,6 +2,7 @@
   {
     "id": "mountain_range",
     "name": "mountain_range",
+    "desc": "",
     "type": "graph",
     "priority": 1,
     "moduleIds": [
@@ -11,61 +12,100 @@
     "nodes": [
       {
         "id": "mountain_range.simulate",
-        "name": "simulate",
         "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
+        "meta": {
+          "position": {
+            "x": 200,
+            "y": 0
           }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
+        },
+        "data": {
+          "title": "simulate",
+          "inputs": {
+            "type": "object",
+            "properties": {
+              "$in": {
+                "type": "object",
+                "title": "输入",
+                "description": "Input"
+              }
+            }
+          },
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "输出",
+                "description": "Output"
+              }
+            }
+          },
+          "exp": {
+            "id": "mountain_range.simulate",
+            "name": "simulate"
           }
-        ],
-        "exp": {
-          "id": "mountain_range.simulate",
-          "name": "simulate"
         }
       },
       {
         "id": "mountain_range.init",
-        "name": "init",
         "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
+        "meta": {
+          "position": {
+            "x": 100,
+            "y": 0
           }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
+        },
+        "data": {
+          "title": "init",
+          "inputs": {
+            "type": "object",
+            "properties": {
+              "$in": {
+                "type": "object",
+                "title": "输入",
+                "description": "Input"
+              }
+            }
+          },
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "输出",
+                "description": "Output"
+              }
+            }
+          },
+          "exp": {
+            "id": "mountain_range.init",
+            "name": "init"
           }
-        ],
-        "exp": {
-          "id": "mountain_range.init",
-          "name": "init"
         }
       },
       {
         "id": "$start",
-        "name": "mountain_range",
         "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
+        "meta": {
+          "position": {
+            "x": 0,
+            "y": 0
           }
-        ]
+        },
+        "data": {
+          "title": "mountain_range",
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "执行输出",
+                "description": "Execution output"
+              }
+            }
+          }
+        }
       }
     ],
     "edges": [
@@ -94,43 +134,69 @@
   {
     "id": "river_node",
     "name": "river_node",
+    "desc": "",
     "type": "graph",
     "priority": 2,
     "nodes": [
       {
         "id": "river_node.riverNodeBehavior",
-        "name": "riverNodeBehavior",
         "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
+        "meta": {
+          "position": {
+            "x": 100,
+            "y": 0
           }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
+        },
+        "data": {
+          "title": "riverNodeBehavior",
+          "inputs": {
+            "type": "object",
+            "properties": {
+              "$in": {
+                "type": "object",
+                "title": "输入",
+                "description": "Input"
+              }
+            }
+          },
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "输出",
+                "description": "Output"
+              }
+            }
+          },
+          "exp": {
+            "id": "river_node.riverNodeBehavior",
+            "name": "riverNodeBehavior"
           }
-        ],
-        "exp": {
-          "id": "river_node.riverNodeBehavior",
-          "name": "riverNodeBehavior"
         }
       },
       {
         "id": "$start",
-        "name": "river_node",
         "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
+        "meta": {
+          "position": {
+            "x": 0,
+            "y": 0
           }
-        ]
+        },
+        "data": {
+          "title": "river_node",
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "执行输出",
+                "description": "Execution output"
+              }
+            }
+          }
+        }
       }
     ],
     "edges": [
@@ -149,6 +215,7 @@
   {
     "id": "barrier_lake",
     "name": "barrier_lake",
+    "desc": "",
     "type": "graph",
     "priority": 3,
     "moduleIds": [
@@ -158,38 +225,63 @@
     "nodes": [
       {
         "id": "barrier_lake.simulate",
-        "name": "simulate",
         "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
+        "meta": {
+          "position": {
+            "x": 100,
+            "y": 0
           }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
+        },
+        "data": {
+          "title": "simulate",
+          "inputs": {
+            "type": "object",
+            "properties": {
+              "$in": {
+                "type": "object",
+                "title": "输入",
+                "description": "Input"
+              }
+            }
+          },
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "输出",
+                "description": "Output"
+              }
+            }
+          },
+          "exp": {
+            "id": "barrier_lake.simulate",
+            "name": "simulate"
           }
-        ],
-        "exp": {
-          "id": "barrier_lake.simulate",
-          "name": "simulate"
         }
       },
       {
         "id": "$start",
-        "name": "barrier_lake",
         "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
+        "meta": {
+          "position": {
+            "x": 0,
+            "y": 0
           }
-        ]
+        },
+        "data": {
+          "title": "barrier_lake",
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "执行输出",
+                "description": "Execution output"
+              }
+            }
+          }
+        }
       }
     ],
     "edges": [
@@ -208,42 +300,68 @@
   {
     "id": "vehicle_yard",
     "name": "vehicle_yard",
+    "desc": "",
     "type": "graph",
     "nodes": [
       {
         "id": "vehicle_yard.simulate",
-        "name": "simulate",
         "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
+        "meta": {
+          "position": {
+            "x": 100,
+            "y": 0
           }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
+        },
+        "data": {
+          "title": "simulate",
+          "inputs": {
+            "type": "object",
+            "properties": {
+              "$in": {
+                "type": "object",
+                "title": "输入",
+                "description": "Input"
+              }
+            }
+          },
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "输出",
+                "description": "Output"
+              }
+            }
+          },
+          "exp": {
+            "id": "vehicle_yard.simulate",
+            "name": "simulate"
           }
-        ],
-        "exp": {
-          "id": "vehicle_yard.simulate",
-          "name": "simulate"
         }
       },
       {
         "id": "$start",
-        "name": "vehicle_yard",
         "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
+        "meta": {
+          "position": {
+            "x": 0,
+            "y": 0
           }
-        ]
+        },
+        "data": {
+          "title": "vehicle_yard",
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "执行输出",
+                "description": "Execution output"
+              }
+            }
+          }
+        }
       }
     ],
     "edges": [
@@ -262,65 +380,105 @@
   {
     "id": "team",
     "name": "team",
+    "desc": "",
     "type": "graph",
     "nodes": [
       {
         "id": "team.simulate",
-        "name": "simulate",
         "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
+        "meta": {
+          "position": {
+            "x": 200,
+            "y": 0
           }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
+        },
+        "data": {
+          "title": "simulate",
+          "inputs": {
+            "type": "object",
+            "properties": {
+              "$in": {
+                "type": "object",
+                "title": "输入",
+                "description": "Input"
+              }
+            }
+          },
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "输出",
+                "description": "Output"
+              }
+            }
+          },
+          "exp": {
+            "id": "team.simulate",
+            "name": "simulate"
           }
-        ],
-        "exp": {
-          "id": "team.simulate",
-          "name": "simulate"
         }
       },
       {
         "id": "team.init",
-        "name": "init",
         "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
+        "meta": {
+          "position": {
+            "x": 100,
+            "y": 0
           }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
+        },
+        "data": {
+          "title": "init",
+          "inputs": {
+            "type": "object",
+            "properties": {
+              "$in": {
+                "type": "object",
+                "title": "输入",
+                "description": "Input"
+              }
+            }
+          },
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "输出",
+                "description": "Output"
+              }
+            }
+          },
+          "exp": {
+            "id": "team.init",
+            "name": "init"
           }
-        ],
-        "exp": {
-          "id": "team.init",
-          "name": "init"
         }
       },
       {
         "id": "$start",
-        "name": "team",
         "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
+        "meta": {
+          "position": {
+            "x": 0,
+            "y": 0
           }
-        ]
+        },
+        "data": {
+          "title": "team",
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "执行输出",
+                "description": "Execution output"
+              }
+            }
+          }
+        }
       }
     ],
     "edges": [
@@ -349,42 +507,68 @@
   {
     "id": "weir_body",
     "name": "weir_body",
+    "desc": "",
     "type": "graph",
     "nodes": [
       {
         "id": "weir_body.simulate",
-        "name": "simulate",
         "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
+        "meta": {
+          "position": {
+            "x": 100,
+            "y": 0
           }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
+        },
+        "data": {
+          "title": "simulate",
+          "inputs": {
+            "type": "object",
+            "properties": {
+              "$in": {
+                "type": "object",
+                "title": "输入",
+                "description": "Input"
+              }
+            }
+          },
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "输出",
+                "description": "Output"
+              }
+            }
+          },
+          "exp": {
+            "id": "weir_body.simulate",
+            "name": "simulate"
           }
-        ],
-        "exp": {
-          "id": "weir_body.simulate",
-          "name": "simulate"
         }
       },
       {
         "id": "$start",
-        "name": "weir_body",
         "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
+        "meta": {
+          "position": {
+            "x": 0,
+            "y": 0
           }
-        ]
+        },
+        "data": {
+          "title": "weir_body",
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "执行输出",
+                "description": "Execution output"
+              }
+            }
+          }
+        }
       }
     ],
     "edges": [
@@ -403,65 +587,105 @@
   {
     "id": "scene",
     "name": "scene",
+    "desc": "",
     "type": "graph",
     "nodes": [
       {
         "id": "scene.simulate",
-        "name": "simulate",
         "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
+        "meta": {
+          "position": {
+            "x": 200,
+            "y": 0
           }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
+        },
+        "data": {
+          "title": "simulate",
+          "inputs": {
+            "type": "object",
+            "properties": {
+              "$in": {
+                "type": "object",
+                "title": "输入",
+                "description": "Input"
+              }
+            }
+          },
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "输出",
+                "description": "Output"
+              }
+            }
+          },
+          "exp": {
+            "id": "scene.simulate",
+            "name": "simulate"
           }
-        ],
-        "exp": {
-          "id": "scene.simulate",
-          "name": "simulate"
         }
       },
       {
         "id": "scene.init",
-        "name": "init",
         "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
+        "meta": {
+          "position": {
+            "x": 100,
+            "y": 0
           }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
+        },
+        "data": {
+          "title": "init",
+          "inputs": {
+            "type": "object",
+            "properties": {
+              "$in": {
+                "type": "object",
+                "title": "输入",
+                "description": "Input"
+              }
+            }
+          },
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "输出",
+                "description": "Output"
+              }
+            }
+          },
+          "exp": {
+            "id": "scene.init",
+            "name": "init"
           }
-        ],
-        "exp": {
-          "id": "scene.init",
-          "name": "init"
         }
       },
       {
         "id": "$start",
-        "name": "scene",
         "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
+        "meta": {
+          "position": {
+            "x": 0,
+            "y": 0
           }
-        ]
+        },
+        "data": {
+          "title": "scene",
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$out": {
+                "type": "object",
+                "title": "执行输出",
+                "description": "Execution output"
+              }
+            }
+          }
+        }
       }
     ],
     "edges": [
@@ -488,5737 +712,76 @@
     ]
   },
   {
-    "id": "vehicle",
-    "name": "vehicle",
+    "id": "sample_behavior",
+    "name": "新建行为",
+    "desc": "",
     "type": "graph",
-    "priority": 0,
-    "moduleIds": [
-      "mobile",
-      "controlled",
-      "container",
-      "vehicle"
-    ],
+    "priority": -1,
     "nodes": [
       {
-        "id": "vehicle.phase.2",
-        "name": "Phase 2",
-        "type": "sequence",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Phase input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Phase output"
-          }
-        ],
-        "threshold": 0
-      },
-      {
-        "id": "vehicle.phase.3",
-        "name": "Phase 3",
-        "type": "sequence",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Phase input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Phase output"
-          }
-        ],
-        "threshold": 0
-      },
-      {
-        "id": "vehicle.before",
-        "name": "before",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.before",
-          "name": "before"
-        }
-      },
-      {
-        "id": "vehicle.executeTask",
-        "name": "executeTask",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.executeTask",
-          "name": "executeTask"
-        }
-      },
-      {
-        "id": "vehicle.executeTask.condition.0",
-        "name": "检查: task_id= (executeTask)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_executeTask",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "task_id"
-                ],
-                "value": "",
-                "reference": [],
-                "compareOperator": "EMPTY",
-                "negation": true,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simulateDozer",
-        "name": "simulateDozer",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simulateDozer",
-          "name": "simulateDozer"
-        }
-      },
-      {
-        "id": "vehicle.simulateTransport",
-        "name": "simulateTransport",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simulateTransport",
-          "name": "simulateTransport"
-        }
-      },
-      {
-        "id": "vehicle.simulateBarge",
-        "name": "simulateBarge",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simulateBarge",
-          "name": "simulateBarge"
-        }
-      },
-      {
-        "id": "vehicle.simulateStringingEquipment",
-        "name": "simulateStringingEquipment",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simulateStringingEquipment",
-          "name": "simulateStringingEquipment"
-        }
-      },
-      {
-        "id": "vehicle.simulateBoatBridge",
-        "name": "simulateBoatBridge",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simulateBoatBridge",
-          "name": "simulateBoatBridge"
-        }
-      },
-      {
-        "id": "vehicle.simulateDigger",
-        "name": "simulateDigger",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simulateDigger",
-          "name": "simulateDigger"
-        }
-      },
-      {
-        "id": "vehicle.simulateHelicopter",
-        "name": "simulateHelicopter",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simulateHelicopter",
-          "name": "simulateHelicopter"
-        }
-      },
-      {
-        "id": "vehicle.simulateRescuePersonnel",
-        "name": "simulateRescuePersonnel",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simulateRescuePersonnel",
-          "name": "simulateRescuePersonnel"
-        }
-      },
-      {
-        "id": "vehicle.simulate",
-        "name": "simulate",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simulate",
-          "name": "simulate"
-        }
-      },
-      {
-        "id": "vehicle.simulateLoader",
-        "name": "simulateLoader",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simulateLoader",
-          "name": "simulateLoader"
-        }
-      },
-      {
-        "id": "vehicle.simulateDrainDevice",
-        "name": "simulateDrainDevice",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simulateDrainDevice",
-          "name": "simulateDrainDevice"
-        }
-      },
-      {
-        "id": "vehicle.simulateDumper",
-        "name": "simulateDumper",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simulateDumper",
-          "name": "simulateDumper"
-        }
-      },
-      {
-        "id": "vehicle.simulateDozer.condition.0",
-        "name": "检查: vehicle/type=dozer (simulateDozer)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateDozer",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "dozer",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simulateTransport.condition.0",
-        "name": "检查: vehicle/type=transport (simulateTransport)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateTransport",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "transport",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simulateBarge.condition.0",
-        "name": "检查: vehicle/type=['barge','self_unloading_barge'] (simulateBarge)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateBarge",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "['barge','self_unloading_barge']",
-                "reference": [],
-                "compareOperator": "AMONG",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simulateStringingEquipment.condition.0",
-        "name": "检查: vehicle/type=stringing_equipment (simulateStringingEquipment)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateStringingEquipment",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "stringing_equipment",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simulateBoatBridge.condition.0",
-        "name": "检查: vehicle/type=boat_bridge (simulateBoatBridge)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateBoatBridge",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "boat_bridge",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simulateDigger.condition.0",
-        "name": "检查: vehicle/type=digger (simulateDigger)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateDigger",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "digger",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simulateHelicopter.condition.0",
-        "name": "检查: vehicle/type=helicopter (simulateHelicopter)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateHelicopter",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "helicopter",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simulateRescuePersonnel.condition.0",
-        "name": "检查: vehicle/type=rescue_personnel (simulateRescuePersonnel)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateRescuePersonnel",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "rescue_personnel",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simulate.condition.0",
-        "name": "检查: vehicle/type=drone (simulate)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulate",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "drone",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simulateLoader.condition.0",
-        "name": "检查: vehicle/type=loader (simulateLoader)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateLoader",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "loader",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simulateDrainDevice.condition.0",
-        "name": "检查: vehicle/type=['vertical_absorbs_water','mother_absorbs_water','drainage'] (simulateDrainDevice)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateDrainDevice",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "['vertical_absorbs_water','mother_absorbs_water','drainage']",
-                "reference": [],
-                "compareOperator": "AMONG",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simulateDumper.condition.0",
-        "name": "检查: vehicle/type=dumper (simulateDumper)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateDumper",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "dumper",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.moveInSky",
-        "name": "moveInSky",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.moveInSky",
-          "name": "moveInSky"
-        }
-      },
-      {
-        "id": "vehicle.dozerAction",
-        "name": "dozerAction",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.dozerAction",
-          "name": "dozerAction"
-        }
-      },
-      {
-        "id": "vehicle.dumperAction",
-        "name": "dumperAction",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.dumperAction",
-          "name": "dumperAction"
-        }
-      },
-      {
-        "id": "vehicle.boatBridgeAction",
-        "name": "boatBridgeAction",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.boatBridgeAction",
-          "name": "boatBridgeAction"
-        }
-      },
-      {
-        "id": "vehicle.transportAction",
-        "name": "transportAction",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.transportAction",
-          "name": "transportAction"
-        }
-      },
-      {
-        "id": "vehicle.simpleMove",
-        "name": "simpleMove",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.simpleMove",
-          "name": "simpleMove"
-        }
-      },
-      {
-        "id": "vehicle.bargeAction",
-        "name": "bargeAction",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.bargeAction",
-          "name": "bargeAction"
-        }
-      },
-      {
-        "id": "vehicle.helicopterAction",
-        "name": "helicopterAction",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.helicopterAction",
-          "name": "helicopterAction"
-        }
-      },
-      {
-        "id": "vehicle.moveOnRoad",
-        "name": "moveOnRoad",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.moveOnRoad",
-          "name": "moveOnRoad"
-        }
-      },
-      {
-        "id": "vehicle.drainDeviceAction",
-        "name": "drainDeviceAction",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "vehicle.drainDeviceAction",
-          "name": "drainDeviceAction"
-        }
-      },
-      {
-        "id": "vehicle.dozerAction.condition.2",
-        "name": "检查: vehicle/type=dozer (dozerAction)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_dozerAction",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "dozer",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.dumperAction.condition.2",
-        "name": "检查: vehicle/type=dumper (dumperAction)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_dumperAction",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "dumper",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.boatBridgeAction.condition.2",
-        "name": "检查: vehicle/type=boat_bridge (boatBridgeAction)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_boatBridgeAction",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "boat_bridge",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.transportAction.condition.2",
-        "name": "检查: vehicle/type=transport (transportAction)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_transportAction",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "transport",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simpleMove.condition.1",
-        "name": "检查: controlled/action=move (simpleMove)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simpleMove",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/action"
-                ],
-                "value": "move",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.simpleMove.condition.0",
-        "name": "检查: controlled/commands={'command': 'move'} (simpleMove)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simpleMove",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/commands"
-                ],
-                "value": "{'command': 'move'}",
-                "reference": [],
-                "compareOperator": "CONTAINS",
-                "negation": false,
-                "partial": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.bargeAction.condition.1",
-        "name": "检查: vehicle/type=['barge','self_unloading_barge'] (bargeAction)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_bargeAction",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "['barge','self_unloading_barge']",
-                "reference": [],
-                "compareOperator": "AMONG",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.moveOnRoad.condition.2",
-        "name": "检查: vehicle/type=['dozer','dumper'] (moveOnRoad)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_moveOnRoad",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "['dozer','dumper']",
-                "reference": [],
-                "compareOperator": "AMONG",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.drainDeviceAction.condition.2",
-        "name": "检查: vehicle/type=['vertical_absorbs_water','mother_absorbs_water','drainage'] (drainDeviceAction)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_drainDeviceAction",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "['vertical_absorbs_water','mother_absorbs_water','drainage']",
-                "reference": [],
-                "compareOperator": "AMONG",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.drainDeviceAction.condition.1",
-        "name": "检查: controlled/action=move (drainDeviceAction)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_drainDeviceAction",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/action"
-                ],
-                "value": "move",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": true,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.drainDeviceAction.condition.0",
-        "name": "检查: controlled/commands={'command': 'drainage'} (drainDeviceAction)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_drainDeviceAction",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/commands"
-                ],
-                "value": "{'command': 'drainage'}",
-                "reference": [],
-                "compareOperator": "CONTAINS",
-                "negation": false,
-                "partial": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.order3.shared.level0.745298296",
-        "name": "检查: controlled/commands={'command': 'transfer'}",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/commands"
-                ],
-                "value": "{'command': 'transfer'}",
-                "reference": [],
-                "compareOperator": "CONTAINS",
-                "negation": false,
-                "partial": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.order3.shared.level1.1544128039",
-        "name": "检查: controlled/action=move",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/action"
-                ],
-                "value": "move",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": true,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.order3.shared.level0.391959363",
-        "name": "检查: controlled/commands={'command': 'delivery'}",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/commands"
-                ],
-                "value": "{'command': 'delivery'}",
-                "reference": [],
-                "compareOperator": "CONTAINS",
-                "negation": false,
-                "partial": true
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.order3.shared.level1.972476707",
-        "name": "检查: controlled/action=move",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/action"
-                ],
-                "value": "move",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "vehicle.order3.shared.level2.325684577",
-        "name": "检查: vehicle/type=helicopter",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "vehicle/type"
-                ],
-                "value": "helicopter",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "$start",
-        "name": "vehicle",
+        "id": "6VpMPdv8JbLqmrO7W8OWV",
         "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
+        "meta": {
+          "position": {
+            "x": 0,
+            "y": -105.5
           }
-        ]
+        },
+        "data": {
+          "title": "Start",
+          "outputs": {
+            "type": "object",
+            "properties": {
+              "$context": {
+                "type": "object",
+                "title": "上下文",
+                "description": "工作流执行上下文",
+                "properties": {
+                  "entityId": {
+                    "type": "string",
+                    "title": "实体ID",
+                    "description": "当前实体的ID"
+                  },
+                  "timestamp": {
+                    "type": "string",
+                    "title": "时间戳",
+                    "description": "工作流执行时间"
+                  },
+                  "executionId": {
+                    "type": "string",
+                    "title": "执行ID",
+                    "description": "当前执行的唯一标识"
+                  }
+                }
+              },
+              "result": {
+                "type": "string",
+                "title": "结果",
+                "description": "节点执行结果"
+              },
+              "status": {
+                "type": "string",
+                "title": "状态",
+                "description": "执行状态",
+                "enum": [
+                  "success",
+                  "error",
+                  "pending"
+                ]
+              }
+            }
+          }
+        }
       }
     ],
-    "edges": [
-      {
-        "input": {
-          "node": "vehicle.executeTask.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.executeTask",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateDozer.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateDozer",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateTransport.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateTransport",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateBarge.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateBarge",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateStringingEquipment.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateStringingEquipment",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateBoatBridge.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateBoatBridge",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateDigger.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateDigger",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateHelicopter.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateHelicopter",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateRescuePersonnel.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateRescuePersonnel",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulate.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulate",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateLoader.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateLoader",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateDrainDevice.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateDrainDevice",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateDumper.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateDumper",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.dozerAction.condition.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.dozerAction",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.dumperAction.condition.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.dumperAction",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.boatBridgeAction.condition.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.boatBridgeAction",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.transportAction.condition.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.transportAction",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simpleMove.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simpleMove",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simpleMove.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simpleMove.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.bargeAction.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.bargeAction",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.moveOnRoad.condition.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.moveOnRoad",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.drainDeviceAction.condition.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.drainDeviceAction",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.drainDeviceAction.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.drainDeviceAction.condition.2",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.drainDeviceAction.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.drainDeviceAction.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.order3.shared.level1.1544128039",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.boatBridgeAction.condition.2",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.order3.shared.level0.745298296",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.order3.shared.level1.1544128039",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.order3.shared.level1.1544128039",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.transportAction.condition.2",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.order3.shared.level0.391959363",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.bargeAction.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.order3.shared.level0.391959363",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.order3.shared.level1.972476707",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.order3.shared.level1.972476707",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.dozerAction.condition.2",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.order3.shared.level1.972476707",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.dumperAction.condition.2",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.order3.shared.level1.972476707",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.moveOnRoad.condition.2",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.order3.shared.level2.325684577",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.moveInSky",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.order3.shared.level1.972476707",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.order3.shared.level2.325684577",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.order3.shared.level2.325684577",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.helicopterAction",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "$start",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.before",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.before",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.executeTask.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.executeTask",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.2",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateDozer.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateTransport.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateBarge.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateStringingEquipment.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateBoatBridge.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateDigger.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateHelicopter.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateRescuePersonnel.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulate.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateLoader.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateDrainDevice.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simulateDumper.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateDozer",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.3",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateTransport",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.3",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateBarge",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.3",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateStringingEquipment",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.3",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateBoatBridge",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.3",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateDigger",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.3",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateHelicopter",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.3",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateRescuePersonnel",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.3",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulate",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.3",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateLoader",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.3",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateDrainDevice",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.3",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.simulateDumper",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.phase.3",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.3",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.order3.shared.level0.391959363",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.3",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.order3.shared.level0.745298296",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.3",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.simpleMove.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "vehicle.phase.3",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "vehicle.drainDeviceAction.condition.0",
-          "socket": "$in"
-        }
-      }
-    ]
-  },
-  {
-    "id": "dike",
-    "name": "dike",
-    "type": "graph",
-    "nodes": [
-      {
-        "id": "dike.init",
-        "name": "init",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "dike.init",
-          "name": "init"
-        }
-      },
-      {
-        "id": "$start",
-        "name": "dike",
-        "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
-          }
-        ]
-      }
-    ],
-    "edges": [
-      {
-        "input": {
-          "node": "$start",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "dike.init",
-          "socket": "$in"
-        }
-      }
-    ]
-  },
-  {
-    "id": "drain_device",
-    "name": "drain_device",
-    "type": "graph",
-    "nodes": [
-      {
-        "id": "drain_device.simulate",
-        "name": "simulate",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "drain_device.simulate",
-          "name": "simulate"
-        }
-      },
-      {
-        "id": "$start",
-        "name": "drain_device",
-        "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
-          }
-        ]
-      }
-    ],
-    "edges": [
-      {
-        "input": {
-          "node": "$start",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "drain_device.simulate",
-          "socket": "$in"
-        }
-      }
-    ]
-  },
-  {
-    "id": "breach",
-    "name": "breach",
-    "type": "graph",
-    "nodes": [
-      {
-        "id": "breach.simulate",
-        "name": "simulate",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "breach.simulate",
-          "name": "simulate"
-        }
-      },
-      {
-        "id": "breach.init",
-        "name": "init",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "breach.init",
-          "name": "init"
-        }
-      },
-      {
-        "id": "$start",
-        "name": "breach",
-        "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
-          }
-        ]
-      }
-    ],
-    "edges": [
-      {
-        "input": {
-          "node": "$start",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "breach.init",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "breach.init",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "breach.simulate",
-          "socket": "$in"
-        }
-      }
-    ]
-  },
-  {
-    "id": "rain",
-    "name": "rain",
-    "type": "graph",
-    "nodes": [
-      {
-        "id": "rain.simulateRain",
-        "name": "simulateRain",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "rain.simulateRain",
-          "name": "simulateRain"
-        }
-      },
-      {
-        "id": "$start",
-        "name": "rain",
-        "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
-          }
-        ]
-      }
-    ],
-    "edges": [
-      {
-        "input": {
-          "node": "$start",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "rain.simulateRain",
-          "socket": "$in"
-        }
-      }
-    ]
-  },
-  {
-    "id": "dangerous_rock_mass",
-    "name": "dangerous_rock_mass",
-    "type": "graph",
-    "nodes": [
-      {
-        "id": "dangerous_rock_mass.simulateLandslide",
-        "name": "simulateLandslide",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "dangerous_rock_mass.simulateLandslide",
-          "name": "simulateLandslide"
-        }
-      },
-      {
-        "id": "dangerous_rock_mass.init",
-        "name": "init",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "dangerous_rock_mass.init",
-          "name": "init"
-        }
-      },
-      {
-        "id": "$start",
-        "name": "dangerous_rock_mass",
-        "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
-          }
-        ]
-      }
-    ],
-    "edges": [
-      {
-        "input": {
-          "node": "$start",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "dangerous_rock_mass.init",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "dangerous_rock_mass.init",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "dangerous_rock_mass.simulateLandslide",
-          "socket": "$in"
-        }
-      }
-    ]
-  },
-  {
-    "id": "underground_parking",
-    "name": "underground_parking",
-    "type": "graph",
-    "nodes": [
-      {
-        "id": "underground_parking.simulate",
-        "name": "simulate",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "underground_parking.simulate",
-          "name": "simulate"
-        }
-      },
-      {
-        "id": "$start",
-        "name": "underground_parking",
-        "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
-          }
-        ]
-      }
-    ],
-    "edges": [
-      {
-        "input": {
-          "node": "$start",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "underground_parking.simulate",
-          "socket": "$in"
-        }
-      }
-    ]
-  },
-  {
-    "id": "material_yard",
-    "name": "material_yard",
-    "type": "graph",
-    "nodes": [
-      {
-        "id": "material_yard.before",
-        "name": "before",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "material_yard.before",
-          "name": "before"
-        }
-      },
-      {
-        "id": "material_yard.simulate",
-        "name": "simulate",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "material_yard.simulate",
-          "name": "simulate"
-        }
-      },
-      {
-        "id": "$start",
-        "name": "material_yard",
-        "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
-          }
-        ]
-      }
-    ],
-    "edges": [
-      {
-        "input": {
-          "node": "$start",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "material_yard.before",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "material_yard.before",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "material_yard.simulate",
-          "socket": "$in"
-        }
-      }
-    ]
-  },
-  {
-    "id": "task",
-    "name": "task",
-    "type": "graph",
-    "nodes": [
-      {
-        "id": "task.phase.2",
-        "name": "Phase 2",
-        "type": "sequence",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Phase input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Phase output"
-          }
-        ],
-        "threshold": 0
-      },
-      {
-        "id": "task.before",
-        "name": "before",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.before",
-          "name": "before"
-        }
-      },
-      {
-        "id": "task.simulateBoulderTreatment",
-        "name": "simulateBoulderTreatment",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateBoulderTreatment",
-          "name": "simulateBoulderTreatment"
-        }
-      },
-      {
-        "id": "task.simulateTransportVehicle",
-        "name": "simulateTransportVehicle",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateTransportVehicle",
-          "name": "simulateTransportVehicle"
-        }
-      },
-      {
-        "id": "task.simulatePluggingClosure",
-        "name": "simulatePluggingClosure",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulatePluggingClosure",
-          "name": "simulatePluggingClosure"
-        }
-      },
-      {
-        "id": "task.simulateRiverDredge",
-        "name": "simulateRiverDredge",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateRiverDredge",
-          "name": "simulateRiverDredge"
-        }
-      },
-      {
-        "id": "task.simulateImperviousHoldBreath",
-        "name": "simulateImperviousHoldBreath",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateImperviousHoldBreath",
-          "name": "simulateImperviousHoldBreath"
-        }
-      },
-      {
-        "id": "task.simulatePersonnelTransfer",
-        "name": "simulatePersonnelTransfer",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulatePersonnelTransfer",
-          "name": "simulatePersonnelTransfer"
-        }
-      },
-      {
-        "id": "task.simulateUndergroundParkingDrainage",
-        "name": "simulateUndergroundParkingDrainage",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateUndergroundParkingDrainage",
-          "name": "simulateUndergroundParkingDrainage"
-        }
-      },
-      {
-        "id": "task.simulateFoundationReinforcement",
-        "name": "simulateFoundationReinforcement",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateFoundationReinforcement",
-          "name": "simulateFoundationReinforcement"
-        }
-      },
-      {
-        "id": "task.simulateDangerousRockMass",
-        "name": "simulateDangerousRockMass",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateDangerousRockMass",
-          "name": "simulateDangerousRockMass"
-        }
-      },
-      {
-        "id": "task.simulateTransmissionLineRestoration",
-        "name": "simulateTransmissionLineRestoration",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateTransmissionLineRestoration",
-          "name": "simulateTransmissionLineRestoration"
-        }
-      },
-      {
-        "id": "task.simulateIncreaseHeightThickness",
-        "name": "simulateIncreaseHeightThickness",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateIncreaseHeightThickness",
-          "name": "simulateIncreaseHeightThickness"
-        }
-      },
-      {
-        "id": "task.simulateDig",
-        "name": "simulateDig",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateDig",
-          "name": "simulateDig"
-        }
-      },
-      {
-        "id": "task.simulateExplode",
-        "name": "simulateExplode",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateExplode",
-          "name": "simulateExplode"
-        }
-      },
-      {
-        "id": "task.simulateTowerErection",
-        "name": "simulateTowerErection",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateTowerErection",
-          "name": "simulateTowerErection"
-        }
-      },
-      {
-        "id": "task.simulateFloodischarge",
-        "name": "simulateFloodischarge",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateFloodischarge",
-          "name": "simulateFloodischarge"
-        }
-      },
-      {
-        "id": "task.simulateTunnelDrainage",
-        "name": "simulateTunnelDrainage",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateTunnelDrainage",
-          "name": "simulateTunnelDrainage"
-        }
-      },
-      {
-        "id": "task.simulateBuildWrapHead",
-        "name": "simulateBuildWrapHead",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateBuildWrapHead",
-          "name": "simulateBuildWrapHead"
-        }
-      },
-      {
-        "id": "task.simulateBoatBridgeTransfer",
-        "name": "simulateBoatBridgeTransfer",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateBoatBridgeTransfer",
-          "name": "simulateBoatBridgeTransfer"
-        }
-      },
-      {
-        "id": "task.simulatePersonnelSearch",
-        "name": "simulatePersonnelSearch",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulatePersonnelSearch",
-          "name": "simulatePersonnelSearch"
-        }
-      },
-      {
-        "id": "task.simulateRoadRepair",
-        "name": "simulateRoadRepair",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "task.simulateRoadRepair",
-          "name": "simulateRoadRepair"
-        }
-      },
-      {
-        "id": "task.simulateBoulderTreatment.condition.1",
-        "name": "检查: controlled/status=running (simulateBoulderTreatment)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateBoulderTreatment",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateBoulderTreatment.condition.0",
-        "name": "检查: type=boulder_treatment (simulateBoulderTreatment)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateBoulderTreatment",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "boulder_treatment",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateTransportVehicle.condition.1",
-        "name": "检查: controlled/status=running (simulateTransportVehicle)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateTransportVehicle",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateTransportVehicle.condition.0",
-        "name": "检查: type=transport_vehicle (simulateTransportVehicle)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateTransportVehicle",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "transport_vehicle",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulatePluggingClosure.condition.1",
-        "name": "检查: controlled/status=running (simulatePluggingClosure)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulatePluggingClosure",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulatePluggingClosure.condition.0",
-        "name": "检查: type=plugging_closure (simulatePluggingClosure)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulatePluggingClosure",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "plugging_closure",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateRiverDredge.condition.1",
-        "name": "检查: controlled/status=running (simulateRiverDredge)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateRiverDredge",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateRiverDredge.condition.0",
-        "name": "检查: type=river_dredge (simulateRiverDredge)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateRiverDredge",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "river_dredge",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateImperviousHoldBreath.condition.1",
-        "name": "检查: controlled/status=running (simulateImperviousHoldBreath)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateImperviousHoldBreath",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateImperviousHoldBreath.condition.0",
-        "name": "检查: type=impervious_hold_breath (simulateImperviousHoldBreath)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateImperviousHoldBreath",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "impervious_hold_breath",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulatePersonnelTransfer.condition.1",
-        "name": "检查: controlled/status=running (simulatePersonnelTransfer)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulatePersonnelTransfer",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulatePersonnelTransfer.condition.0",
-        "name": "检查: type=personnel_transfer (simulatePersonnelTransfer)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulatePersonnelTransfer",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "personnel_transfer",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateUndergroundParkingDrainage.condition.1",
-        "name": "检查: controlled/status=running (simulateUndergroundParkingDrainage)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateUndergroundParkingDrainage",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateUndergroundParkingDrainage.condition.0",
-        "name": "检查: type=underground_parking_drainage (simulateUndergroundParkingDrainage)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateUndergroundParkingDrainage",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "underground_parking_drainage",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateFoundationReinforcement.condition.1",
-        "name": "检查: controlled/status=running (simulateFoundationReinforcement)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateFoundationReinforcement",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateFoundationReinforcement.condition.0",
-        "name": "检查: type=['foundation_pile_reinforcement','pile_reinforcement'] (simulateFoundationReinforcement)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateFoundationReinforcement",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "['foundation_pile_reinforcement','pile_reinforcement']",
-                "reference": [],
-                "compareOperator": "AMONG",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateDangerousRockMass.condition.1",
-        "name": "检查: controlled/status=running (simulateDangerousRockMass)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateDangerousRockMass",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateDangerousRockMass.condition.0",
-        "name": "检查: type=dangerous_rock_mass (simulateDangerousRockMass)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateDangerousRockMass",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "dangerous_rock_mass",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateTransmissionLineRestoration.condition.1",
-        "name": "检查: controlled/status=running (simulateTransmissionLineRestoration)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateTransmissionLineRestoration",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateTransmissionLineRestoration.condition.0",
-        "name": "检查: type=['transmission_line_restoration', 'wire_trpping'] (simulateTransmissionLineRestoration)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateTransmissionLineRestoration",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "['transmission_line_restoration', 'wire_trpping']",
-                "reference": [],
-                "compareOperator": "AMONG",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateIncreaseHeightThickness.condition.1",
-        "name": "检查: controlled/status=running (simulateIncreaseHeightThickness)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateIncreaseHeightThickness",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateIncreaseHeightThickness.condition.0",
-        "name": "检查: type=increase_height_thickness (simulateIncreaseHeightThickness)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateIncreaseHeightThickness",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "increase_height_thickness",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateDig.condition.1",
-        "name": "检查: controlled/status=running (simulateDig)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateDig",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateDig.condition.0",
-        "name": "检查: type=dig (simulateDig)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateDig",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "dig",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateExplode.condition.1",
-        "name": "检查: controlled/status=running (simulateExplode)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateExplode",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateExplode.condition.0",
-        "name": "检查: type=explode (simulateExplode)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateExplode",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "explode",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateTowerErection.condition.1",
-        "name": "检查: controlled/status=running (simulateTowerErection)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateTowerErection",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateTowerErection.condition.0",
-        "name": "检查: type=['tower_erection', 'tower_formation'] (simulateTowerErection)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateTowerErection",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "['tower_erection', 'tower_formation']",
-                "reference": [],
-                "compareOperator": "AMONG",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateFloodischarge.condition.1",
-        "name": "检查: controlled/status=running (simulateFloodischarge)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateFloodischarge",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateFloodischarge.condition.0",
-        "name": "检查: type=floodischarge (simulateFloodischarge)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateFloodischarge",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "floodischarge",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateTunnelDrainage.condition.1",
-        "name": "检查: controlled/status=running (simulateTunnelDrainage)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateTunnelDrainage",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateTunnelDrainage.condition.0",
-        "name": "检查: type=tunnel_drainage (simulateTunnelDrainage)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateTunnelDrainage",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "tunnel_drainage",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateBuildWrapHead.condition.1",
-        "name": "检查: controlled/status=running (simulateBuildWrapHead)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateBuildWrapHead",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateBuildWrapHead.condition.0",
-        "name": "检查: type=build_wrap_head (simulateBuildWrapHead)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateBuildWrapHead",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "build_wrap_head",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateBoatBridgeTransfer.condition.1",
-        "name": "检查: controlled/status=running (simulateBoatBridgeTransfer)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateBoatBridgeTransfer",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateBoatBridgeTransfer.condition.0",
-        "name": "检查: type=boat_bridge_transfer (simulateBoatBridgeTransfer)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateBoatBridgeTransfer",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "boat_bridge_transfer",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulatePersonnelSearch.condition.1",
-        "name": "检查: controlled/status=running (simulatePersonnelSearch)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulatePersonnelSearch",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulatePersonnelSearch.condition.0",
-        "name": "检查: type=personnel_search (simulatePersonnelSearch)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulatePersonnelSearch",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "personnel_search",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateRoadRepair.condition.1",
-        "name": "检查: controlled/status=running (simulateRoadRepair)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateRoadRepair",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "task.simulateRoadRepair.condition.0",
-        "name": "检查: type=road_repair (simulateRoadRepair)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulateRoadRepair",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "type"
-                ],
-                "value": "road_repair",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "$start",
-        "name": "task",
-        "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
-          }
-        ]
-      }
-    ],
-    "edges": [
-      {
-        "input": {
-          "node": "task.simulateBoulderTreatment.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateBoulderTreatment",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateBoulderTreatment.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateBoulderTreatment.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateTransportVehicle.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateTransportVehicle",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateTransportVehicle.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateTransportVehicle.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulatePluggingClosure.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulatePluggingClosure",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulatePluggingClosure.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulatePluggingClosure.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateRiverDredge.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateRiverDredge",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateRiverDredge.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateRiverDredge.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateImperviousHoldBreath.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateImperviousHoldBreath",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateImperviousHoldBreath.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateImperviousHoldBreath.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulatePersonnelTransfer.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulatePersonnelTransfer",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulatePersonnelTransfer.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulatePersonnelTransfer.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateUndergroundParkingDrainage.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateUndergroundParkingDrainage",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateUndergroundParkingDrainage.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateUndergroundParkingDrainage.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateFoundationReinforcement.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateFoundationReinforcement",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateFoundationReinforcement.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateFoundationReinforcement.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateDangerousRockMass.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateDangerousRockMass",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateDangerousRockMass.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateDangerousRockMass.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateTransmissionLineRestoration.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateTransmissionLineRestoration",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateTransmissionLineRestoration.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateTransmissionLineRestoration.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateIncreaseHeightThickness.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateIncreaseHeightThickness",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateIncreaseHeightThickness.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateIncreaseHeightThickness.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateDig.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateDig",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateDig.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateDig.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateExplode.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateExplode",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateExplode.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateExplode.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateTowerErection.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateTowerErection",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateTowerErection.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateTowerErection.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateFloodischarge.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateFloodischarge",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateFloodischarge.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateFloodischarge.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateTunnelDrainage.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateTunnelDrainage",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateTunnelDrainage.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateTunnelDrainage.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateBuildWrapHead.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateBuildWrapHead",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateBuildWrapHead.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateBuildWrapHead.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateBoatBridgeTransfer.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateBoatBridgeTransfer",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateBoatBridgeTransfer.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateBoatBridgeTransfer.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulatePersonnelSearch.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulatePersonnelSearch",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulatePersonnelSearch.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulatePersonnelSearch.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateRoadRepair.condition.1",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateRoadRepair",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.simulateRoadRepair.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateRoadRepair.condition.1",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "$start",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.before",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.before",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.phase.2",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateBoulderTreatment.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateTransportVehicle.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulatePluggingClosure.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateRiverDredge.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateImperviousHoldBreath.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulatePersonnelTransfer.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateUndergroundParkingDrainage.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateFoundationReinforcement.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateDangerousRockMass.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateTransmissionLineRestoration.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateIncreaseHeightThickness.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateDig.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateExplode.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateTowerErection.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateFloodischarge.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateTunnelDrainage.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateBuildWrapHead.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateBoatBridgeTransfer.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulatePersonnelSearch.condition.0",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "task.phase.2",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "task.simulateRoadRepair.condition.0",
-          "socket": "$in"
-        }
-      }
-    ]
+    "edges": []
   },
   {
     "id": "material",
     "name": "material",
-    "type": "graph"
-  },
-  {
-    "id": "plan",
-    "name": "plan",
+    "desc": "",
     "type": "graph",
-    "nodes": [
-      {
-        "id": "plan.before",
-        "name": "before",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "plan.before",
-          "name": "before"
-        }
-      },
-      {
-        "id": "plan.simulate",
-        "name": "simulate",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "plan.simulate",
-          "name": "simulate"
-        }
-      },
-      {
-        "id": "plan.simulate.condition.0",
-        "name": "检查: controlled/status=running (simulate)",
-        "type": "condition",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "states": [
-          {
-            "id": "condition_check_simulate",
-            "order": 0,
-            "conditions": [
-              {
-                "segments": [
-                  "controlled/status"
-                ],
-                "value": "running",
-                "reference": [],
-                "compareOperator": "EQUALS",
-                "negation": false,
-                "partial": false
-              }
-            ]
-          }
-        ]
-      },
-      {
-        "id": "$start",
-        "name": "plan",
-        "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
-          }
-        ]
-      }
-    ],
-    "edges": [
-      {
-        "input": {
-          "node": "plan.simulate.condition.0",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "plan.simulate",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "$start",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "plan.before",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "plan.before",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "plan.simulate.condition.0",
-          "socket": "$in"
-        }
-      }
-    ]
-  },
-  {
-    "id": "terrain",
-    "name": "terrain",
-    "type": "graph",
-    "nodes": [
-      {
-        "id": "terrain.simulate",
-        "name": "simulate",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "terrain.simulate",
-          "name": "simulate"
-        }
-      },
-      {
-        "id": "terrain.init",
-        "name": "init",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "terrain.init",
-          "name": "init"
-        }
-      },
-      {
-        "id": "$start",
-        "name": "terrain",
-        "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
-          }
-        ]
-      }
-    ],
-    "edges": [
-      {
-        "input": {
-          "node": "$start",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "terrain.init",
-          "socket": "$in"
-        }
-      },
-      {
-        "input": {
-          "node": "terrain.init",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "terrain.simulate",
-          "socket": "$in"
-        }
-      }
-    ]
-  },
-  {
-    "id": "tunnel",
-    "name": "tunnel",
-    "type": "graph",
-    "nodes": [
-      {
-        "id": "tunnel.simulate",
-        "name": "simulate",
-        "type": "action",
-        "inputs": [
-          {
-            "id": "$in",
-            "name": "$in",
-            "desc": "Input"
-          }
-        ],
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Output"
-          }
-        ],
-        "exp": {
-          "id": "tunnel.simulate",
-          "name": "simulate"
-        }
-      },
-      {
-        "id": "$start",
-        "name": "tunnel",
-        "type": "nest",
-        "outputs": [
-          {
-            "id": "$out",
-            "name": "$out",
-            "desc": "Execution output"
-          }
-        ]
-      }
-    ],
-    "edges": [
-      {
-        "input": {
-          "node": "$start",
-          "socket": "$out"
-        },
-        "output": {
-          "node": "tunnel.simulate",
-          "socket": "$in"
-        }
-      }
-    ]
+    "nodes": [],
+    "edges": []
   }
 ]

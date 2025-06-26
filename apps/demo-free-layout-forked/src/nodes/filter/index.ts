@@ -13,6 +13,7 @@ export const FilterNodeRegistry: FlowNodeRegistry = {
       width: 450,
       height: 380,
     },
+    expandable: true,
     disableSideBar: true,
   },
   info: {

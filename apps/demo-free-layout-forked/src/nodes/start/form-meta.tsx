@@ -1,9 +1,17 @@
 import React, { useEffect } from 'react';
 
-import { FormMeta, ValidateTrigger, Field, FormRenderProps } from '@flowgram.ai/free-layout-editor';
+import {
+  FormMeta,
+  ValidateTrigger,
+  Field,
+  FormRenderProps,
+  createEffectFromVariableProvider,
+  ASTFactory,
+} from '@flowgram.ai/free-layout-editor';
 import { Input, TextArea, Typography, InputNumber } from '@douyinfe/semi-ui';
 
 import { FlowNodeJSON } from '../../typings';
+import { useModuleStore } from '../../stores/module-list';
 import { useCurrentBehavior, useCurrentBehaviorActions } from '../../stores/current-workflow';
 import { FormHeader, FormContent, FormItem, FormOutputs } from '../../form-components';
 
@@ -119,4 +127,87 @@ export const formMeta: FormMeta<FlowNodeJSON> = {
     title: ({ value }: { value: string }) => (value ? undefined : '标题不能为空'),
     id: ({ value }: { value: string }) => (value ? undefined : 'ID不能为空'),
   },
+  // 🎯 关键修复：配置变量输出能力
+  effect: {
+    // 将outputs字段转换为变量输出
+    outputs: createEffectFromVariableProvider({
+      parse: (outputs: any, ctx) => {
+        if (!outputs || !outputs.properties) {
+          return [];
+        }
+
+        // 🔍 调试：打印outputs数据
+        console.log('[Start节点] 变量输出解析:', {
+          nodeId: ctx.node.id,
+          outputs,
+          propertiesCount: Object.keys(outputs.properties).length,
+          propertyKeys: Object.keys(outputs.properties),
+        });
+
+        // 创建一个根变量，包含所有属性
+        return [
+          ASTFactory.createVariableDeclaration({
+            key: `$start`, // 🎯 关键：使用$start作为变量key
+            meta: {
+              title: '开始节点输出',
+              icon: ctx.node.getNodeRegistry?.()?.info?.icon,
+            },
+            type: ASTFactory.createObject({
+              properties: Object.entries(outputs.properties).map(
+                ([key, property]: [string, any]) => {
+                  // 🔍 调试：打印每个属性
+                  console.log('[Start节点] 处理属性:', { key, property });
+
+                  return ASTFactory.createProperty({
+                    key: key,
+                    meta: {
+                      title: property.name || property.title || key,
+                      description: property.description,
+                      isEntityProperty: property.isEntityProperty,
+                      isModuleProperty: property.isModuleProperty,
+                      isContextProperty: property.isContextProperty,
+                      moduleId: property.moduleId,
+                    },
+                    type: convertPropertyTypeToAST(property),
+                  });
+                }
+              ),
+            }),
+          }),
+        ];
+      },
+    }),
+  },
 };
+
+// 🔧 辅助函数：将属性类型转换为AST类型
+function convertPropertyTypeToAST(property: any): any {
+  switch (property.type) {
+    case 'string':
+      return ASTFactory.createString();
+    case 'number':
+      return ASTFactory.createNumber();
+    case 'boolean':
+      return ASTFactory.createBoolean();
+    case 'array':
+      return ASTFactory.createArray({
+        items: property.items
+          ? convertPropertyTypeToAST(property.items)
+          : ASTFactory.createString(),
+      });
+    case 'object':
+      if (property.properties && typeof property.properties === 'object') {
+        return ASTFactory.createObject({
+          properties: Object.entries(property.properties).map(([key, subProperty]: [string, any]) =>
+            ASTFactory.createProperty({
+              key: key,
+              type: convertPropertyTypeToAST(subProperty),
+            })
+          ),
+        });
+      }
+      return ASTFactory.createObject({ properties: [] });
+    default:
+      return ASTFactory.createString();
+  }
+}
