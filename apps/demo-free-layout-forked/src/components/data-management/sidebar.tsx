@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 
 import {
   Input,
@@ -17,18 +17,129 @@ import {
   IconRefresh,
   IconChevronUp,
   IconChevronDown,
+  IconHandle,
 } from '@douyinfe/semi-icons';
+
+// 🔑 引入dnd-kit拖拽排序相关组件
+import { CSS } from '@dnd-kit/utilities';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
 
 const { Text } = Typography;
 
-interface DataListItem {
+// 🔑 可拖拽的列表项组件 - 支持拖拽手柄
+interface SortableItemProps {
   id: string;
-  _indexId: string;
-  name?: string;
-  [key: string]: any;
+  children: React.ReactNode;
+  disabled?: boolean;
 }
 
-interface DataListSidebarProps<T extends DataListItem> {
+function SortableItem({ id, children, disabled = false }: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    setActivatorNodeRef,
+  } = useSortable({
+    id,
+    disabled,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  // 🔑 修复：使用拖拽手柄模式，只有手柄可以拖拽
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      {/* 🔑 传递拖拽手柄的ref和listeners给子组件 */}
+      {React.cloneElement(children as React.ReactElement, {
+        dragHandleRef: setActivatorNodeRef,
+        dragHandleListeners: listeners,
+      })}
+    </div>
+  );
+}
+
+// 最基础的数据结构 - 只包含必需字段
+interface BaseDataItem {
+  id: string; // 业务ID
+  _indexId: string; // nanoid索引ID (React key)
+}
+
+// 默认渲染需要的字段
+interface DefaultRenderFields {
+  name?: string; // 显示名称
+  desc?: string; // 描述
+  bundles?: string[]; // 关联模块ID列表
+  attributes?: any[]; // 属性列表
+}
+
+// 拖拽排序相关字段
+interface DragSortFields {
+  _status?: 'new' | 'saved' | 'dirty' | 'saving'; // 状态管理
+  priority?: number; // 优先级
+}
+
+// 完整的默认数据项（向后兼容）
+type DataListItem = BaseDataItem &
+  DefaultRenderFields &
+  DragSortFields & {
+    [key: string]: any; // 允许其他扩展字段
+  };
+
+// 渲染上下文
+interface RenderContext<T extends BaseDataItem> {
+  item: T;
+  isSelected: boolean;
+  index?: number;
+  searchText: string;
+  modules?: Array<{ id: string; name?: string; [key: string]: any }>;
+  onItemSelect: (item: T) => void;
+  // 拖拽排序相关
+  enableDragSort?: boolean;
+  onDragSort?: (oldIndex: number, newIndex: number) => void;
+  testId?: string;
+  // 列表总数（用于计算是否为最后一项）
+  totalItems?: number;
+}
+
+// 渲染方式的联合类型
+type RenderMethod<T extends BaseDataItem> =
+  | { type: 'default' } // 使用默认渲染
+  | {
+      type: 'custom';
+      render: (
+        context: RenderContext<T> & { dragHandleRef?: any; dragHandleListeners?: any }
+      ) => ReactNode;
+    } // 自定义渲染函数
+  | {
+      type: 'children';
+      children: (
+        context: RenderContext<T> & { dragHandleRef?: any; dragHandleListeners?: any }
+      ) => ReactNode;
+    }; // render props
+
+interface DataListSidebarProps<T extends BaseDataItem> {
   // 数据
   items: T[];
   loading?: boolean;
@@ -41,71 +152,66 @@ interface DataListSidebarProps<T extends DataListItem> {
   // 选择
   selectedId?: string;
   onItemSelect: (item: T) => void;
-  selectedIdField?: keyof T; // 新增：指定用于选中比较的字段
+  selectedIdField?: keyof T; // 指定用于选中比较的字段
 
   // 操作
   onAdd?: () => void;
   onRefresh?: () => void;
-  addDisabled?: boolean; // 新增：是否禁用新建按钮
+  addDisabled?: boolean;
 
-  // 🔑 新增：拖拽排序
-  enableDragSort?: boolean; // 是否启用拖拽排序
-  onDragSort?: (oldIndex: number, newIndex: number) => void; // 拖拽排序回调
+  // 拖拽排序
+  enableDragSort?: boolean;
+  onDragSort?: (oldIndex: number, newIndex: number) => void;
 
-  // 渲染
-  renderItem?: (item: T, isSelected: boolean, index?: number) => ReactNode; // 🔑 添加index参数
+  // 渲染方式 - 三选一
+  renderMethod?: RenderMethod<T>;
+
+  // 兼容性：旧的renderItem方法（已废弃，但保留向后兼容）
+  /** @deprecated 请使用 renderMethod 替代 */
+  renderItem?: (item: T, isSelected: boolean, index?: number) => ReactNode;
+
+  // 其他配置
   emptyText?: string;
-
-  // 模块数据（用于实体管理）
   modules?: Array<{ id: string; name?: string; [key: string]: any }>;
-
-  // 行为树数据（用于实体管理）
-  graphs?: Array<{ id: string; _indexId?: string; nodes?: any[]; [key: string]: any }>;
-
-  // 样式和测试
   style?: React.CSSProperties;
-  testId?: string; // 自定义测试ID
+  testId?: string;
 }
 
-export function DataListSidebar<T extends DataListItem>({
-  items,
-  loading = false,
+// 默认渲染实现
+function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & DragSortFields>({
+  item,
+  isSelected,
+  index,
   searchText,
-  onSearchChange,
-  searchPlaceholder = '搜索...',
-  selectedId,
-  onItemSelect,
-  selectedIdField = 'id', // 默认使用id字段
-  onAdd,
-  onRefresh,
-  addDisabled = false, // 默认不禁用
-  enableDragSort = false, // 🔑 新增：默认不启用拖拽排序
-  onDragSort, // 🔑 新增：拖拽排序回调
-  renderItem,
-  emptyText = '暂无数据',
   modules,
-  graphs,
-  style,
-  testId = 'entity-sidebar', // 默认值为entity-sidebar，保持向后兼容
-}: DataListSidebarProps<T>) {
-  // 渲染统计信息 - 垂直分布
-  const renderStats = (item: T) => {
-    // 🔑 计算模块数量
-    const moduleCount = item.bundles?.length || 0;
+  onItemSelect,
+  enableDragSort,
+  onDragSort,
+  testId = 'data-sidebar',
+  totalItems = 0,
+  ...props // 🔑 接收拖拽手柄的props
+}: RenderContext<T> & { dragHandleRef?: any; dragHandleListeners?: any }) {
+  const searchWords = searchText.trim() ? [searchText.trim()] : [];
 
-    // 🔑 计算属性数量
+  // 🔑 获取拖拽手柄的props
+  const { dragHandleRef, dragHandleListeners } = props;
+
+  // 🔑 移除旧的HTML5拖拽代码，现在使用dnd-kit
+
+  // 渲染统计信息
+  const renderStats = () => {
+    const moduleCount = item.bundles?.length || 0;
     const attributeCount = item.attributes?.length || 0;
+
+    if (moduleCount === 0 && attributeCount === 0) return null;
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
-        {/* 模块统计 - 只有当有模块时才显示 */}
         {moduleCount > 0 && (
           <Tag size="small" color="green">
             模：{moduleCount}
           </Tag>
         )}
-
-        {/* 属性统计 - 只有当有属性时才显示 */}
         {attributeCount > 0 && (
           <Tag size="small" color="blue">
             属：{attributeCount}
@@ -116,10 +222,8 @@ export function DataListSidebar<T extends DataListItem>({
   };
 
   // 渲染模块标签
-  const renderModuleTags = (item: T) => {
-    if (!item.bundles || !modules) return null;
-
-    const searchWords = searchText.trim() ? [searchText.trim()] : [];
+  const renderModuleTags = () => {
+    if (!item.bundles || !modules || item.bundles.length === 0) return null;
 
     return (
       <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
@@ -146,18 +250,7 @@ export function DataListSidebar<T extends DataListItem>({
     );
   };
 
-  // 🔑 新增：处理拖拽排序
-  const handleMoveBehavior = (index: number, direction: 'up' | 'down') => {
-    if (!onDragSort) return;
-
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    if (newIndex < 0 || newIndex >= items.length) return;
-
-    onDragSort(index, newIndex);
-  };
-
-  // 默认渲染函数 - 新的两行布局
-  const defaultRenderItem = (item: T, isSelected: boolean, index?: number) => (
+  return (
     <List.Item
       style={{
         backgroundColor: isSelected ? 'var(--semi-color-primary-light-default)' : undefined,
@@ -167,41 +260,32 @@ export function DataListSidebar<T extends DataListItem>({
       className="data-list-item"
       data-testid={`${testId.replace('-sidebar', '')}-item-${item.id || item._indexId}`}
     >
-      {/* 🔑 拖拽排序按钮 */}
-      {enableDragSort && typeof index === 'number' && (
+      {/* 🔑 拖拽手柄 - 修复：简化显示条件 */}
+      {enableDragSort && (
         <div
+          ref={dragHandleRef}
+          {...(dragHandleListeners || {})}
           style={{
             position: 'absolute',
-            right: '8px',
-            top: '8px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '2px',
+            left: '8px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            cursor: 'grab',
+            padding: '4px',
+            borderRadius: '4px',
+            backgroundColor: 'var(--semi-color-fill-0)',
+            border: '1px solid var(--semi-color-border)',
             zIndex: 10,
+            width: '24px',
+            height: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
+          onMouseDown={(e) => e.stopPropagation()}
+          title="拖拽排序"
         >
-          <Button
-            icon={<IconChevronUp />}
-            size="small"
-            theme="borderless"
-            disabled={index === 0 || (item as any).isNew}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleMoveBehavior(index, 'up');
-            }}
-            style={{ width: '24px', height: '20px', padding: 0 }}
-          />
-          <Button
-            icon={<IconChevronDown />}
-            size="small"
-            theme="borderless"
-            disabled={index === items.length - 1 || (item as any).isNew}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleMoveBehavior(index, 'down');
-            }}
-            style={{ width: '24px', height: '20px', padding: 0 }}
-          />
+          <span style={{ fontSize: '12px', color: 'var(--semi-color-text-2)' }}>⋮⋮</span>
         </div>
       )}
 
@@ -209,11 +293,11 @@ export function DataListSidebar<T extends DataListItem>({
         style={{
           width: '100%',
           cursor: 'pointer',
-          paddingRight: enableDragSort ? '40px' : '0',
+          paddingLeft: enableDragSort ? '40px' : '0', // 🔑 修复：为左侧拖拽手柄留出空间
         }}
         onClick={() => onItemSelect(item)}
       >
-        {/* 第一行：左侧实体信息 + 右侧统计 */}
+        {/* 第一行：左侧信息 + 右侧统计 */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <Text
@@ -227,10 +311,7 @@ export function DataListSidebar<T extends DataListItem>({
                 textOverflow: 'ellipsis',
               }}
             >
-              <Highlight
-                sourceString={item.id || ''}
-                searchWords={searchText.trim() ? [searchText.trim()] : []}
-              />
+              <Highlight sourceString={item.id} searchWords={searchWords} />
             </Text>
             {item.name && (
               <Text
@@ -245,44 +326,116 @@ export function DataListSidebar<T extends DataListItem>({
                   textOverflow: 'ellipsis',
                 }}
               >
-                <Highlight
-                  sourceString={item.name}
-                  searchWords={searchText.trim() ? [searchText.trim()] : []}
-                />
+                <Highlight sourceString={item.name} searchWords={searchWords} />
               </Text>
             )}
           </div>
-          <div style={{ flexShrink: 0, marginLeft: '8px' }}>{renderStats(item)}</div>
+          <div style={{ flexShrink: 0, marginLeft: '8px' }}>{renderStats()}</div>
         </div>
 
         {/* 第二行：模块标签 */}
-        {renderModuleTags(item)}
+        {renderModuleTags()}
       </div>
     </List.Item>
   );
+}
+
+export function DataListSidebar<T extends BaseDataItem>({
+  items,
+  loading = false,
+  searchText,
+  onSearchChange,
+  searchPlaceholder = '搜索...',
+  selectedId,
+  onItemSelect,
+  selectedIdField = 'id',
+  onAdd,
+  onRefresh,
+  addDisabled = false,
+  enableDragSort = false,
+  onDragSort,
+  renderMethod = { type: 'default' },
+  renderItem, // 向后兼容
+  emptyText = '暂无数据',
+  modules,
+  style,
+  testId = 'data-sidebar',
+}: DataListSidebarProps<T>) {
+  // 🔑 配置拖拽传感器 - 修复：使用手柄模式，避免与选中冲突
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 需要拖拽8px才激活，避免误触
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // 🔑 拖拽结束处理
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    console.log('🔄 [DataListSidebar] 拖拽结束:', {
+      activeId: active.id,
+      overId: over?.id,
+      hasOnDragSort: !!onDragSort,
+      itemsCount: items.length,
+      itemsIndexIds: items.map((item) => item._indexId),
+    });
+
+    if (active.id !== over?.id && onDragSort) {
+      const oldIndex = items.findIndex((item) => item._indexId === active.id);
+      const newIndex = items.findIndex((item) => item._indexId === over?.id);
+
+      console.log('🔄 [DataListSidebar] 拖拽索引:', {
+        oldIndex,
+        newIndex,
+        activeId: active.id,
+        overId: over?.id,
+      });
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        onDragSort(oldIndex, newIndex);
+      } else {
+        console.log('❌ [DataListSidebar] 拖拽索引无效');
+      }
+    }
+  };
+
+  // 确定渲染函数
+  const getRenderFunction = (): ((
+    context: RenderContext<T> & { dragHandleRef?: any; dragHandleListeners?: any }
+  ) => ReactNode) => {
+    // 向后兼容：如果提供了旧的renderItem，优先使用
+    if (renderItem) {
+      return (context) => renderItem(context.item, context.isSelected, context.index);
+    }
+
+    // 根据renderMethod选择渲染方式
+    switch (renderMethod.type) {
+      case 'custom':
+        return renderMethod.render;
+      case 'children':
+        return renderMethod.children;
+      case 'default':
+      default:
+        return (context) =>
+          DefaultItemRenderer(
+            context as RenderContext<T & DefaultRenderFields & DragSortFields> & {
+              dragHandleRef?: any;
+              dragHandleListeners?: any;
+            }
+          );
+    }
+  };
+
+  const renderFunction = getRenderFunction();
 
   return (
-    <div
-      style={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden', // 防止整个容器滚动
-        ...style,
-      }}
-      data-testid={testId}
-    >
-      <style>
-        {`
-          .data-list-item:hover {
-            background-color: var(--semi-color-fill-0) !important;
-          }
-          .data-list-item:active {
-            background-color: var(--semi-color-fill-1) !important;
-          }
-        `}
-      </style>
-      {/* 搜索栏和操作按钮 - 固定高度 */}
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', ...style }}>
+      {/* 搜索栏和操作按钮 - 恢复原来的一行布局 */}
       <div
         style={{
           padding: '16px',
@@ -299,7 +452,8 @@ export function DataListSidebar<T extends DataListItem>({
             onChange={onSearchChange}
             style={{ flex: 1 }}
             size="small"
-            data-testid={`${testId.replace('-sidebar', '')}-search-input`}
+            showClear
+            data-testid={`${testId}-search`}
           />
           {onAdd && (
             <Button
@@ -308,61 +462,110 @@ export function DataListSidebar<T extends DataListItem>({
               size="small"
               onClick={onAdd}
               disabled={addDisabled}
-              data-testid={`add-${testId.replace('-sidebar', '')}-btn`}
+              data-testid={`${testId}-add`}
             />
           )}
           {onRefresh && (
             <Button
               icon={<IconRefresh />}
-              type="tertiary"
               size="small"
               onClick={onRefresh}
-              loading={loading}
+              data-testid={`${testId}-refresh`}
             />
           )}
         </Space>
       </div>
 
-      {/* 列表内容 - 占满剩余空间并可滚动 */}
-      <div
-        style={{
-          flex: 1,
-          overflow: 'hidden', // 外层容器不滚动
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        {loading ? (
-          <div style={{ padding: '32px', textAlign: 'center' }}>
-            <Spin size="large" />
-          </div>
-        ) : (
-          <List
-            dataSource={items}
-            size="small"
-            split={true}
-            style={{
-              flex: 1,
-              overflow: 'auto', // 只有List内容可滚动
-            }}
-            emptyContent={
-              <Empty
-                image={<IconSearch size="large" />}
-                title="暂无数据"
-                description={emptyText}
-                style={{ padding: '32px' }}
-              />
-            }
-            renderItem={(item, index) => {
-              // 🔑 修复：使用id进行匹配，而不是_indexId
-              const isSelected = selectedId === item[selectedIdField];
-              return renderItem
-                ? renderItem(item, isSelected, index)
-                : defaultRenderItem(item, isSelected, index);
-            }}
-          />
-        )}
+      {/* 列表内容 */}
+      <div style={{ flex: 1, overflow: 'auto' }}>
+        <Spin spinning={loading}>
+          {items.length === 0 ? (
+            <Empty
+              image={<IconSearch size="large" />}
+              title="暂无数据"
+              description={emptyText}
+              style={{ padding: '40px 20px' }}
+            />
+          ) : enableDragSort ? (
+            // 🔑 启用拖拽排序时使用DndContext
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={items.map((item) => item._indexId)}
+                strategy={verticalListSortingStrategy}
+              >
+                <List
+                  dataSource={items}
+                  renderItem={(item, index) => {
+                    const isSelected = String(item[selectedIdField]) === String(selectedId);
+                    const context: RenderContext<T> = {
+                      item,
+                      isSelected,
+                      index,
+                      searchText,
+                      modules,
+                      onItemSelect,
+                      enableDragSort,
+                      onDragSort,
+                      testId,
+                      totalItems: items.length,
+                    };
+
+                    // 🔑 修复：创建一个可以接收拖拽props的组件
+                    const DraggableItemWrapper = (props: any) => {
+                      const extendedContext = { ...context, ...props };
+                      return renderFunction(extendedContext);
+                    };
+
+                    return (
+                      <SortableItem key={item._indexId} id={item._indexId} disabled={false}>
+                        <DraggableItemWrapper />
+                      </SortableItem>
+                    );
+                  }}
+                  style={{ padding: 0 }}
+                />
+              </SortableContext>
+            </DndContext>
+          ) : (
+            // 🔑 不启用拖拽排序时使用普通List
+            <List
+              dataSource={items}
+              renderItem={(item, index) => {
+                const isSelected = String(item[selectedIdField]) === String(selectedId);
+                const context: RenderContext<T> = {
+                  item,
+                  isSelected,
+                  index,
+                  searchText,
+                  modules,
+                  onItemSelect,
+                  enableDragSort,
+                  onDragSort,
+                  testId,
+                  totalItems: items.length,
+                };
+                return renderFunction(context);
+              }}
+              style={{ padding: 0 }}
+            />
+          )}
+        </Spin>
       </div>
     </div>
   );
 }
+
+// 导出类型定义
+export type {
+  BaseDataItem,
+  DefaultRenderFields,
+  DragSortFields,
+  DataListItem,
+  RenderContext,
+  RenderMethod,
+  DataListSidebarProps,
+};

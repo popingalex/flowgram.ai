@@ -20,21 +20,17 @@ import { nodeRegistries } from '../../nodes';
 import { useEditorProps } from '../../hooks';
 
 export interface BehaviorWorkflowEditorProps {
-  systemId: string;
-  systemName: string;
   initialData: {
     nodes: any[];
     edges: any[];
   };
   style?: React.CSSProperties;
   className?: string;
-  onDataChange?: (data: { nodes: any[]; edges: any[] }) => void; // 新增：数据变化回调
-  onValidationChange?: (hasErrors: boolean, errorCount: number) => void; // 新增：验证状态回调
+  onDataChange?: (data: { nodes: any[]; edges: any[] }) => void; // 数据变化回调
+  onValidationChange?: (hasErrors: boolean, errorCount: number) => void; // 验证状态回调
 }
 
 export const BehaviorWorkflowEditor: React.FC<BehaviorWorkflowEditorProps> = ({
-  systemId,
-  systemName,
   initialData,
   style,
   className,
@@ -52,6 +48,13 @@ export const BehaviorWorkflowEditor: React.FC<BehaviorWorkflowEditorProps> = ({
         type: node.type === 'nest' ? 'start' : node.type, // 修复：nest → start
       })) || [],
   };
+
+  // 🔍 调试：检查传递给useEditorProps的数据
+  console.log('🔍 [BehaviorWorkflowEditor] 传递给useEditorProps的数据:', {
+    mappedInitialData,
+    nodesLength: mappedInitialData.nodes?.length || 0,
+    edgesLength: mappedInitialData.edges?.length || 0,
+  });
 
   const editorProps = useEditorProps(mappedInitialData, nodeRegistries);
 
@@ -116,7 +119,6 @@ export const BehaviorWorkflowEditor: React.FC<BehaviorWorkflowEditorProps> = ({
       <EnumStoreProvider>
         <SidebarProvider>
           <FreeLayoutEditorProvider
-            key={`behavior-workflow-${systemId}`} // 🔑 使用稳定的_indexId，避免因业务ID变化导致重新创建
             nodeRegistries={nodeRegistries}
             initialData={mappedInitialData}
             {...editorPropsWithCallback}

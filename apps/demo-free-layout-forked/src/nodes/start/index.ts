@@ -39,7 +39,7 @@ export const StartNodeRegistry: FlowNodeRegistry = {
       id: 'start',
       type: 'start',
       data: {
-        title: 'Start',
+        // 🔑 移除title字段，让节点显示name字段
         id: '',
         description: '',
         outputs: {

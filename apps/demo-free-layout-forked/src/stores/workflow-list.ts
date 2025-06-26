@@ -16,6 +16,8 @@ const transformFrontendToBackend = (frontendGraph: WorkflowGraph): any => {
 
   const result = {
     ...frontendGraph,
+    // 🔑 修复：前端type为'behavior'时，后台应该是'graph'
+    type: frontendGraph.type === 'behavior' ? 'graph' : frontendGraph.type,
     nodes: frontendGraph.nodes.map((node) => {
       const originalType = node.type;
       // 转换节点类型：前端的 start → 后台的 nest
@@ -35,7 +37,9 @@ const transformFrontendToBackend = (frontendGraph: WorkflowGraph): any => {
   };
 
   console.log(
-    '🔄 [transformFrontendToBackend] 转换完成，最终节点类型:',
+    '🔄 [transformFrontendToBackend] 转换完成，type转换:',
+    `${frontendGraph.type} → ${result.type}`,
+    '最终节点类型:',
     result.nodes.map((n) => ({ id: n.id, type: n.type }))
   );
 
@@ -45,6 +49,8 @@ const transformFrontendToBackend = (frontendGraph: WorkflowGraph): any => {
 // 数据转换函数：后台 → 前端
 const transformBackendToFrontend = (backendGraph: any): WorkflowGraph => ({
   ...backendGraph,
+  // 🔑 修复：后台type为'graph'时，前端应该是'behavior'
+  type: backendGraph.type === 'graph' ? 'behavior' : backendGraph.type,
   // 确保_indexId存在
   _indexId: backendGraph._indexId || nanoid(),
   nodes: (backendGraph.nodes || []).map((node: any) => ({
@@ -74,6 +80,20 @@ export interface WorkflowGraphNode {
     name?: string;
     desc?: string;
   }>;
+  // 🔧 新增：FlowGram节点数据结构，用于存储start节点的属性
+  data?: {
+    title?: string; // 节点标题
+    outputs?: {
+      type: string;
+      properties?: {
+        [key: string]: {
+          type: string;
+          default?: any;
+        };
+      };
+    };
+    [key: string]: any; // 支持其他任意属性
+  };
   stateData?: {
     order?: number;
     phase?: string;
@@ -133,7 +153,7 @@ export interface WorkflowGraphEdge {
 
 export interface WorkflowGraph {
   id: string;
-  name: string;
+  name?: string;
   type: string;
   desc?: string;
   entityId?: string; // 关联的实体_indexId（保留向后兼容）
@@ -142,6 +162,7 @@ export interface WorkflowGraph {
   nodes: WorkflowGraphNode[];
   edges: WorkflowGraphEdge[];
   _indexId?: string; // nanoid索引，用作React key
+  _status?: 'new' | 'saved' | 'dirty' | 'saving'; // 统一状态管理
 }
 
 // Store状态
@@ -162,9 +183,10 @@ export interface GraphActions {
 
   // 行为树图编辑操作
   saveGraph: (graph: WorkflowGraph) => Promise<void>;
-  createGraph: (graph: Omit<WorkflowGraph, 'id'> & { id?: string }) => Promise<void>;
+  createGraph: (graph: Omit<WorkflowGraph, 'id'> & { id?: string }) => Promise<WorkflowGraph>;
   deleteGraph: (id: string) => Promise<void>;
   addNewBehavior: () => string; // 添加新行为，返回_indexId
+  clearNewBehaviors: () => void; // 清理新建行为
 
   // 🔑 实体ID映射管理
   updateEntityIdMapping: (mapping: Map<string, string>) => void;
@@ -180,10 +202,10 @@ const useGraphStoreBase = create<GraphStore>()(
   devtools(
     immer((set, get) => ({
       // 初始状态
-      graphs: [],
-      loading: false,
-      error: null,
-      lastLoaded: null,
+      graphs: [] as WorkflowGraph[],
+      loading: false as boolean,
+      error: null as string | null,
+      lastLoaded: null as number | null,
 
       // 加载所有工作流图
       loadGraphs: async () => {
@@ -219,24 +241,14 @@ const useGraphStoreBase = create<GraphStore>()(
                     Array.isArray(graph.nodes);
                   // 移除对edges的强制要求，因为图可以只有节点没有边
 
-                  if (!isValid) {
-                    console.log('🔍 [GraphStore] 过滤掉的图:', {
-                      id: graph?.id,
-                      name: graph?.name,
-                      hasNodes: Array.isArray(graph?.nodes),
-                      graph: graph,
-                    });
-                  }
+                  // 过滤无效图（移除过度调试信息）
 
                   return isValid;
                 })
                 .map((graph) => transformBackendToFrontend(graph))
             : [];
 
-          console.log('🔍 [GraphStore] 处理后的数据:', {
-            validCount: validGraphs.length,
-            firstValid: validGraphs[0],
-          });
+          // 数据处理完成（移除过度调试信息）
 
           set((state) => {
             state.graphs = validGraphs;
@@ -371,17 +383,46 @@ const useGraphStoreBase = create<GraphStore>()(
           // 🔄 数据转换：前端 → 后台格式
           const graphWithId: WorkflowGraph = { ...graph, id: graph.id || nanoid() };
           const backendGraph = transformFrontendToBackend(graphWithId);
+
+          // 创建行为数据转换完成（移除过度调试信息）
+
           const savedGraph = await graphApi.create(backendGraph);
 
           // 🔄 数据转换：后台 → 前端格式
           const frontendGraph = transformBackendToFrontend(savedGraph);
 
           set((state) => {
+            // 🔑 修复：创建成功后，移除临时的新建行为，添加保存后的行为
+            const tempBehaviorIndex = state.graphs.findIndex(
+              (g) => g._indexId === graph._indexId && 'isNew' in g && (g as any).isNew
+            );
+
+            if (tempBehaviorIndex >= 0) {
+              console.log('🧹 [GraphStore] 移除临时新建行为，替换为保存后的行为');
+              state.graphs.splice(tempBehaviorIndex, 1);
+            }
+
             state.graphs.push(frontendGraph);
           });
+
+          console.log('✅ [GraphStore] 行为创建成功:', frontendGraph.id);
+
+          // 🔑 修复：返回创建后的行为数据，供后续处理使用
+          return frontendGraph;
         } catch (error) {
+          console.error('❌ [GraphStore] 创建行为失败:', error);
           set((state) => {
             state.error = error instanceof Error ? error.message : '创建行为树图失败';
+
+            // 🔑 修复：创建失败时，移除临时的新建行为，避免数据重复
+            const tempBehaviorIndex = state.graphs.findIndex(
+              (g) => g._indexId === graph._indexId && 'isNew' in g && (g as any).isNew
+            );
+
+            if (tempBehaviorIndex >= 0) {
+              console.log('🧹 [GraphStore] 创建失败，移除临时新建行为');
+              state.graphs.splice(tempBehaviorIndex, 1);
+            }
           });
           throw error;
         } finally {
@@ -451,27 +492,66 @@ const useGraphStoreBase = create<GraphStore>()(
         console.log('🔄 [GraphStore] 更新graphs数据:', graphs);
       },
 
+      // 清理新建行为 - 移除所有状态为'new'的行为
+      clearNewBehaviors: () => {
+        set((state) => {
+          const beforeCount = state.graphs.length;
+          state.graphs = state.graphs.filter((g) => g._status !== 'new');
+          const afterCount = state.graphs.length;
+          const removedCount = beforeCount - afterCount;
+
+          if (removedCount > 0) {
+            console.log(`🧹 [GraphStore] 清理了 ${removedCount} 个新建行为`);
+          }
+        });
+      },
+
       // 添加新行为 - 在store中处理业务逻辑
       addNewBehavior: () => {
+        // 🔑 修复：检查是否已经有新建行为，避免重复创建
+        const existingNewBehavior = get().graphs.find((g) => g._status === 'new');
+        if (existingNewBehavior) {
+          console.log('⚠️ [GraphStore] 已存在新建行为，跳过创建:', existingNewBehavior._indexId);
+          return existingNewBehavior._indexId!;
+        }
+
         const indexId = nanoid();
         const startNodeId = nanoid();
         const newBehavior: WorkflowGraph = {
-          id: '', // 空ID，用户需要填写
-          name: '新建一个行为',
+          id: '', // 🔑 新建行为ID为空，用户可以编辑设置
+          name: '新建行为', // 🔑 行为名称存储在WorkflowGraph层面
+          desc: '', // 🔑 行为描述存储在WorkflowGraph层面
           type: 'behavior',
-          desc: '新建两个行为',
-          moduleIds: [], // 空数组，不预设模块
-          priority: get().graphs.filter((g) => g.type === 'behavior').length,
+          priority: -1, // 🔑 修复：新建行为优先级设为-1，确保排在所有现有行为前面
           nodes: [
             {
               id: startNodeId,
-              name: '开始',
+              name: 'Start', // 🔑 节点固定名称，不存储行为属性
               type: 'start',
+              // 🔑 start节点不存储行为属性，只保留基本的FlowGram节点结构
+              data: {
+                title: 'Start',
+                outputs: {
+                  type: 'object',
+                  properties: {
+                    // 只保留工作流执行相关的输出属性
+                    result: {
+                      type: 'string',
+                      title: '结果',
+                    },
+                    status: {
+                      type: 'string',
+                      title: '状态',
+                      enum: ['success', 'error', 'pending'],
+                    },
+                  },
+                },
+              },
             },
           ],
           edges: [],
           _indexId: indexId,
-          isNew: true, // 标记为新建
+          _status: 'new', // 统一使用_status管理状态
         } as any;
 
         set((state) => {
@@ -516,6 +596,7 @@ export const useGraphActions = () =>
       createGraph: state.createGraph,
       deleteGraph: state.deleteGraph,
       addNewBehavior: state.addNewBehavior,
+      clearNewBehaviors: state.clearNewBehaviors,
       updateEntityIdMapping: state.updateEntityIdMapping,
       updateGraphs: state.updateGraphs,
     }))

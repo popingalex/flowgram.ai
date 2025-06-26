@@ -102,9 +102,10 @@ export interface CurrentBehaviorActions {
   // 保存/重置
   saveChanges: (graphActions?: {
     saveGraph: (graph: any) => Promise<void>;
-    createGraph: (graph: any) => Promise<void>;
-  }) => Promise<void>;
+    createGraph: (graph: any) => Promise<WorkflowGraph>;
+  }) => Promise<WorkflowGraph | void>;
   resetChanges: () => void;
+  clearAll: () => void;
 
   // 刷新行为数据
   refreshBehavior: (behaviorId: string) => Promise<void>;
@@ -143,11 +144,16 @@ export const useCurrentBehaviorStore = create<CurrentBehaviorStore>()(
             return;
           }
 
-          // 避免不必要的重新创建工作副本
-          if (
+          // 🔑 修复：避免不必要的重新创建工作副本，但要考虑新建行为保存后的情况
+          const isSameBehavior =
             state.selectedBehaviorId === behavior._indexId ||
-            state.selectedBehaviorId === behavior.id
-          ) {
+            state.selectedBehaviorId === behavior.id ||
+            // 特殊情况：当前选中的是新建行为，但要切换到同一个行为的保存版本
+            (state.editingBehavior?._status === 'new' &&
+              state.editingBehavior.id === behavior.id &&
+              behavior._status !== 'new');
+
+          if (isSameBehavior && behavior._status !== 'new') {
             console.log('🔄 行为已选中，跳过重新创建工作副本:', behavior.id);
             return;
           }
@@ -163,7 +169,7 @@ export const useCurrentBehaviorStore = create<CurrentBehaviorStore>()(
             fullBehaviorData: behavior,
           });
 
-          state.selectedBehaviorId = behavior._indexId || behavior.id;
+          state.selectedBehaviorId = behavior._indexId!;
           state.originalBehavior = behaviorCopy;
           state.editingBehavior = cloneDeep(behaviorCopy);
           state.isDirty = false;
@@ -214,7 +220,35 @@ export const useCurrentBehaviorStore = create<CurrentBehaviorStore>()(
             _indexId: state.editingBehavior._indexId,
           };
 
-          Object.assign(state.editingBehavior, updates);
+          // 🔑 创建新的对象引用确保React能检测到变化
+          state.editingBehavior = { ...state.editingBehavior, ...updates };
+
+          // 🔑 同步行为属性到start节点
+          if (state.editingBehavior.nodes && state.editingBehavior.nodes.length > 0) {
+            const startNode = state.editingBehavior.nodes.find(
+              (node: any) => node.type === 'start' || node.type === 'nest'
+            );
+
+            if (startNode && startNode.data) {
+              let nodeUpdated = false;
+
+              // 同步属性到 outputs.properties
+              if (startNode.data.outputs && startNode.data.outputs.properties) {
+                const props = startNode.data.outputs.properties;
+
+                Object.keys(updates).forEach((key) => {
+                  if (props[key] && state.editingBehavior) {
+                    props[key].default = (state.editingBehavior as any)[key];
+                    nodeUpdated = true;
+                  }
+                });
+              }
+
+              if (nodeUpdated) {
+                console.log('🔄 [CurrentBehaviorStore] 反向同步行为属性到start节点完成');
+              }
+            }
+          }
 
           // 检查是否有变化
           const wasDirty = state.isDirty;
@@ -242,53 +276,44 @@ export const useCurrentBehaviorStore = create<CurrentBehaviorStore>()(
         set((state) => {
           if (!state.editingBehavior) return;
 
-          // 🔑 修复：避免不必要的更新，检查数据是否真的发生了变化
-          const currentNodeCount = state.editingBehavior.nodes?.length || 0;
-          const currentEdgeCount = state.editingBehavior.edges?.length || 0;
-          const newNodeCount = data.nodes?.length || 0;
-          const newEdgeCount = data.edges?.length || 0;
+          const currentNodes = state.editingBehavior.nodes || [];
+          const currentEdges = state.editingBehavior.edges || [];
+          const newNodes = data.nodes || [];
+          const newEdges = data.edges || [];
 
-          // 如果节点和边的数量都没有变化，并且不是初始化状态，则跳过更新
-          if (
-            currentNodeCount === newNodeCount &&
-            currentEdgeCount === newEdgeCount &&
-            currentNodeCount > 0 // 确保不是初始化状态
-          ) {
+          // 深度比较，避免无意义的更新
+          const nodesChanged = JSON.stringify(currentNodes) !== JSON.stringify(newNodes);
+          const edgesChanged = JSON.stringify(currentEdges) !== JSON.stringify(newEdges);
+
+          if (!nodesChanged && !edgesChanged) {
+            // 数据没有变化，直接返回，避免无限循环
             return;
           }
 
-          state.editingBehavior.nodes = data.nodes || [];
-          state.editingBehavior.edges = data.edges || [];
+          console.log('📝 [CurrentBehaviorStore] 更新工作流数据:', {
+            behaviorId: state.editingBehavior.id,
+            oldNodeCount: currentNodes.length,
+            newNodeCount: newNodes.length,
+            oldEdgeCount: currentEdges.length,
+            newEdgeCount: newEdges.length,
+            nodesChanged,
+            edgesChanged,
+          });
 
-          // 🔑 同步start节点的ID到行为ID（只在真正变化时同步，避免频繁更新）
-          if (data.nodes && data.nodes.length > 0) {
-            const startNode = data.nodes.find(
-              (node: any) => node.type === 'start' || node.type === 'nest'
-            );
-
-            if (startNode && startNode.data && startNode.data.id && startNode.data.id.trim()) {
-              // 只有当ID真正不同时才同步，避免频繁触发
-              const newId = startNode.data.id.trim();
-              if (state.editingBehavior.id !== newId) {
-                state.editingBehavior.id = newId;
-                console.log('🔄 [CurrentBehaviorStore] 同步start节点ID到行为ID:', newId);
-              }
-            }
+          // 只在真正有变化时才更新
+          if (nodesChanged) {
+            state.editingBehavior.nodes = newNodes;
+          }
+          if (edgesChanged) {
+            state.editingBehavior.edges = newEdges;
           }
 
-          // 🔑 修复：减少深度比较的频率，只在必要时进行
-          const wasClean = !state.isDirty;
+          // 🔑 移除复杂的双向同步逻辑
+          // start节点不存储行为属性，只是逻辑节点
+          // 行为属性统一存储在WorkflowGraph层面
+
+          // 检查是否有变化
           state.isDirty = !deepCompareBehaviors(state.originalBehavior, state.editingBehavior);
-
-          // 只在状态真正变化时输出日志
-          if (wasClean !== !state.isDirty) {
-            console.log('📝 [CurrentBehaviorStore] 更新工作流数据:', {
-              nodeCount: newNodeCount,
-              edgeCount: newEdgeCount,
-              behaviorId: state.editingBehavior.id,
-              isDirty: state.isDirty,
-            });
-          }
         });
       },
 
@@ -309,9 +334,10 @@ export const useCurrentBehaviorStore = create<CurrentBehaviorStore>()(
           errors.push('行为ID不能为空');
         }
 
-        if (!nameValue || !nameValue.trim()) {
-          errors.push('行为名称不能为空');
-        }
+        // 🔑 修复：name不是必填项，移除name验证
+        // if (!nameValue || !nameValue.trim()) {
+        //   errors.push('行为名称不能为空');
+        // }
 
         const isValid = errors.length === 0;
 
@@ -352,19 +378,38 @@ export const useCurrentBehaviorStore = create<CurrentBehaviorStore>()(
 
           console.log('💾 [CurrentBehaviorStore] 保存行为变化:', {
             behaviorId: behaviorToSave.id,
-            isNew: 'isNew' in behaviorToSave && (behaviorToSave as any).isNew,
+            _status: (behaviorToSave as any)._status,
+            isNew: (behaviorToSave as any)._status === 'new',
             isDirty: state.isDirty,
           });
 
-          // 判断是新建还是更新
-          if ('isNew' in behaviorToSave && (behaviorToSave as any).isNew) {
+          let savedBehavior: WorkflowGraph | null = null;
+
+          // 🔑 修复：使用_status判断是新建还是更新
+          if ((behaviorToSave as any)._status === 'new') {
             // 新建行为
-            delete (behaviorToSave as any).isNew; // 移除临时标记
-            await graphActions.createGraph(behaviorToSave);
-            console.log('✅ [CurrentBehaviorStore] 新建行为成功');
+            const cleanBehavior = { ...behaviorToSave };
+            delete (cleanBehavior as any)._status; // 移除临时标记
+            delete (cleanBehavior as any)._indexId; // 移除索引ID，让后台重新生成
+
+            console.log('💾 [CurrentBehaviorStore] 准备创建新行为:', {
+              originalId: behaviorToSave.id,
+              cleanBehavior: cleanBehavior,
+            });
+
+            savedBehavior = await graphActions.createGraph(cleanBehavior);
+            console.log('✅ [CurrentBehaviorStore] 新建行为成功:', savedBehavior.id);
           } else {
             // 更新现有行为
-            await graphActions.saveGraph(behaviorToSave);
+            const cleanBehavior = { ...behaviorToSave };
+            delete (cleanBehavior as any)._status; // 移除状态标记
+
+            console.log('💾 [CurrentBehaviorStore] 准备更新行为:', {
+              behaviorId: cleanBehavior.id,
+              cleanBehavior: cleanBehavior,
+            });
+
+            await graphActions.saveGraph(cleanBehavior);
             console.log('✅ [CurrentBehaviorStore] 更新行为成功');
           }
 
@@ -372,11 +417,17 @@ export const useCurrentBehaviorStore = create<CurrentBehaviorStore>()(
             s.originalBehavior = cloneDeep(s.editingBehavior);
             s.isDirty = false;
           });
+
+          // 🔑 修复：返回保存后的行为数据（新建时）
+          return savedBehavior || undefined;
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : '保存失败';
           console.error('❌ [CurrentBehaviorStore] 保存失败:', error);
+
           set((s) => {
             s.error = errorMsg;
+            // 🔑 修复：保存失败时，如果是新建行为，保持_status状态，不清理
+            console.log('🧹 [CurrentBehaviorStore] 保存失败，保持编辑状态');
           });
           throw error;
         } finally {
@@ -389,14 +440,29 @@ export const useCurrentBehaviorStore = create<CurrentBehaviorStore>()(
       // 重置变化
       resetChanges: () => {
         set((state) => {
-          if (!state.originalBehavior) return;
+          if (!state.originalBehavior) {
+            console.log('⚠️ [CurrentBehaviorStore] 重置失败: 没有originalBehavior');
+            return;
+          }
+
+          const beforeReset = {
+            id: state.editingBehavior?.id,
+            name: state.editingBehavior?.name,
+            isDirty: state.isDirty,
+          };
 
           state.editingBehavior = cloneDeep(state.originalBehavior);
           state.isDirty = false;
           state.error = null;
 
-          console.log('🔄 [CurrentBehaviorStore] 重置变化:', {
+          console.log('🔄 [CurrentBehaviorStore] 重置变化完成:', {
             behaviorId: state.originalBehavior.id,
+            beforeReset,
+            afterReset: {
+              id: state.editingBehavior.id,
+              name: state.editingBehavior.name,
+              isDirty: state.isDirty,
+            },
           });
         });
       },
@@ -418,6 +484,19 @@ export const useCurrentBehaviorStore = create<CurrentBehaviorStore>()(
       setSaving: (saving) => {
         set((state) => {
           state.isSaving = saving;
+        });
+      },
+
+      // 🔑 新增：强制清理所有状态（用于保存成功后清理新建行为）
+      clearAll: () => {
+        set((state) => {
+          console.log('🔄 [CurrentBehaviorStore] 强制清理所有状态');
+          state.selectedBehaviorId = null;
+          state.originalBehavior = null;
+          state.editingBehavior = null;
+          state.isDirty = false;
+          state.isSaving = false;
+          state.error = null;
         });
       },
     })),
@@ -449,6 +528,7 @@ export const useCurrentBehaviorActions = () =>
       updateWorkflowData: state.updateWorkflowData,
       saveChanges: state.saveChanges,
       resetChanges: state.resetChanges,
+      clearAll: state.clearAll,
       refreshBehavior: state.refreshBehavior,
       setError: state.setError,
       setSaving: state.setSaving,

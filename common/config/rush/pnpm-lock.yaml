@@ -345,6 +345,15 @@ importers:
       '@csstools/normalize.css':
         specifier: ~12.1.1
         version: 12.1.1
+      '@dnd-kit/core':
+        specifier: ^6.1.0
+        version: 6.3.1(react-dom@18.3.1)(react@18.3.1)
+      '@dnd-kit/sortable':
+        specifier: ^8.0.0
+        version: 8.0.0(@dnd-kit/core@6.3.1)(react@18.3.1)
+      '@dnd-kit/utilities':
+        specifier: ^3.2.2
+        version: 3.2.2(react@18.3.1)
       '@douyinfe/semi-icons':
         specifier: ^2.80.0
         version: 2.80.0(react@18.3.1)
@@ -440,7 +449,7 @@ importers:
         specifier: workspace:*
         version: link:../../config/ts-config
       '@playwright/test':
-        specifier: ^1.48.0
+        specifier: ^1.52.0
         version: 1.52.0
       '@rsbuild/core':
         specifier: ^1.2.16
@@ -455,7 +464,7 @@ importers:
         specifier: ^1.0.1
         version: 1.4.0(@rsbuild/core@1.2.19)
       '@types/lodash':
-        specifier: ^4.17.10
+        specifier: ^4.14.137
         version: 4.17.13
       '@types/lodash-es':
         specifier: ^4.17.12
@@ -479,7 +488,7 @@ importers:
         specifier: ^8.54.0
         version: 8.57.1
       typescript:
-        specifier: ^5.6.3
+        specifier: ^5.0.4
         version: 5.8.3
 
   ../../apps/demo-free-layout-simple:
@@ -6102,6 +6111,18 @@ packages:
     resolution: {integrity: sha512-wDkBHHf9iCi1veM834Gbk1429bd4lHX4RpAwT0y2cHLf246GAvU2sVw/oxWNpPKQNQRQaeGXhAVgrOl1IT+iyA==}
     peerDependencies:
       '@dnd-kit/core': ^6.0.7
+      react: '>=16.8.0'
+    dependencies:
+      '@dnd-kit/core': 6.3.1(react-dom@18.3.1)(react@18.3.1)
+      '@dnd-kit/utilities': 3.2.2(react@18.3.1)
+      react: 18.3.1
+      tslib: 2.8.1
+    dev: false
+
+  /@dnd-kit/sortable@8.0.0(@dnd-kit/core@6.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-U3jk5ebVXe1Lr7c2wU7SBZjcWdQP+j7peHJfCspnA81enlu88Mgd7CC8Q+pub9ubP7eKVETzJW+IBAhsqbSu/g==}
+    peerDependencies:
+      '@dnd-kit/core': ^6.1.0
       react: '>=16.8.0'
     dependencies:
       '@dnd-kit/core': 6.3.1(react-dom@18.3.1)(react@18.3.1)

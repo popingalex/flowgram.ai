@@ -330,7 +330,7 @@ const EntityPropertySyncer: React.FC = () => {
     }
   }, []);
 
-  // 带重试的同步函数 - 🔧 移除setTimeout，用状态管理替代
+  // 带重试的同步函数
   const syncWithRetry = useCallback(
     (entityId: string, editingEntityData?: any) => {
       // 如果实体Store还在加载中，直接返回，依赖useEffect重新调用
@@ -343,8 +343,7 @@ const EntityPropertySyncer: React.FC = () => {
 
         if (!success && retryCountRef.current < maxRetries) {
           retryCountRef.current++;
-          // 🔧 移除setTimeout重试，直接重新调用
-          // 在React中，应该通过状态变化触发重新渲染而不是定时器
+          // 直接重新调用
           performSync();
         }
       };
@@ -419,7 +418,7 @@ export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className
     loadModules();
   }, [loadModules]);
 
-  // 🔧 自动布局逻辑 - 移除setTimeout，用状态管理触发布局
+  // 自动布局逻辑
   const lastEntityIdRef = useRef<string | null>(null);
   const [shouldTriggerLayout, setShouldTriggerLayout] = useState(false);
 
@@ -433,7 +432,7 @@ export const WorkflowEditor: React.FC<WorkflowEditorProps> = ({ style, className
     }
   }, [loading, workflowData?.nodes?.length, entityId]);
 
-  // 🔧 使用useEffect替代setTimeout进行布局触发
+  // 使用useEffect进行布局触发
   useEffect(() => {
     if (shouldTriggerLayout) {
       // 使用requestAnimationFrame确保DOM已渲染

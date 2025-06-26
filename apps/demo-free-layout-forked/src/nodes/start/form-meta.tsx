@@ -4,12 +4,13 @@ import { FormMeta, ValidateTrigger, Field, FormRenderProps } from '@flowgram.ai/
 import { Input, TextArea, Typography, InputNumber } from '@douyinfe/semi-ui';
 
 import { FlowNodeJSON } from '../../typings';
-import { useCurrentBehavior } from '../../stores/current-workflow';
+import { useCurrentBehavior, useCurrentBehaviorActions } from '../../stores/current-workflow';
 import { FormHeader, FormContent, FormItem, FormOutputs } from '../../form-components';
 
 const renderForm = ({ form }: FormRenderProps<FlowNodeJSON>) => {
-  // 🔑 新增：获取当前行为的优先级信息
+  // 🔑 获取当前行为信息，start节点从WorkflowGraph读取属性
   const { editingBehavior } = useCurrentBehavior();
+  const { updateBehavior } = useCurrentBehaviorActions();
 
   // 生成基础的输出配置，不依赖外部状态
   const generateBasicOutputs = () => {
@@ -68,45 +69,42 @@ const renderForm = ({ form }: FormRenderProps<FlowNodeJSON>) => {
     }
   }, [outputs, form.setValueIn]);
 
+  // 🔑 处理行为属性变化，直接更新WorkflowGraph
+  const handleBehaviorChange = (field: string, value: any) => {
+    if (updateBehavior) {
+      updateBehavior({ [field]: value });
+    }
+  };
+
   return (
     <>
       <FormHeader />
       <FormContent>
         <FormItem name="ID" type="string" required>
-          <Field name="id">
-            {({ field }) => (
-              <Input
-                value={(field.value as string) || ''}
-                onChange={field.onChange}
-                placeholder="系统唯一标识符"
-                style={{ width: '100%' }}
-              />
-            )}
-          </Field>
+          <Input
+            value={editingBehavior?.id || ''}
+            onChange={(value) => handleBehaviorChange('id', value)}
+            placeholder="系统唯一标识符"
+            style={{ width: '100%' }}
+          />
+        </FormItem>
+
+        <FormItem name="名称" type="string">
+          <Input
+            value={editingBehavior?.name || ''}
+            onChange={(value) => handleBehaviorChange('name', value)}
+            placeholder="行为名称"
+            style={{ width: '100%' }}
+          />
         </FormItem>
 
         <FormItem name="描述" type="string">
-          <Field name="description">
-            {({ field }) => (
-              <TextArea
-                value={(field.value as string) || ''}
-                onChange={field.onChange}
-                placeholder="描述系统的功能和用途"
-                rows={3}
-                style={{ width: '100%' }}
-              />
-            )}
-          </Field>
-        </FormItem>
-
-        {/* 🔑 新增：优先级字段（只读） */}
-        <FormItem name="优先级" type="number">
-          <InputNumber
-            value={editingBehavior?.priority ?? 0}
-            readonly
-            placeholder="行为优先级"
+          <TextArea
+            value={editingBehavior?.desc || ''}
+            onChange={(value) => handleBehaviorChange('desc', value)}
+            placeholder="行为描述"
             style={{ width: '100%' }}
-            hideButtons
+            rows={3}
           />
         </FormItem>
       </FormContent>

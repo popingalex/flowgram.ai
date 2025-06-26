@@ -127,7 +127,7 @@ export const GenerateEntityWorkflow: React.FC<{ disabled?: boolean }> = ({ disab
 
       Toast.success(`成功生成 ${graph.name}，包含 ${graph.nodes.length} 个节点`);
 
-      // 🔧 自动适应视图 - 使用requestAnimationFrame替代setTimeout
+      // 自动适应视图
       requestAnimationFrame(() => {
         playground.config.fitView(workflowDocument.root.bounds.pad(30));
       });
