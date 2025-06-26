@@ -16,8 +16,8 @@ import { Feedback } from '../../../form-components';
 const { Text } = Typography;
 
 interface ModuleFilterValue {
-  moduleId: string;
-  operator: 'contains' | 'notContains';
+  whitelist: string[]; // 白名单：包含的模块ID数组
+  blacklist: string[]; // 黑名单：排除的模块ID数组
 }
 
 interface PropertyFilterValue {
@@ -89,147 +89,124 @@ function PropertyFilterGroup({ children }: { children: React.ReactNode }) {
 
 export function FilterConditionInputs() {
   const { readonly } = useNodeRenderContext();
-  const { modules } = useModuleStore();
+  const { modules, loadModules } = useModuleStore();
   const [selectedModuleIds, setSelectedModuleIds] = useState<string[]>([]);
+
+  // 🔍 确保模块数据被加载
+  useEffect(() => {
+    if (modules.length === 0) {
+      console.log('[FilterConditionInputs] 模块数据为空，开始加载...');
+      loadModules();
+    }
+  }, [modules.length, loadModules]);
+
+  // 🔍 调试日志
+  console.log('[FilterConditionInputs] 组件状态:', {
+    readonly,
+    modulesCount: modules.length,
+    selectedModuleIds,
+    firstModule: modules[0],
+  });
 
   return (
     <div style={{ padding: '16px' }}>
       {/* 模块过滤条件 */}
       <ModuleFilterGroup>
-        <FieldArray name="moduleFilters">
-          {({ field }) => {
+        <Field<ModuleFilterValue> name="moduleFilter">
+          {({ field, fieldState }) => {
             // 监听字段变化，更新选中的模块ID
             useEffect(() => {
-              const moduleIds = (field.value || [])
-                .filter((filter: any) => filter?.moduleId)
-                .map((filter: any) => filter.moduleId as string);
+              const allSelectedIds = [
+                ...(field.value?.whitelist || []),
+                ...(field.value?.blacklist || []),
+              ];
 
               console.log('[过滤器] 模块ID更新:', {
-                fieldValue: field.value,
-                extractedModuleIds: moduleIds,
+                whitelist: field.value?.whitelist,
+                blacklist: field.value?.blacklist,
+                allSelectedIds,
               });
 
-              setSelectedModuleIds(moduleIds);
+              setSelectedModuleIds(allSelectedIds);
             }, [field.value]);
 
             return (
-              <>
-                {field.map((child: any, index: number) => (
-                  <Field<ModuleFilterValue> key={child.name} name={child.name}>
-                    {({ field: childField, fieldState: childState }) => (
-                      <FormItem name="moduleFilter" type="object" required={false} labelWidth={0}>
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            marginBottom: '8px',
-                            padding: '8px',
-                            border: '1px solid var(--semi-color-border)',
-                            borderRadius: '4px',
-                            backgroundColor: '#fafafa',
-                          }}
-                        >
-                          <Space style={{ flex: 1 }}>
-                            <Select
-                              placeholder="选择模块"
-                              value={childField.value?.moduleId || ''}
-                              onChange={(value) => {
-                                childField.onChange({
-                                  ...childField.value,
-                                  moduleId: value as string,
-                                });
-                              }}
-                              style={{ width: 180 }}
-                              disabled={readonly}
-                            >
-                              {modules.map((module: any) => (
-                                <Select.Option key={module._indexId} value={module.id}>
-                                  {module.name} ({module.id})
-                                </Select.Option>
-                              ))}
-                            </Select>
-                            <Select
-                              value={childField.value?.operator || 'contains'}
-                              onChange={(value) =>
-                                childField.onChange({
-                                  ...childField.value,
-                                  operator: value as 'contains' | 'notContains',
-                                })
-                              }
-                              style={{ width: 100 }}
-                              disabled={readonly}
-                            >
-                              <Select.Option value="contains">包含</Select.Option>
-                              <Select.Option value="notContains">不包含</Select.Option>
-                            </Select>
-                          </Space>
-
-                          {!readonly && (
-                            <Button
-                              theme="borderless"
-                              icon={<IconDelete />}
-                              onClick={() => field.delete(index)}
-                              style={{ marginLeft: '8px' }}
-                              size="small"
-                              type="danger"
-                            />
-                          )}
-                        </div>
-
-                        <Feedback errors={childState?.errors} invalid={childState?.invalid} />
-                      </FormItem>
+              <FormItem name="moduleFilter" type="object" required={false} labelWidth={0}>
+                {/* 白名单选择 */}
+                <div style={{ marginBottom: '12px' }}>
+                  <Text strong style={{ fontSize: '13px', marginBottom: '8px', display: 'block' }}>
+                    ✅ 白名单（包含模块）
+                  </Text>
+                  <Select
+                    multiple
+                    placeholder="选择要包含的模块"
+                    value={field.value?.whitelist || []}
+                    onChange={(value) => {
+                      console.log('[FilterConditionInputs] 白名单选择:', value);
+                      field.onChange({
+                        ...field.value,
+                        whitelist: value as string[],
+                      });
+                    }}
+                    style={{ width: '100%' }}
+                    disabled={readonly}
+                    showClear
+                    maxTagCount={3}
+                  >
+                    {modules.length === 0 ? (
+                      <Select.Option value="" disabled>
+                        暂无可用模块
+                      </Select.Option>
+                    ) : (
+                      modules.map((module: any) => (
+                        <Select.Option key={module._indexId || module.id} value={module.id}>
+                          {module.id} ({module.name})
+                        </Select.Option>
+                      ))
                     )}
-                  </Field>
-                ))}
+                  </Select>
+                </div>
 
-                {!readonly && (
-                  <div style={{ marginTop: '8px' }}>
-                    <Button
-                      theme="borderless"
-                      icon={<IconPlus />}
-                      onClick={() =>
-                        field.append({
-                          moduleId: '',
-                          operator: 'contains',
-                        })
-                      }
-                      size="small"
-                    >
-                      添加模块条件
-                    </Button>
-                  </div>
-                )}
-
-                {(!field.value || field.value.length === 0) && (
-                  <div>
-                    <Text
-                      type="tertiary"
-                      style={{ fontSize: '12px', marginBottom: '8px', display: 'block' }}
-                    >
-                      暂无模块过滤条件
-                    </Text>
-                    {!readonly && (
-                      <Button
-                        theme="light"
-                        icon={<IconPlus />}
-                        onClick={() =>
-                          field.append({
-                            moduleId: '',
-                            operator: 'contains',
-                          })
-                        }
-                        size="small"
-                        style={{ marginTop: '4px' }}
-                      >
-                        添加默认模块条件
-                      </Button>
+                {/* 黑名单选择 */}
+                <div style={{ marginBottom: '12px' }}>
+                  <Text strong style={{ fontSize: '13px', marginBottom: '8px', display: 'block' }}>
+                    ❌ 黑名单（排除模块）
+                  </Text>
+                  <Select
+                    multiple
+                    placeholder="选择要排除的模块"
+                    value={field.value?.blacklist || []}
+                    onChange={(value) => {
+                      console.log('[FilterConditionInputs] 黑名单选择:', value);
+                      field.onChange({
+                        ...field.value,
+                        blacklist: value as string[],
+                      });
+                    }}
+                    style={{ width: '100%' }}
+                    disabled={readonly}
+                    showClear
+                    maxTagCount={3}
+                  >
+                    {modules.length === 0 ? (
+                      <Select.Option value="" disabled>
+                        暂无可用模块
+                      </Select.Option>
+                    ) : (
+                      modules.map((module: any) => (
+                        <Select.Option key={module._indexId || module.id} value={module.id}>
+                          {module.id} ({module.name})
+                        </Select.Option>
+                      ))
                     )}
-                  </div>
-                )}
-              </>
+                  </Select>
+                </div>
+
+                <Feedback errors={fieldState?.errors} invalid={fieldState?.invalid} />
+              </FormItem>
             );
           }}
-        </FieldArray>
+        </Field>
       </ModuleFilterGroup>
 
       {/* 属性过滤条件 */}
@@ -268,6 +245,7 @@ export function FilterConditionInputs() {
                 </Field>
               ))}
 
+              {/* 统一的添加按钮 */}
               {!readonly && (
                 <div style={{ marginTop: '8px' }}>
                   <Button
@@ -286,31 +264,14 @@ export function FilterConditionInputs() {
                 </div>
               )}
 
+              {/* 空状态提示 */}
               {(!field.value || field.value.length === 0) && (
-                <div>
-                  <Text
-                    type="tertiary"
-                    style={{ fontSize: '12px', marginBottom: '8px', display: 'block' }}
-                  >
-                    暂无属性过滤条件
-                  </Text>
-                  {!readonly && (
-                    <Button
-                      theme="light"
-                      icon={<IconPlus />}
-                      onClick={() =>
-                        field.append({
-                          key: `property_${nanoid(6)}`,
-                          value: { type: 'expression', content: '' },
-                        })
-                      }
-                      size="small"
-                      style={{ marginTop: '4px' }}
-                    >
-                      添加默认属性条件
-                    </Button>
-                  )}
-                </div>
+                <Text
+                  type="tertiary"
+                  style={{ fontSize: '12px', marginBottom: '8px', display: 'block' }}
+                >
+                  暂无属性过滤条件
+                </Text>
               )}
 
               {selectedModuleIds.length > 0 && (

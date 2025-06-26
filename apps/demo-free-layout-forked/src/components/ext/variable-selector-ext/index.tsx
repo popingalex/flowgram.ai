@@ -121,9 +121,10 @@ export const EnhancedVariableSelector = ({
       let displayText = '';
 
       if (keyPath.length >= 3 && keyPath[1] && keyPath[2]?.includes('/')) {
-        // 模块属性格式：$start.controlled/commands -> 显示为 controlled/commands
+        // 模块属性格式：$start.controlled/commands -> 显示为 commands（去掉前缀）
         const moduleProperty = keyPath[2];
-        displayText = moduleProperty;
+        const parts = moduleProperty.split('/');
+        displayText = parts[parts.length - 1] || moduleProperty; // 取最后一部分，去掉模块前缀
       } else {
         // 其他情况使用keyPath的最后一段
         displayText = keyPath[keyPath.length - 1] || '';
@@ -165,7 +166,7 @@ export const EnhancedVariableSelector = ({
         searchPlaceholder="搜索变量..."
         onChange={handleChange}
         renderSelectedItem={renderSelectedItem}
-        dropdownStyle={{ maxHeight: 300, overflowY: 'auto' }}
+        dropdownStyle={{ maxHeight: 300, overflowY: 'auto', minWidth: 280 }}
         disableStrictly={true}
       />
     </>

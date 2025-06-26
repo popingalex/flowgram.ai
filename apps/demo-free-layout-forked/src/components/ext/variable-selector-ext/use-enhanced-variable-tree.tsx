@@ -7,7 +7,106 @@ import { IJsonSchema } from '@flowgram.ai/form-materials';
 import { TreeNodeData } from '@douyinfe/semi-ui/lib/es/tree';
 import { Icon } from '@douyinfe/semi-ui';
 
+import { useModuleStore } from '../../../stores/module-list';
+
 type VariableField = BaseVariableField<{ icon?: string | JSX.Element; title?: string }>;
+
+// 🔧 辅助函数：将属性类型转换为变量类型
+function convertAttributeTypeToVariableType(attr: any): string {
+  const typeMap: Record<string, string> = {
+    s: 'string',
+    i: 'number',
+    f: 'number',
+    b: 'boolean',
+    o: 'object',
+    a: 'array',
+  };
+  return typeMap[attr.type] || 'string';
+}
+
+// 🎯 创建扁平变量结构
+function createFlatVariableStructure(selectedModuleIds: string[], modules: any[]): TreeNodeData[] {
+  console.log('[变量树] 创建扁平结构:', { selectedModuleIds, modulesCount: modules.length });
+
+  const result: TreeNodeData[] = [];
+
+  // 1. 添加$context节点
+  const contextNode: TreeNodeData = {
+    key: '$context',
+    label: <span style={{ fontWeight: 400 }}>$context</span>,
+    value: '$context',
+    keyPath: ['$context'],
+    icon: <Icon size="small" svg={VariableTypeIcons.object} />,
+    disabled: false,
+  };
+  result.push(contextNode);
+
+  // 2. 为每个选中的模块创建第一级节点
+  if (selectedModuleIds && selectedModuleIds.length > 0) {
+    selectedModuleIds.forEach((moduleId) => {
+      const module = modules.find((m) => m.id === moduleId || m._indexId === moduleId);
+      if (module && module.attributes) {
+        console.log('[变量树] 添加模块节点:', {
+          moduleId,
+          moduleName: module.name,
+          attributeCount: module.attributes.length,
+        });
+
+        // 🎯 创建模块节点（第一级）
+        const moduleNode: TreeNodeData = {
+          key: moduleId,
+          label: (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '100%',
+                paddingRight: '8px',
+              }}
+            >
+              <span>{moduleId}</span>
+              <span style={{ color: '#666', fontSize: '12px' }}>{module.name}</span>
+            </div>
+          ),
+          value: moduleId,
+          keyPath: [moduleId],
+          disabled: true, // 模块节点不可选中，但可以展开
+          children: module.attributes.map((attr: any) => ({
+            key: `${moduleId}/${attr.id}`,
+            label: attr.name ? (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  width: '100%',
+                  paddingRight: '8px',
+                }}
+              >
+                <span>{attr.id}</span>
+                <span style={{ color: '#666', fontSize: '12px' }}>{attr.name}</span>
+              </div>
+            ) : (
+              <span>{attr.id}</span>
+            ),
+            value: `${moduleId}/${attr.id}`,
+            keyPath: [`${moduleId}/${attr.id}`],
+            icon: <Icon size="small" svg={VariableTypeIcons.string} />,
+            disabled: false, // 属性可以选中
+          })),
+        };
+
+        result.push(moduleNode);
+      } else {
+        console.warn('[变量树] 未找到模块:', moduleId);
+      }
+    });
+  }
+
+  console.log('[变量树] 扁平结构创建完成:', { resultCount: result.length });
+  return result;
+}
 
 export function useEnhancedVariableTree(params: {
   includeSchema?: IJsonSchema | IJsonSchema[];
@@ -15,13 +114,22 @@ export function useEnhancedVariableTree(params: {
   selectedModuleIds?: string[];
 }): TreeNodeData[] {
   const { includeSchema, excludeSchema, selectedModuleIds } = params;
+  const { modules } = useModuleStore();
 
-  // 🎯 添加调试信息，确认参数传递
+  // 🔍 调试：打印传入的参数
   console.log('[变量树] useEnhancedVariableTree 参数:', {
     selectedModuleIds,
     hasSelectedModuleIds: !!selectedModuleIds,
     selectedModuleIdsLength: selectedModuleIds?.length || 0,
+    modulesCount: modules.length,
+    stackTrace: new Error().stack?.split('\n').slice(1, 4).join('\n'), // 显示调用栈
   });
+
+  // 🎯 如果传入了selectedModuleIds，直接返回扁平结构，不使用原有逻辑
+  if (selectedModuleIds !== undefined) {
+    console.log('[变量树] 使用扁平结构模式');
+    return createFlatVariableStructure(selectedModuleIds, modules);
+  }
 
   const available = useScopeAvailable();
 
@@ -29,8 +137,37 @@ export function useEnhancedVariableTree(params: {
   console.log('[变量树] 可用变量数据:', {
     available,
     variablesCount: available?.variables?.length || 0,
-    variables: available?.variables?.map((v) => ({ key: v.key, type: v.type })) || [],
+    variables:
+      available?.variables?.map((v) => {
+        const properties = Array.isArray(v.type?.properties) ? v.type.properties : [];
+        return {
+          key: v.key,
+          type: v.type,
+          hasProperties: properties.length > 0,
+          propertiesCount: properties.length,
+          sampleProperties: properties.slice(0, 3).map((p: any) => p.key) || [],
+        };
+      }) || [],
+    availableVariableKeys: available?.variableKeys || [],
   });
+
+  // 🎯 额外调试：检查第一个变量的详细信息
+  if (available?.variables?.length > 0) {
+    const firstVariable = available.variables[0];
+    const properties = Array.isArray(firstVariable.type?.properties)
+      ? firstVariable.type.properties
+      : [];
+    console.log('[变量树] 第一个变量详细信息:', {
+      key: firstVariable.key,
+      type: firstVariable.type,
+      properties: properties,
+      propertiesPreview: properties.slice(0, 5).map((p: any) => ({
+        key: p.key,
+        type: p.type,
+        name: p.name || '无名称',
+      })),
+    });
+  }
 
   const getVariableTypeIcon = useCallback((variable: VariableField) => {
     const type = variable?.type;
@@ -74,137 +211,10 @@ export function useEnhancedVariableTree(params: {
     let children: TreeNodeData[] | undefined;
 
     if (ASTMatch.isObject(type)) {
-      // 🎯 特殊处理$start节点，按模块分组显示
-      if (variable.key === '$start' && parentFields.length === 0) {
-        const properties = type.properties || [];
-        const entityProperties: VariableField[] = [];
-        const moduleGroups: Record<string, VariableField[]> = {};
-        const contextProperties: VariableField[] = [];
-
-        // 分类属性
-        properties.forEach((_property) => {
-          const prop = _property as VariableField;
-          const propKey = prop.key;
-
-          // 🎯 根据key格式判断属性类型，而不依赖meta信息
-          if (propKey === '$context') {
-            // $context属性
-            contextProperties.push(prop);
-          } else if (propKey.includes('/') && !propKey.startsWith('$')) {
-            // 模块属性：格式为 "模块名/属性名"，如 "controlled/action_target"
-            const [moduleId] = propKey.split('/');
-            if (!moduleGroups[moduleId]) {
-              moduleGroups[moduleId] = [];
-            }
-            moduleGroups[moduleId].push(prop);
-          } else {
-            // 实体属性：不包含"/"的普通属性
-            entityProperties.push(prop);
-          }
-        });
-
-        children = [];
-
-        // 添加实体属性
-        entityProperties.forEach((prop) => {
-          const rendered = renderVariable(prop, [...parentFields, variable]);
-          if (rendered && children) children.push(rendered);
-        });
-
-        // 添加模块分组
-        Object.entries(moduleGroups).forEach(([moduleId, moduleProps]) => {
-          if (moduleProps.length > 0) {
-            // 🎯 如果指定了selectedModuleIds，只显示选中的模块
-            if (selectedModuleIds && selectedModuleIds.length > 0) {
-              // 🎯 调试信息
-              console.log('[变量树] 模块过滤调试:', {
-                currentModuleId: moduleId,
-                selectedModuleIds,
-                moduleProps: moduleProps.map((p) => p.key),
-              });
-
-              // 检查当前模块是否在选中列表中
-              const isModuleSelected = selectedModuleIds.includes(moduleId);
-              console.log('[变量树] 模块匹配结果:', { moduleId, isModuleSelected });
-
-              if (!isModuleSelected) {
-                return; // 跳过未选中的模块
-              }
-            }
-
-            // 🎯 使用moduleId作为显示名称，因为meta信息不可用
-            const moduleName = moduleId;
-
-            // 创建模块分组节点
-            const moduleGroupNode: TreeNodeData = {
-              key: `${variable.key}.module_group_${moduleId}`,
-              label: (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    color: 'inherit',
-                    fontWeight: 500,
-                    fontSize: '13px',
-                  }}
-                >
-                  {moduleName} ({moduleProps.length})
-                </div>
-              ),
-              value: `${variable.key}.module_group_${moduleId}`,
-              keyPath: [variable.key, `module_group_${moduleId}`],
-              disabled: true, // 🎯 分组节点不可选中，但可以展开
-              children: moduleProps
-                .map((prop) => {
-                  // 🎯 为模块内属性创建简化显示的节点
-                  const originalKey = prop.key;
-
-                  // 计算简化的显示名称（去掉模块前缀）
-                  const simplifiedKey = originalKey.startsWith(`${moduleId}/`)
-                    ? originalKey.replace(`${moduleId}/`, '')
-                    : originalKey;
-
-                  // 🎯 关键修复：构建正确的keyPath格式，保持与原有扁平格式兼容
-                  // 不使用分组路径，直接使用原始的模块属性路径
-                  const fullKeyPath = [
-                    ...parentFields.map((_field) => _field.key),
-                    variable.key,
-                    originalKey, // 保持原始的"模块名/属性名"格式
-                  ];
-
-                  // 🎯 构建简化的label，不再依赖meta.title
-                  const simplifiedLabel = <span style={{ fontWeight: 400 }}>{simplifiedKey}</span>;
-
-                  return {
-                    key: fullKeyPath.join('.'),
-                    label: simplifiedLabel,
-                    value: fullKeyPath.join('.'),
-                    keyPath: fullKeyPath, // 这里保持原始的路径格式，与现有的变量值兼容
-                    icon: getVariableTypeIcon(prop),
-                    disabled: false, // 🎯 模块内属性可以选中
-                    rootMeta: variable.meta,
-                  };
-                })
-                .filter(Boolean) as TreeNodeData[],
-            };
-
-            if (children) children.push(moduleGroupNode);
-          }
-        });
-
-        // 添加上下文属性
-        contextProperties.forEach((prop) => {
-          const rendered = renderVariable(prop, [...parentFields, variable]);
-          if (rendered && children) children.push(rendered);
-        });
-      } else {
-        // 普通object节点的处理
-        children = (type.properties || [])
-          .map((_property) =>
-            renderVariable(_property as VariableField, [...parentFields, variable])
-          )
-          .filter(Boolean) as TreeNodeData[];
-      }
+      // 普通object节点的处理
+      children = (type.properties || [])
+        .map((_property) => renderVariable(_property as VariableField, [...parentFields, variable]))
+        .filter(Boolean) as TreeNodeData[];
 
       if (!children?.length) {
         return null;
@@ -295,7 +305,26 @@ export function useEnhancedVariableTree(params: {
   };
 
   const result = [...available.variables.slice(0).reverse()]
-    .map((_variable) => renderVariable(_variable as VariableField))
+    .map((_variable) => {
+      const variable = _variable as VariableField;
+
+      // 🔍 调试：打印每个根变量
+      console.log('[变量树] 处理根变量:', {
+        key: variable.key,
+        type: variable.type?.type,
+        hasProperties: !!(
+          Array.isArray(variable.type?.properties) && variable.type.properties.length > 0
+        ),
+        propertiesCount: Array.isArray(variable.type?.properties)
+          ? variable.type.properties.length
+          : 0,
+        isStartNode: variable.key === '$start',
+        parentFieldsLength: 0, // 这里是根变量，parentFields为空
+        willEnterStartLogic: variable.key === '$start',
+      });
+
+      return renderVariable(variable);
+    })
     .filter(Boolean) as TreeNodeData[];
 
   // 只在开发环境且变量数量有变化时打印调试信息
