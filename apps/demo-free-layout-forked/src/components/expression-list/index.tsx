@@ -15,11 +15,17 @@ export const ExpressionListPage: React.FC = () => {
   // 从路由获取选中的表达式ID
   const selectedExpressionId = routeState.expressionId;
 
+  // 🎯 根据路由类型确定页面标题
+  const isLocalMode = routeState.route === 'exp-local';
+  const pageTitle = isLocalMode ? '本地函数' : '远程服务';
+
   // 添加调试日志
   console.log('🔍 [ExpressionListPage] 路由状态:', {
     routeState,
     selectedExpressionId,
     currentUrl: window.location.href,
+    isLocalMode,
+    pageTitle,
   });
 
   // 页面初始化时加载数据
@@ -39,7 +45,7 @@ export const ExpressionListPage: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <Title heading={4} style={{ margin: 0 }}>
-              远程服务
+              {pageTitle}
             </Title>
             {/* 添加调试信息显示 */}
             {selectedExpressionId && (

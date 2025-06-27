@@ -64,7 +64,9 @@
     "@flowgram.ai/form-core": "workspace:*",
     "@flowgram.ai/node": "workspace:*",
     "@flowgram.ai/variable-core": "workspace:*",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "@monaco-editor/react": "^4.6.0",
+    "monaco-editor": "^0.52.2"
   },
   "devDependencies": {
     "@flowgram.ai/ts-config": "workspace:*",

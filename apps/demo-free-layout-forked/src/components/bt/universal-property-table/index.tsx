@@ -14,6 +14,7 @@ import {
   TextArea,
   Typography,
   Checkbox,
+  Select,
 } from '@douyinfe/semi-ui';
 import {
   IconPlus,
@@ -31,6 +32,7 @@ import {
 
 // 移除外部组件引用，改为内联实现
 import { EntityPropertyTypeSelector } from '../../ext/type-selector-ext';
+import { ParameterMappingInput } from '../../ext/parameter-mapping-input';
 import { TypedParser } from '../../../typings/mas/typed';
 import { useModuleStore, useCurrentEntityActions, useCurrentEntityStore } from '../../../stores';
 import type { Attribute } from '../../../services/types';
@@ -209,10 +211,28 @@ export interface UniversalPropertyTableProps {
   // 显示配置
   showEntityProperties?: boolean;
   showModuleProperties?: boolean;
+  showFunctionParameters?: boolean; // 新增：显示函数参数
   // 标题配置
   entityTitle?: string;
   moduleTitle?: string;
+  functionParameterTitle?: string; // 新增：函数参数标题
   hideInternalTitles?: boolean; // 隐藏内部标题，避免与外部label重复
+  // 函数参数相关配置
+  functionParameters?: Array<{
+    id: string;
+    name: string;
+    type: string;
+    desc?: string;
+    required?: boolean;
+    mappingType?: 'parameter' | 'constant';
+    mappingValue?: string;
+    _indexId?: string;
+  }>;
+  onParameterMappingChange?: (
+    paramId: string,
+    mappingType: 'parameter' | 'constant',
+    mappingValue: string
+  ) => void;
 }
 
 // 独立的属性字段组件
@@ -1409,9 +1429,13 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
   readonly = false,
   showEntityProperties = true,
   showModuleProperties = false,
+  showFunctionParameters = false,
   entityTitle = '实体属性',
   moduleTitle = '实体模块',
+  functionParameterTitle = '函数参数',
   hideInternalTitles = false,
+  functionParameters = [],
+  onParameterMappingChange,
 }) => {
   // 兼容处理：如果传了readonly，则以readonly为准；否则根据mode判断
   const isReadonly = readonly || mode === 'node';
@@ -1895,6 +1919,87 @@ export const UniversalPropertyTable: React.FC<UniversalPropertyTableProps> = ({
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* 函数参数部分 */}
+      {showFunctionParameters && functionParameters && functionParameters.length > 0 && (
+        <div style={{ marginTop: showEntityProperties || showModuleProperties ? 16 : 0 }}>
+          {!hideInternalTitles && (
+            <div style={{ marginBottom: 8 }}>
+              <Typography.Text strong>{functionParameterTitle}</Typography.Text>
+              <Typography.Text type="tertiary" size="small" style={{ marginLeft: 4 }}>
+                ({functionParameters.length})
+              </Typography.Text>
+            </div>
+          )}
+
+          <Table
+            columns={[
+              {
+                title: '类型',
+                dataIndex: 'type',
+                width: 80,
+                render: (text: string) => (
+                  <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <EntityPropertyTypeSelector value={{ type: text }} disabled={true} />
+                  </div>
+                ),
+              },
+              {
+                title: 'ID',
+                dataIndex: 'id',
+                width: 130,
+                render: (text: string) => (
+                  <Text
+                    style={{
+                      fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                      fontSize: '12px',
+                    }}
+                  >
+                    {text}
+                  </Text>
+                ),
+              },
+              {
+                title: '名称',
+                dataIndex: 'name',
+                width: 160,
+                render: (text: string) => <Text>{text}</Text>,
+              },
+              {
+                title: '必填',
+                dataIndex: 'required',
+                width: 80,
+                render: (required: boolean) => (
+                  <Tag size="small" color={required ? 'red' : 'grey'}>
+                    {required ? '必填' : '可选'}
+                  </Tag>
+                ),
+              },
+              {
+                title: '参数映射',
+                dataIndex: 'mappingValue',
+                width: 280,
+                render: (value: string, record: any) => (
+                  <ParameterMappingInput
+                    value={value || ''}
+                    mappingType={record.mappingType || 'constant'}
+                    disabled={isReadonly}
+                    onChange={(type, val) => onParameterMappingChange?.(record.id, type, val)}
+                  />
+                ),
+              },
+            ]}
+            dataSource={functionParameters}
+            rowKey={(record) => record._indexId || record.id}
+            pagination={false}
+            size="small"
+            style={{
+              border: '1px solid var(--semi-color-border)',
+              borderRadius: '4px',
+            }}
+          />
         </div>
       )}
     </div>

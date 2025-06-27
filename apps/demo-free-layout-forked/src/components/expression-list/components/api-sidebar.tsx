@@ -18,7 +18,7 @@ interface ApiSidebarProps {
 export const ApiSidebar: React.FC<ApiSidebarProps> = ({
   selectedExpressionId: initialSelectedId,
 }) => {
-  const { navigate } = useRouter();
+  const { navigate, routeState } = useRouter();
   const expressionStore = useExpressionStore();
 
   // 内部状态管理当前选中的API
@@ -33,9 +33,18 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
   // API创建模态框状态
   const [apiModalVisible, setApiModalVisible] = useState(false);
 
-  // 过滤表达式数据
+  // 🎯 根据当前路由类型过滤数据
+  const isLocalMode = routeState.route === 'exp-local';
+
+  // 过滤表达式数据 - 根据路由类型显示不同数据
   const filteredExpressions = expressionStore.allItems.filter((item) => {
-    if (item.type !== 'expression') return false;
+    // 本地模式显示behavior类型，远程模式显示expression类型
+    if (isLocalMode) {
+      if (item.type !== 'behavior') return false;
+    } else {
+      if (item.type !== 'expression') return false;
+    }
+
     if (!searchKeyword) return true;
 
     const searchTerm = searchKeyword.toLowerCase();
@@ -46,19 +55,19 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
     );
   });
 
-  // 默认选中第一条记录
+  // 默认选中第一条记录 - 根据路由类型导航到不同页面
   useEffect(() => {
     if (!selectedApiId && filteredExpressions.length > 0) {
       const firstApi = filteredExpressions[0];
       setSelectedApiId(firstApi.id);
       navigate({
-        route: 'exp-remote',
+        route: isLocalMode ? 'exp-local' : 'exp-remote',
         expressionId: firstApi.id,
       });
     }
-  }, [filteredExpressions, selectedApiId, navigate]);
+  }, [filteredExpressions, selectedApiId, navigate, isLocalMode]);
 
-  // 处理API选择
+  // 处理API选择 - 根据路由类型导航
   const handleExpressionSelect = useCallback(
     (expressionId: string) => {
       console.log('🔍 [ApiSidebar] 选择API:', expressionId);
@@ -66,13 +75,13 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
       // 更新内部状态
       setSelectedApiId(expressionId);
 
-      // 同步更新URL（可选）
+      // 同步更新URL - 根据当前路由类型
       navigate({
-        route: 'exp-remote',
+        route: isLocalMode ? 'exp-local' : 'exp-remote',
         expressionId,
       });
     },
-    [navigate]
+    [navigate, isLocalMode]
   );
 
   // 处理搜索
@@ -190,14 +199,14 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
 
       // 同步更新URL
       navigate({
-        route: 'exp-remote',
+        route: isLocalMode ? 'exp-local' : 'exp-remote',
         expressionId: apiId,
       });
 
       // 关闭模态框
       setApiModalVisible(false);
     },
-    [navigate, expressionStore]
+    [navigate, expressionStore, isLocalMode]
   );
 
   // 删除API
@@ -227,7 +236,7 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
               const nextApi = remainingApis[0];
               setSelectedApiId(nextApi.id);
               navigate({
-                route: 'exp-remote',
+                route: isLocalMode ? 'exp-local' : 'exp-remote',
                 expressionId: nextApi.id,
               });
             } else {
@@ -239,7 +248,7 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
         },
       });
     },
-    [selectedApiId, filteredExpressions, navigate, expressionStore]
+    [selectedApiId, filteredExpressions, navigate, expressionStore, isLocalMode]
   );
 
   // 删除分组
