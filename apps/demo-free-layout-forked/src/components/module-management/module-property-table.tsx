@@ -28,12 +28,13 @@ interface DescriptionEditModal {
   description: string;
 }
 
-export const ModulePropertyTable: React.FC = () => {
+interface ModulePropertyTableProps {
+  searchText?: string;
+}
+
+export const ModulePropertyTable: React.FC<ModulePropertyTableProps> = ({ searchText = '' }) => {
   const { editingModule } = useCurrentModule();
   const { updateAttributeProperty, addAttribute, removeAttribute } = useCurrentModuleActions();
-
-  // 搜索状态
-  const [searchText, setSearchText] = useState('');
 
   // 描述编辑弹窗状态
   const [descriptionEditModal, setDescriptionEditModal] = useState<DescriptionEditModal>({
@@ -261,19 +262,6 @@ export const ModulePropertyTable: React.FC = () => {
 
   return (
     <div style={{ width: '100%' }}>
-      {/* 搜索框 */}
-      <div style={{ marginBottom: '16px' }}>
-        <Input
-          prefix={<IconSearch />}
-          placeholder="搜索属性ID、名称、类型或描述..."
-          value={searchText}
-          onChange={setSearchText}
-          size="small"
-          showClear
-          style={{ width: '100%' }}
-        />
-      </div>
-
       {/* 属性表格 */}
       <Table
         columns={columns}

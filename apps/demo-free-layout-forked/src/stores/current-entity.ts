@@ -295,8 +295,8 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
               targetAttribute._status = 'modified';
             }
 
-            // 🎯 修复：使用深度比较检查是否有变化
-            state.isDirty = !deepCompareEntities(state.editingEntity, state.originalEntity);
+            // 🎯 优化：属性更新时直接设置为dirty，避免重度比较
+            state.isDirty = true;
             state.error = null;
 
             console.log('🔍 Immer属性字段更新完成:', {
@@ -327,8 +327,8 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
 
           // 🎯 修复：新属性添加到末尾，保持添加顺序的直觉性
           state.editingEntity.attributes.push(newAttribute);
-          // 🎯 修复：使用深度比较检查是否有变化
-          state.isDirty = !deepCompareEntities(state.editingEntity, state.originalEntity);
+          // 🎯 优化：添加属性时直接设置为dirty
+          state.isDirty = true;
           state.error = null;
         });
       },
@@ -374,8 +374,8 @@ export const useCurrentEntityStore = create<CurrentEntityStore>()(
             // 使用Immer的splice方法删除
             state.editingEntity.attributes.splice(index, 1);
 
-            // 🎯 修复：使用深度比较检查是否有变化
-            state.isDirty = !deepCompareEntities(state.editingEntity, state.originalEntity);
+            // 🎯 优化：删除属性时直接设置为dirty
+            state.isDirty = true;
             state.error = null;
 
             console.log('🗑️ Store: 删除成功:', {

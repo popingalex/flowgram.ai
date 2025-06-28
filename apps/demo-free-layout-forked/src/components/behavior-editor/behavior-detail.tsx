@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 
 import { nanoid } from 'nanoid';
-import { Typography, Input, Button, Space, Spin, Card } from '@douyinfe/semi-ui';
+import { Typography, Input, Button, Space, Spin, Card, Form } from '@douyinfe/semi-ui';
 import { IconPlus, IconDelete } from '@douyinfe/semi-icons';
 
 import { ParameterFilterEditor } from '../ext/parameter-filter';
@@ -143,46 +143,34 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
         <Card title="基本信息" style={{ marginBottom: '16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div
-                style={{ width: '80px', textAlign: 'right', marginRight: '12px', fontSize: '14px' }}
-              >
-                行为ID
-              </div>
+              <Form.Label text="行为" required width={80} align="right" />
               <Input
                 value={editingBehavior.id}
                 onChange={(value) => updateField('id', value)}
                 placeholder="行为ID"
-                style={{ flex: 1 }}
+                style={{ flex: 1, marginLeft: '12px' }}
                 data-testid="behavior-id-input"
               />
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div
-                style={{ width: '80px', textAlign: 'right', marginRight: '12px', fontSize: '14px' }}
-              >
-                行为名称
-              </div>
+              <Form.Label text="名称" width={80} align="right" />
               <Input
                 value={editingBehavior.name}
                 onChange={(value) => updateField('name', value)}
                 placeholder="行为名称"
-                style={{ flex: 1 }}
+                style={{ flex: 1, marginLeft: '12px' }}
                 data-testid="behavior-name-input"
               />
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div
-                style={{ width: '80px', textAlign: 'right', marginRight: '12px', fontSize: '14px' }}
-              >
-                描述
-              </div>
+              <Form.Label text="描述" width={80} align="right" />
               <Input
                 value={editingBehavior.description || ''}
                 onChange={(value) => updateField('description', value)}
                 placeholder="行为描述"
-                style={{ flex: 1 }}
+                style={{ flex: 1, marginLeft: '12px' }}
                 data-testid="behavior-description-input"
               />
             </div>
