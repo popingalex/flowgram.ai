@@ -593,6 +593,40 @@ export class FlowDocument<T = FlowDocumentJSON> implements Disposable {
     return result;
   }
 
+  toNodeJSON(node: FlowNodeEntity): FlowNodeJSON {
+    if (this.options.toNodeJSON) {
+      return this.options.toNodeJSON(node);
+    }
+    const nodesMap: Record<string, FlowNodeJSON> = {};
+    let startNodeJSON: FlowNodeJSON;
+    this.traverse((node) => {
+      const isSystemNode = node.id.startsWith('$');
+      if (isSystemNode) return;
+      const nodeJSONData = node.getJSONData();
+      const nodeJSON: FlowNodeJSON = {
+        id: node.id,
+        type: node.flowNodeType,
+      };
+      if (nodeJSONData !== undefined) {
+        nodeJSON.data = nodeJSONData;
+      }
+      if (!startNodeJSON) startNodeJSON = nodeJSON;
+      let { parent } = node;
+      if (parent && parent.id.startsWith('$')) {
+        parent = parent.originParent;
+      }
+      const parentJSON = parent ? nodesMap[parent.id] : undefined;
+      if (parentJSON) {
+        if (!parentJSON.blocks) {
+          parentJSON.blocks = [];
+        }
+        parentJSON.blocks.push(nodeJSON);
+      }
+      nodesMap[node.id] = nodeJSON;
+    }, node);
+    return startNodeJSON!;
+  }
+
   /**
    * 移动节点
    * @param param0

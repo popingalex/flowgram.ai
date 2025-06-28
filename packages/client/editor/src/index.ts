@@ -53,6 +53,7 @@ export {
   useFieldValidate,
   useWatch,
   ValidateTrigger,
+  FeedbackLevel,
 } from '@flowgram.ai/form';
 export * from '@flowgram.ai/node';
 export { FormModelV2 as FormModel };

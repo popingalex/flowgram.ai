@@ -181,7 +181,7 @@ export function createFreeLayoutPreset(
               }
             },
           });
-          if (!opts.scroll?.disableScrollLimit) {
+          if (opts.scroll?.enableScrollLimit) {
             // 控制滚动范围
             ctx.playground.registerLayer(FlowScrollLimitLayer);
           }

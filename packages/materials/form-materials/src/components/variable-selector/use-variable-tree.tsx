@@ -66,10 +66,6 @@ export function useVariableTree(params: {
       children = (type.properties || [])
         .map((_property) => renderVariable(_property as VariableField, [...parentFields, variable]))
         .filter(Boolean) as TreeNodeData[];
-
-      if (!children?.length) {
-        return null;
-      }
     }
 
     const keyPath = [...parentFields.map((_field) => _field.key), variable.key];
@@ -81,6 +77,7 @@ export function useVariableTree(params: {
     const isSchemaExclude = excludeSchema
       ? JsonSchemaUtils.isASTMatchSchema(type, excludeSchema)
       : false;
+
     const isSchemaMatch = isSchemaInclude && !isSchemaExclude;
 
     // If not match, and no children, return null

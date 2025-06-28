@@ -1,11 +1,17 @@
 import { inject, optional, postConstruct } from 'inversify';
 import { Scope, ScopeChain } from '@flowgram.ai/variable-core';
 import { WorkflowNodeLinesData, WorkflowNodeMeta } from '@flowgram.ai/free-layout-core';
-import { FlowNodeEntity, FlowDocument, FlowVirtualTree } from '@flowgram.ai/document';
+import {
+  FlowNodeEntity,
+  FlowDocument,
+  FlowVirtualTree,
+  FlowNodeBaseType,
+} from '@flowgram.ai/document';
 import { EntityManager } from '@flowgram.ai/core';
 
 import { VariableLayoutConfig } from '../variable-layout-config';
 import { FlowNodeScope, FlowNodeScopeTypeEnum } from '../types';
+import { ScopeChainTransformService } from '../services/scope-chain-transform-service';
 import { GlobalScope } from '../scopes/global-scope';
 import { FlowNodeVariableData } from '../flow-node-variable-data';
 
@@ -21,6 +27,9 @@ export class FreeLayoutScopeChain extends ScopeChain {
   @optional()
   @inject(VariableLayoutConfig)
   protected configs?: VariableLayoutConfig;
+
+  @inject(ScopeChainTransformService)
+  protected transformService: ScopeChainTransformService;
 
   get tree(): FlowVirtualTree<FlowNodeEntity> {
     return this.flowDocument.originTree;
@@ -44,22 +53,26 @@ export class FreeLayoutScopeChain extends ScopeChain {
 
   // 获取同一层级所有输入节点
   protected getAllInputLayerNodes(curr: FlowNodeEntity): FlowNodeEntity[] {
+    const currParent = this.getParent(curr);
+
     return (curr.getData(WorkflowNodeLinesData)?.allInputNodes || []).filter(
-      (_node) => _node.parent === curr.parent
+      (_node) => this.getParent(_node) === currParent
     );
   }
 
   // 获取同一层级所有输出节点
   protected getAllOutputLayerNodes(curr: FlowNodeEntity): FlowNodeEntity[] {
+    const currParent = this.getParent(curr);
+
     return (curr.getData(WorkflowNodeLinesData)?.allOutputNodes || []).filter(
-      (_node) => _node.parent === curr.parent
+      (_node) => this.getParent(_node) === currParent
     );
   }
 
   getDeps(scope: FlowNodeScope): FlowNodeScope[] {
     const { node } = scope.meta || {};
     if (!node) {
-      return this.transformDeps([], { scope });
+      return this.transformService.transformDeps([], { scope });
     }
 
     const deps: FlowNodeScope[] = [];
@@ -91,7 +104,7 @@ export class FreeLayoutScopeChain extends ScopeChain {
     }
 
     const uniqDeps = Array.from(new Set(deps));
-    return this.transformDeps(uniqDeps, { scope });
+    return this.transformService.transformDeps(uniqDeps, { scope });
   }
 
   getCovers(scope: FlowNodeScope): FlowNodeScope[] {
@@ -104,7 +117,7 @@ export class FreeLayoutScopeChain extends ScopeChain {
 
     const { node } = scope.meta || {};
     if (!node) {
-      return this.transformCovers([], { scope });
+      return this.transformService.transformCovers([], { scope });
     }
 
     const isPrivate = scope.meta.type === FlowNodeScopeTypeEnum.private;
@@ -142,27 +155,7 @@ export class FreeLayoutScopeChain extends ScopeChain {
 
     const uniqScopes = Array.from(new Set(scopes));
 
-    return this.transformCovers(uniqScopes, { scope });
-  }
-
-  protected transformCovers(covers: Scope[], { scope }: { scope: Scope }): Scope[] {
-    return this.configs?.transformCovers
-      ? this.configs.transformCovers(covers, {
-          scope,
-          document: this.flowDocument,
-          variableEngine: this.variableEngine,
-        })
-      : covers;
-  }
-
-  protected transformDeps(deps: Scope[], { scope }: { scope: Scope }): Scope[] {
-    return this.configs?.transformDeps
-      ? this.configs.transformDeps(deps, {
-          scope,
-          document: this.flowDocument,
-          variableEngine: this.variableEngine,
-        })
-      : deps;
+    return this.transformService.transformCovers(uniqScopes, { scope });
   }
 
   getChildren(node: FlowNodeEntity): FlowNodeEntity[] {
@@ -190,19 +183,25 @@ export class FreeLayoutScopeChain extends ScopeChain {
     if (this.configs?.getFreeParent) {
       return this.configs.getFreeParent(node);
     }
-    const initParent = node.document.originTree.getParent(node);
+    let parent = node.document.originTree.getParent(node);
 
-    if (!initParent) {
-      return initParent;
+    // If currentParent is Group, get the parent of parent
+    while (parent?.flowNodeType === FlowNodeBaseType.GROUP) {
+      parent = parent.parent;
     }
 
-    const nodeMeta = initParent.getNodeMeta<WorkflowNodeMeta>();
-    const subCanvas = nodeMeta.subCanvas?.(initParent);
+    if (!parent) {
+      return parent;
+    }
+
+    const nodeMeta = parent.getNodeMeta<WorkflowNodeMeta>();
+    const subCanvas = nodeMeta.subCanvas?.(parent);
     if (subCanvas?.isCanvas) {
+      // Get real parent node by subCanvas Configuration
       return subCanvas.parentNode;
     }
 
-    return initParent;
+    return parent;
   }
 
   sortAll(): Scope[] {

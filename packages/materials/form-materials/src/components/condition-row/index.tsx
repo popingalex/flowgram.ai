@@ -68,4 +68,4 @@ export function ConditionRow({ style, value, onChange, readonly }: PropTypes) {
   );
 }
 
-export { ConditionRowValueType };
+export { type ConditionRowValueType };

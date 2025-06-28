@@ -146,7 +146,7 @@ export namespace Glob {
     let curPaths: string[] = [];
     let curValue = obj;
     while (curKey) {
-      let isObject = typeof curValue === 'object';
+      let isObject = typeof curValue === 'object' && curValue !== null;
       if (!isObject) return [];
       // 匹配 *
       if (curKey === ALL) {

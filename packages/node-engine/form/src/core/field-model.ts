@@ -361,8 +361,8 @@ export class FieldModel<TValue extends FieldValue = FieldValue> implements Dispo
 
       const groupedFeedbacks = groupBy(feedbacks, 'level');
 
-      warnings = warnings.concat(groupedFeedbacks[FeedbackLevel.Warning] as FieldWarning[]);
-      errors = errors.concat(groupedFeedbacks[FeedbackLevel.Error] as FieldError[]);
+      warnings = warnings.concat((groupedFeedbacks[FeedbackLevel.Warning] as FieldWarning[]) || []);
+      errors = errors.concat((groupedFeedbacks[FeedbackLevel.Error] as FieldError[]) || []);
     }
 
     return { errors, warnings };

@@ -17,7 +17,7 @@ import { type FlowNodeRegistry } from '../typings';
 import { shortcutGetter } from '../shortcuts';
 import { CustomService } from '../services';
 import { GroupBoxHeader, GroupNode } from '../plugins/group-plugin';
-import { createSyncVariablePlugin, createClipboardPlugin } from '../plugins';
+import { createClipboardPlugin } from '../plugins';
 import { SelectorBoxPopover } from '../components/selector-box-popover';
 import NodeAdder from '../components/node-adder';
 import BranchAdder from '../components/branch-adder';
@@ -91,6 +91,7 @@ export function useEditorProps(
        */
       constants: {
         // [ConstantKeys.NODE_SPACING]: 24,
+        // [ConstantKeys.BRANCH_SPACING]: 20,
         // [ConstantKeys.INLINE_SPACING_BOTTOM]: 24,
         // [ConstantKeys.INLINE_BLOCKS_INLINE_SPACING_BOTTOM]: 13,
         // [ConstantKeys.ROUNDED_LINE_X_RADIUS]: 8,
@@ -184,6 +185,13 @@ export function useEditorProps(
       onBind: ({ bind }) => {
         bind(CustomService).toSelf().inSingletonScope();
       },
+      scroll: {
+        /**
+         * 限制滚动，防止节点都看不到
+         * Limit scrolling so that none of the nodes can see it
+         */
+        enableScrollLimit: true,
+      },
       /**
        * Playground init
        */
@@ -247,11 +255,6 @@ export function useEditorProps(
             GroupNode,
           },
         }),
-        /**
-         * Variable plugin
-         * 变量插件
-         */
-        createSyncVariablePlugin({}),
         /**
          * Clipboard plugin
          * 剪切板插件

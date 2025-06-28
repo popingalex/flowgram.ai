@@ -24,7 +24,7 @@ export interface Feedback<FeedbackLevel> {
   /**
    * Feedback message
    */
-  message: string;
+  message: string | React.ReactNode;
 }
 
 export type FieldError = Feedback<FeedbackLevel.Error>;

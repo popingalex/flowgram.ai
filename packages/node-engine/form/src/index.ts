@@ -19,7 +19,7 @@ export type {
   Warnings,
 } from './types';
 
-export { ValidateTrigger } from './types';
+export { ValidateTrigger, FeedbackLevel } from './types';
 export { createForm, type CreateFormOptions } from './core/create-form';
 export { Glob } from './utils';
 export * from './core';

@@ -87,7 +87,7 @@ export interface EditorProps<
   reduxDevTool?: ReduxDevToolPluginOptions;
 
   scroll?: {
-    disableScrollLimit?: boolean; // 关闭滚动限制
+    enableScrollLimit?: boolean; // 开启滚动限制
     disableScrollBar?: boolean; //  关闭滚动条
   };
 

@@ -11,8 +11,9 @@ import { GroupNodeRegistry } from './group-node';
 
 export const createFreeGroupPlugin = definePluginCreator<WorkflowGroupPluginOptions, PluginContext>(
   {
-    onBind({ bind, rebind }) {
+    onBind({ bind, rebind }, opts) {
       bind(WorkflowGroupService).toSelf().inSingletonScope();
+      bind(WorkflowGroupPluginOptions).toConstantValue(opts);
       rebind(FlowGroupService).toService(WorkflowGroupService);
     },
     onInit(

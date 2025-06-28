@@ -101,7 +101,7 @@ export class PlaygroundConfigEntity extends ConfigEntity<PlaygroundConfigEntityD
       originY: 0,
       width: 0,
       height: 0,
-      minZoom: 0.1,
+      minZoom: 0.25,
       maxZoom: 2,
       zoom: 1,
       clientX: 0,

@@ -73,7 +73,9 @@ export class FlowNodesTransformLayer extends Layer<FlowNodesTransformLayerOption
         if (resizeDispose) return;
         // 监听 dom 节点的大小变化
         this.renderElement.appendChild(node);
-        resizeDispose = this.resizeObserver.observe(node, transform!);
+        if (!entity.getNodeMeta().autoResizeDisable) {
+          resizeDispose = this.resizeObserver.observe(node, transform!);
+        }
       };
       const dispose = () => {
         if (!resizeDispose) return;
