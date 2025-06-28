@@ -15,7 +15,7 @@ import {
   OnFormValuesUpdatedPayload,
 } from '../types/form';
 import { FieldName, FieldValue } from '../types/field';
-import { Errors, FormValidateReturn, Warnings } from '../types';
+import { Errors, FeedbackLevel, FormValidateReturn, Warnings } from '../types';
 import { createFormModelState } from '../constants';
 import { getValidByErrors, mergeFeedbacks } from './utils';
 import { Store } from './store';
@@ -281,8 +281,14 @@ export class FormModel<TValues = any> implements Disposable {
           const feedback = toFeedback(result, path);
           const field = this.getField(path);
 
-          const errors = feedbackToFieldErrorsOrWarnings<Errors>(path, feedback);
-          const warnings = feedbackToFieldErrorsOrWarnings<Warnings>(path, feedback);
+          const errors = feedbackToFieldErrorsOrWarnings<Errors>(
+            path,
+            feedback?.level === FeedbackLevel.Error ? feedback : undefined
+          );
+          const warnings = feedbackToFieldErrorsOrWarnings<Warnings>(
+            path,
+            feedback?.level === FeedbackLevel.Warning ? feedback : undefined
+          );
 
           if (field) {
             field.state.errors = errors;

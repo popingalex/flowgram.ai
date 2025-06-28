@@ -16,6 +16,7 @@ import { FlowGroupService, FlowNodeBaseType } from '@flowgram.ai/document';
 import { TransformData } from '@flowgram.ai/core';
 
 import { WorkflowGroupUtils } from './utils';
+import { WorkflowGroupPluginOptions } from './type';
 
 @injectable()
 /** 分组服务 */
@@ -27,6 +28,8 @@ export class WorkflowGroupService extends FlowGroupService {
   @inject(HistoryService) private historyService: HistoryService;
 
   @inject(NodeIntoContainerService) private nodeIntoContainerService: NodeIntoContainerService;
+
+  @inject(WorkflowGroupPluginOptions) private opts: WorkflowGroupPluginOptions;
 
   private toDispose = new DisposableCollection();
 
@@ -44,10 +47,9 @@ export class WorkflowGroupService extends FlowGroupService {
       return;
     }
     const parent = nodes[0].parent ?? this.document.root;
-    const groupId = `group_${nanoid(5)}`;
-    const groupJSON: WorkflowNodeJSON = {
+    let groupJSON: WorkflowNodeJSON = {
       type: FlowNodeBaseType.GROUP,
-      id: groupId,
+      id: `group_${nanoid(5)}`,
       meta: {
         position: {
           x: 0,
@@ -56,6 +58,9 @@ export class WorkflowGroupService extends FlowGroupService {
       },
       data: {},
     };
+    if (this.opts.initGroupJSON) {
+      groupJSON = this.opts.initGroupJSON(groupJSON, nodes);
+    }
     this.historyService.startTransaction();
     this.document.createWorkflowNodeByType(
       FlowNodeBaseType.GROUP,
@@ -68,7 +73,7 @@ export class WorkflowGroupService extends FlowGroupService {
     );
     nodes.forEach((node) => {
       this.freeOperationService.moveNode(node, {
-        parent: groupId,
+        parent: groupJSON.id,
       });
     });
     this.historyService.endTransaction();

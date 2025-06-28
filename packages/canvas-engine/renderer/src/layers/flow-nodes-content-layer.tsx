@@ -83,7 +83,7 @@ export class FlowNodesContentLayer extends Layer {
       function Portal(): JSX.Element {
         React.useEffect(() => {
           // 第一次加载需要把宽高通知
-          if (node.clientWidth && node.clientHeight) {
+          if (!entity.getNodeMeta().autoResizeDisable && node.clientWidth && node.clientHeight) {
             const transform = entity.getData<FlowNodeTransformData>(FlowNodeTransformData);
             if (transform)
               transform.size = {
@@ -91,7 +91,7 @@ export class FlowNodesContentLayer extends Layer {
                 height: node.clientHeight,
               };
           }
-        }, []);
+        }, [entity, node]);
         // 这里使用 portal，改 dom 样式不会引起 react 重新渲染
         return ReactDOM.createPortal(
           <PlaygroundEntityContext.Provider value={entity}>

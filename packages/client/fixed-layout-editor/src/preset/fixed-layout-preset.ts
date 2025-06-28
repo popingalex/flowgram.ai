@@ -141,7 +141,7 @@ export function createFixedLayoutPreset(
             FlowNodesContentLayer, // 节点内容渲染
             FlowNodesTransformLayer // 节点位置偏移计算
           );
-          if (!opts.scroll?.disableScrollLimit) {
+          if (opts.scroll?.enableScrollLimit) {
             // 控制滚动范围
             ctx.playground.registerLayer(FlowScrollLimitLayer);
           }

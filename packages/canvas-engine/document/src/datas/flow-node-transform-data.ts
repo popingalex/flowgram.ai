@@ -35,11 +35,10 @@ export class FlowNodeTransformData extends EntityData<FlowNodeTransformSchema> {
   }
 
   getDefaultData(): FlowNodeTransformSchema {
-    const { size, defaultExpanded, expandedSize, hidden } = this.entity.getNodeMeta();
-    const defaultSize = defaultExpanded ? expandedSize : size;
+    const { size, hidden } = this.entity.getNodeMeta();
     // 更新默认 size 大小
     return {
-      size: !hidden ? { ...defaultSize } : { width: 0, height: 0 },
+      size: !hidden ? { ...size } : { width: 0, height: 0 },
     };
   }
 

@@ -1,12 +1,13 @@
 import { FlowRendererKey, FlowTextKey } from '@flowgram.ai/renderer';
 import {
-  DEFAULT_SPACING,
   FlowNodeBaseType,
   type FlowNodeRegistry,
   FlowNodeTransformData,
   FlowTransitionLabelEnum,
   FlowTransitionLineEnum,
   FlowLayoutDefault,
+  getDefaultSpacing,
+  ConstantKeys,
 } from '@flowgram.ai/document';
 
 import { TryCatchSpacings, TryCatchTypeEnum } from './constants';
@@ -118,12 +119,12 @@ export const MainInlineBlocksRegistry: FlowNodeRegistry = {
       if (isVertical) {
         delta = Math.max(
           child.parent!.minInlineBlockSpacing,
-          -child.originDeltaX + DEFAULT_SPACING.MARGIN_RIGHT
+          -child.originDeltaX + getDefaultSpacing(child.entity, ConstantKeys.BRANCH_SPACING)
         );
       } else {
         delta = Math.max(
           child.parent!.minInlineBlockSpacing,
-          -child.originDeltaY + DEFAULT_SPACING.MARGIN_RIGHT
+          -child.originDeltaY + getDefaultSpacing(child.entity, ConstantKeys.BRANCH_SPACING)
         );
       }
 

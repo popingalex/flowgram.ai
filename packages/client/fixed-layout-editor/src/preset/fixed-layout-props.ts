@@ -41,5 +41,10 @@ export namespace FixedLayoutProps {
   /**
    * 默认配置
    */
-  export const DEFAULT: FixedLayoutProps = EditorProps.DEFAULT as FixedLayoutProps;
+  export const DEFAULT: FixedLayoutProps = {
+    ...EditorProps.DEFAULT,
+    scroll: {
+      enableScrollLimit: true,
+    },
+  } as FixedLayoutProps;
 }

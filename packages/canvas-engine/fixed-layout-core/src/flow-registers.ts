@@ -6,8 +6,6 @@ import {
   FlowNodesTransformLayer,
   type FlowRendererContribution,
   type FlowRendererRegistry,
-  FlowScrollBarLayer,
-  FlowScrollLimitLayer,
 } from '@flowgram.ai/renderer';
 import {
   type FlowDocument,
@@ -94,9 +92,7 @@ export class FlowRegisters
       FlowNodesContentLayer, // 节点内容渲染
       FlowLinesLayer, // 线条渲染
       FlowLabelsLayer, // Label 渲染
-      PlaygroundLayer, // 画布基础层，提供缩放、手势等能力
-      FlowScrollLimitLayer, // 控制滚动范围
-      FlowScrollBarLayer // 滚动条
+      PlaygroundLayer // 画布基础层，提供缩放、手势等能力
     );
   }
 

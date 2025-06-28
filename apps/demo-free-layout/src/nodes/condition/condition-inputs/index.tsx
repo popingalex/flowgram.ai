@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import { Field, FieldArray } from '@flowgram.ai/free-layout-editor';
-import { ConditionRow, ConditionRowValueType, VariableSelector } from '@flowgram.ai/form-materials';
+import { ConditionRow, ConditionRowValueType } from '@flowgram.ai/form-materials';
 import { Button } from '@douyinfe/semi-ui';
 import { IconPlus, IconCrossCircleStroked } from '@douyinfe/semi-icons';
 

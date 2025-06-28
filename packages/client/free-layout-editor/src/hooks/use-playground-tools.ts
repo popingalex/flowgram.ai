@@ -44,7 +44,19 @@ export interface PlaygroundTools {
   setMouseScrollDelta: (mouseScrollDelta: number | ((zoom: number) => number)) => void;
 }
 
-export function usePlaygroundTools(): PlaygroundTools {
+export interface PlaygroundToolsPropsType {
+  /**
+   * 最大缩放比，默认 2
+   */
+  maxZoom?: number;
+  /**
+   * 最小缩放比，默认 0.25
+   */
+  minZoom?: number;
+}
+
+export function usePlaygroundTools(props?: PlaygroundToolsPropsType): PlaygroundTools {
+  const { maxZoom, minZoom } = props || {};
   const playground = usePlayground();
   const doc = useService<WorkflowDocument>(WorkflowDocument);
 
@@ -55,9 +67,6 @@ export function usePlaygroundTools(): PlaygroundTools {
 
   const handleZoomOut = useCallback(
     (easing?: boolean) => {
-      if (zoom < 0.1) {
-        return;
-      }
       playground?.config.zoomout(easing);
     },
     [zoom, playground]
@@ -65,9 +74,6 @@ export function usePlaygroundTools(): PlaygroundTools {
 
   const handleZoomIn = useCallback(
     (easing?: boolean) => {
-      if (zoom > 1.9) {
-        return;
-      }
       playground?.config.zoomin(easing);
     },
     [zoom, playground]
@@ -170,6 +176,14 @@ export function usePlaygroundTools(): PlaygroundTools {
       mouseScrollDelta: delta,
     });
   }
+
+  useEffect(() => {
+    const config = playground.config.config;
+    playground.config.updateConfig({
+      maxZoom: maxZoom !== undefined ? maxZoom : config.maxZoom,
+      minZoom: minZoom !== undefined ? minZoom : config.minZoom,
+    });
+  }, [playground, maxZoom, minZoom]);
 
   return {
     zoomin: handleZoomIn,

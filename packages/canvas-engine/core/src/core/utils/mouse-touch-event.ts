@@ -1,6 +1,6 @@
 export namespace MouseTouchEvent {
   export const isTouchEvent = (event: TouchEvent | React.TouchEvent): event is TouchEvent =>
-    event?.touches instanceof TouchList;
+    'touches' in event;
 
   export const touchToMouseEvent = (event: Event): MouseEvent | Event => {
     if (!isTouchEvent(event as TouchEvent)) {

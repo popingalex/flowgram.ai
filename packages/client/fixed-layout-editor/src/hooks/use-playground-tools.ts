@@ -72,7 +72,7 @@ export interface PlaygroundTools {
 }
 
 export function usePlaygroundTools(props?: PlaygroundToolsPropsType): PlaygroundTools {
-  const { maxZoom = 2, minZoom = 0.25, padding = 30 } = props || {};
+  const { maxZoom, minZoom, padding = 30 } = props || {};
   const playground = usePlayground();
   const container = usePlaygroundContainer();
   const historyService = container.isBound(HistoryService)
@@ -84,12 +84,6 @@ export function usePlaygroundTools(props?: PlaygroundToolsPropsType): Playground
   const [currentLayout, updateLayout] = useState(doc.layout);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-
-  const fitViewOptions = {
-    maxZoom,
-    minZoom,
-    padding,
-  };
 
   const changeLayout = useCallback(
     (newLayout?: FlowLayoutDefault) => {
@@ -105,8 +99,10 @@ export function usePlaygroundTools(props?: PlaygroundToolsPropsType): Playground
       });
       setTimeout(() => {
         fitView(doc, playground.config, {
-          ...fitViewOptions,
           easingDuration: 300,
+          padding,
+          maxZoom: playground.config.config.maxZoom,
+          minZoom: playground.config.config.minZoom,
         });
       }, 10);
       setTimeout(() => {
@@ -118,14 +114,11 @@ export function usePlaygroundTools(props?: PlaygroundToolsPropsType): Playground
       doc.setLayout(newLayout);
       updateLayout(doc.layout);
     },
-    [doc, playground]
+    [doc, playground, padding]
   );
 
   const handleZoomOut = useCallback(
     (easing?: boolean) => {
-      if (zoom < minZoom) {
-        return;
-      }
       playground?.config.zoomout(easing);
     },
     [zoom, playground]
@@ -133,9 +126,6 @@ export function usePlaygroundTools(props?: PlaygroundToolsPropsType): Playground
 
   const handleZoomIn = useCallback(
     (easing?: boolean) => {
-      if (zoom > maxZoom) {
-        return;
-      }
       playground?.config.zoomin(easing);
     },
     [zoom, playground]
@@ -145,12 +135,14 @@ export function usePlaygroundTools(props?: PlaygroundToolsPropsType): Playground
   const handleFitView = useCallback(
     (easing?: boolean, easingDuration?: number) => {
       fitView(doc, playground.config, {
-        ...fitViewOptions,
         easing,
         easingDuration,
+        padding,
+        maxZoom: playground.config.config.maxZoom,
+        minZoom: playground.config.config.minZoom,
       });
     },
-    [doc, playground]
+    [doc, playground, padding]
   );
 
   const handleUpdateZoom = useCallback(
@@ -178,6 +170,14 @@ export function usePlaygroundTools(props?: PlaygroundToolsPropsType): Playground
     }
     return () => dispose.dispose();
   }, [playground, historyService]);
+
+  useEffect(() => {
+    const config = playground.config.config;
+    playground.config.updateConfig({
+      maxZoom: maxZoom !== undefined ? maxZoom : config.maxZoom,
+      minZoom: minZoom !== undefined ? minZoom : config.minZoom,
+    });
+  }, [playground, maxZoom, minZoom]);
 
   return {
     zoomin: handleZoomIn,

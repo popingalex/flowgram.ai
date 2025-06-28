@@ -38,6 +38,7 @@ export function JsonSchemaEditor(props: {
   value?: IJsonSchema;
   onChange?: (value: IJsonSchema) => void;
   config?: ConfigType;
+  className?: string;
 }) {
   const { value = { type: 'object' }, config = {}, onChange: onChangeProps } = props;
   const { propertyList, onAddProperty, onRemoveProperty, onEditProperty } = usePropertiesEdit(
@@ -46,7 +47,7 @@ export function JsonSchemaEditor(props: {
   );
 
   return (
-    <UIContainer>
+    <UIContainer className={props.className}>
       <UIProperties>
         {propertyList.map((_property, index) => (
           <PropertyEdit
@@ -63,7 +64,12 @@ export function JsonSchemaEditor(props: {
           />
         ))}
       </UIProperties>
-      <Button size="small" style={{ marginTop: 10 }} icon={<IconPlus />} onClick={onAddProperty}>
+      <Button
+        size="small"
+        style={{ marginTop: 10, marginLeft: 16 }}
+        icon={<IconPlus />}
+        onClick={onAddProperty}
+      >
         {config?.addButtonText ?? 'Add'}
       </Button>
     </UIContainer>
