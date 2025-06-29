@@ -142,3 +142,5 @@
 - 保持向后兼容，不破坏现有功能
 - 使用nanoid确保组件稳定性
 - 实现渐进式迁移
+
+property-table-components-cleanup.md

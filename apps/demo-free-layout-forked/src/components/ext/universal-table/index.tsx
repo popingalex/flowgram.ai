@@ -103,7 +103,7 @@ export interface UniversalTableProps {
   emptyText?: string; // 空数据提示
 }
 
-// 稳定的编辑组件 - 防止光标跳动
+// 稳定的编辑组件
 const StableEditableCell: React.FC<{
   value: any;
   column: ColumnConfig;
@@ -112,95 +112,29 @@ const StableEditableCell: React.FC<{
   field: string;
 }> = React.memo(({ value, column, onChange, rowKey, field }) => {
   const [localValue, setLocalValue] = useState(value);
-  const [isEditing, setIsEditing] = useState(false);
 
-  // 跟踪外部值变化，避免在用户编辑时被覆盖
-  const lastExternalValueRef = useRef(value);
-  const cursorPositionRef = useRef<number>(0);
-
+  // 同步外部值变化
   useEffect(() => {
-    // 只有在不编辑状态下，且外部值确实发生了变化时才同步
-    if (!isEditing && value !== lastExternalValueRef.current) {
-      console.log('🔍 StableEditableCell 同步外部值变化:', {
-        rowKey,
-        field,
-        oldLocalValue: localValue,
-        newExternalValue: value,
-        isEditing,
-      });
-      setLocalValue(value);
-      lastExternalValueRef.current = value;
-    }
-  }, [value, isEditing, rowKey, field]); // 移除localValue依赖，避免无限循环
+    setLocalValue(value);
+  }, [value]);
 
   const handleChange = useCallback(
     (newValue: string) => {
-      console.log('🔍 StableEditableCell handleChange:', {
-        rowKey,
-        field,
-        oldLocalValue: localValue,
-        newValue,
-        isEditing,
-      });
-
-      // 保存光标位置
-      const input = document.activeElement as HTMLInputElement;
-      if (input && input.selectionStart !== null) {
-        cursorPositionRef.current = input.selectionStart;
-      }
-
       setLocalValue(newValue);
-      setIsEditing(true);
-
-      // 延迟触发onChange，避免立即重新渲染
-      setTimeout(() => {
-        onChange(newValue);
-
-        // 恢复光标位置
-        requestAnimationFrame(() => {
-          const input = document.activeElement as HTMLInputElement;
-          if (input && input.setSelectionRange) {
-            input.setSelectionRange(cursorPositionRef.current, cursorPositionRef.current);
-          }
-        });
-      }, 0);
+      onChange(newValue);
     },
-    [onChange, rowKey, field, localValue, isEditing]
+    [onChange]
   );
 
-  const handleBlur = useCallback(() => {
-    console.log('🔍 StableEditableCell handleBlur:', {
-      rowKey,
-      field,
-      localValue,
-    });
-    // 失去焦点时结束编辑状态
-    setIsEditing(false);
-  }, [localValue, onChange]);
-
-  // 移除了定时器相关逻辑
-
   if (column.editRender) {
-    console.log('🔍 StableEditableCell 使用自定义渲染器');
     return column.editRender(localValue, {}, handleChange);
   }
-
-  // console.log('🔍 StableEditableCell 渲染Input:', {
-  //   rowKey,
-  //   field,
-  //   localValue,
-  //   placeholder: `请输入${column.title}`,
-  // });
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
       <Input
         value={localValue}
-        onChange={(value) => {
-          console.log('🔍 Input onChange 事件触发:', { value, rowKey, field });
-          handleChange(value);
-        }}
-        onBlur={handleBlur}
+        onChange={handleChange}
         placeholder={`请输入${column.title}`}
         size="small"
       />
@@ -385,7 +319,7 @@ export const UniversalTable: React.FC<UniversalTableProps> = ({
                 checked={isAssociated}
                 onChange={(e) => {
                   e.stopPropagation();
-                  tableProps.onModuleAssociationChange?.(moduleId, e.target.checked);
+                  tableProps.onModuleAssociationChange?.(moduleId, e.target.checked || false);
                 }}
                 data-testid={`module-checkbox-${moduleId}`}
               />
@@ -454,13 +388,6 @@ export const UniversalTable: React.FC<UniversalTableProps> = ({
     }
 
     // 5. 操作列
-    console.log('🔍 操作列条件检查:', {
-      showActions: tableProps.showActions,
-      editable,
-      deletable,
-      addable,
-      onDelete: !!onDelete,
-    });
     if (tableProps.showActions || editable || deletable || addable) {
       finalColumns.push({
         ...FEATURE_COLUMNS.ACTIONS,
@@ -482,14 +409,13 @@ export const UniversalTable: React.FC<UniversalTableProps> = ({
             </div>
           );
         },
-        title:
-          addable && onAdd ? (
-            <Button size="small" icon={<IconPlus />} type="primary" onClick={onAdd}>
-              {tableProps.addButtonText || '添加'}
-            </Button>
-          ) : (
-            ''
-          ),
+        title: (addable && onAdd ? (
+          <Button size="small" icon={<IconPlus />} type="primary" onClick={onAdd}>
+            {tableProps.addButtonText || '添加'}
+          </Button>
+        ) : (
+          '操作'
+        )) as any,
       });
     }
 
@@ -538,7 +464,7 @@ export const UniversalTable: React.FC<UniversalTableProps> = ({
           </Divider>
         )}
         <Table
-          dataSource={groupData}
+          dataSource={groupData as any[]}
           columns={finalColumns}
           rowKey={getRowKey}
           size={size}
