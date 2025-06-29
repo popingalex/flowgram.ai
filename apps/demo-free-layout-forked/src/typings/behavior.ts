@@ -67,6 +67,7 @@ export interface SystemBehavior extends EditableIndexed {
   id: string; // 行为ID
   name?: string; // 行为名称
   description?: string; // 行为描述
+  exp?: string; // 表达式内容 - 存储实际使用的函数调用或脚本代码
   parameters: BehaviorParameter[]; // 参数（参与者）列表
   codeConfig: CodeConfig; // 代码配置
   // 元数据

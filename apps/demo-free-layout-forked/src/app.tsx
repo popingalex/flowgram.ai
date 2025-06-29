@@ -518,9 +518,9 @@ const AppContent: React.FC = () => {
   // 主要导航项
   const mainNavItems = React.useMemo(
     () => [
-      { itemKey: 'entities', text: '实体列表', link: '/#entities' },
-      { itemKey: 'modules', text: '模块列表', link: '/#modules' },
-      { itemKey: 'behavior', text: '行为编辑', link: '/#behavior' },
+      { itemKey: 'entities', text: '实体管理', link: '/#entities' },
+      { itemKey: 'modules', text: '模块管理', link: '/#modules' },
+      { itemKey: 'behavior', text: '行为管理', link: '/#behavior' },
       {
         itemKey: 'expressions',
         text: '表达式管理',

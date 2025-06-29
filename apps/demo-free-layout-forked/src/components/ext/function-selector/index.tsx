@@ -41,13 +41,15 @@ export const FunctionSelector: React.FC<FunctionSelectorProps> = ({
   // 🎯 修复：构建正确的选项列表，避免重复和混乱
   const optionList = useMemo(() => {
     if (type === 'remote_service') {
-      // 远程服务选项：显示完整的服务名称
+      // 远程服务选项：优先显示ID，名称作为补充
       return expressions.map((expr) => ({
         value: expr.id,
-        label: `${expr.name} (${expr.method || 'POST'})`, // 显示名称和方法
+        label: `${expr.id}${expr.name && expr.name !== expr.id ? ` (${expr.name})` : ''} (${
+          expr.method || 'POST'
+        })`,
       }));
     } else {
-      // 本地函数选项：显示完整的函数ID和名称
+      // 本地函数选项：优先显示ID，名称作为补充
       const allBehaviors = [...localBehaviors];
 
       // 去重：按ID去重，避免重复显示

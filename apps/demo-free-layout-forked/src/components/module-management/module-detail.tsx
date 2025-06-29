@@ -7,10 +7,10 @@ import { IconSearch } from '@douyinfe/semi-icons';
 import { createColumn } from '../ext/universal-table/column-configs';
 import { UniversalTable } from '../ext/universal-table';
 import { EntityPropertyTypeSelector } from '../ext/type-selector-ext';
-import { useCurrentModule, useCurrentModuleActions, useModuleStore } from '../../stores';
+import { useCurrentModule, useCurrentModuleActions, useEntityList } from '../../stores';
 import type { ModuleAttribute } from '../../services/types';
 
-const { Title } = Typography;
+// const { Title } = Typography; // 未使用
 
 interface ModuleDetailProps {
   selectedModule: any;
@@ -34,15 +34,25 @@ export const ModuleDetail: React.FC<ModuleDetailProps> = ({
   statusInfo,
 }) => {
   // 🔑 使用CurrentModuleStore的数据和状态
-  const { editingModule, isDirty, isSaving } = useCurrentModule();
+  const { editingModule } = useCurrentModule();
   const { updateProperty, updateAttributeProperty, addAttribute, removeAttribute } =
     useCurrentModuleActions();
+
+  // 🔑 获取实体列表
+  const { entities } = useEntityList();
 
   // 🔑 搜索状态
   const [searchText, setSearchText] = React.useState('');
 
   // 🔑 使用CurrentModuleStore的editingModule作为数据源
   const currentModule = editingModule || selectedModule;
+
+  // 🔑 计算关联的实体列表
+  const relatedEntities = useMemo(() => {
+    if (!currentModule?.id || !entities) return [];
+
+    return entities.filter((entity) => entity.bundles?.includes(currentModule.id));
+  }, [currentModule?.id, entities]);
 
   // 🔑 过滤后的属性列表
   const filteredAttributes = useMemo(() => {
@@ -186,6 +196,42 @@ export const ModuleDetail: React.FC<ModuleDetailProps> = ({
             data-testid="module-description-input"
           />
         </div>
+
+        {/* 关联实体 */}
+        {relatedEntities.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+            <Form.Label text="关联实体" width={80} align="right" />
+            <div style={{ flex: 1, marginLeft: '12px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {relatedEntities.map((entity) => (
+                  <Typography.Text
+                    key={entity._indexId}
+                    link={{
+                      href: `/entities/${entity.id}/`,
+                    }}
+                    style={{
+                      fontSize: '12px',
+                      padding: '2px 6px',
+                      backgroundColor: 'var(--semi-color-fill-1)',
+                      borderRadius: '4px',
+                      border: '1px solid var(--semi-color-border)',
+                    }}
+                    data-testid={`related-entity-${entity.id}`}
+                  >
+                    {entity.id} {entity.name && `(${entity.name})`}
+                  </Typography.Text>
+                ))}
+              </div>
+              <Typography.Text
+                type="secondary"
+                size="small"
+                style={{ display: 'block', marginTop: '4px' }}
+              >
+                共 {relatedEntities.length} 个实体使用此模块，点击可跳转
+              </Typography.Text>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 模块属性 */}

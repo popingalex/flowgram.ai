@@ -1,10 +1,10 @@
 import React from 'react';
 
-import { Table } from '@douyinfe/semi-ui';
 import { Tooltip } from '@douyinfe/semi-ui';
 import { IconInfoCircle } from '@douyinfe/semi-icons';
 
 import { useNodeRenderContext } from '../../hooks';
+import { UniversalTable } from '../../components/ext/universal-table';
 
 export const FormEntityProperties: React.FC = () => {
   const { node } = useNodeRenderContext();
@@ -16,21 +16,23 @@ export const FormEntityProperties: React.FC = () => {
     return null;
   }
 
+  // 使用UniversalTable的列配置
   const columns = [
     {
+      key: 'id',
       title: '属性ID',
       dataIndex: 'id',
-      key: 'id',
+      width: 200,
       render: (text: string, record: any) => (
         <Tooltip content={record.name || text}>
-          <span>{text}</span>
+          <span style={{ fontSize: '12px' }}>{text}</span>
         </Tooltip>
       ),
     },
     {
+      key: 'type',
       title: '类型',
       dataIndex: 'type',
-      key: 'type',
       width: 80,
       align: 'right' as const,
       render: (type: string) => (
@@ -62,13 +64,13 @@ export const FormEntityProperties: React.FC = () => {
         <IconInfoCircle style={{ marginRight: 4 }} />
         属性
       </div>
-      <Table
-        columns={columns}
+      <UniversalTable
         dataSource={entity.attributes}
-        pagination={false}
-        size="small"
+        columns={columns}
         rowKey="id"
-        style={{ fontSize: '12px' }}
+        size="small"
+        showPagination={false}
+        emptyText="暂无属性"
       />
     </div>
   );

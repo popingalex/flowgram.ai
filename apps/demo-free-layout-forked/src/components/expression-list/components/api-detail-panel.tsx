@@ -1,10 +1,11 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 
-import { Layout, Typography, Input, Button, Space, Popconfirm } from '@douyinfe/semi-ui';
-import { IconUndo, IconSave, IconDelete } from '@douyinfe/semi-icons';
+import { nanoid } from 'nanoid';
+import { Layout, Typography, Input } from '@douyinfe/semi-ui';
 
 import { useCurrentExpression, useCurrentExpressionActions } from '../../../stores/current-api';
 import { useExpressionStore } from '../../../stores/api-list';
+import { useRouter } from '../../../hooks/use-router';
 import { ApiUrlToolbar } from './api-url-toolbar';
 import { ApiTabs } from './api-tabs';
 
@@ -19,11 +20,72 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
   const expressionStore = useExpressionStore();
   const currentExpression = useCurrentExpression();
   const currentExpressionActions = useCurrentExpressionActions();
+  const { routeState } = useRouter();
+
+  // 🎯 创建新API的默认数据
+  const newApiTemplate = useMemo(() => {
+    const isLocalMode = routeState.route === 'exp-local';
+
+    if (!isLocalMode) {
+      // 远程API模式
+      return {
+        _indexId: nanoid(),
+        id: '',
+        name: '',
+        desc: '',
+        deprecated: false,
+        method: 'GET' as const,
+        url: '',
+        body: null,
+        group: 'remote/user',
+        type: 'expression' as const,
+        _status: 'new' as const,
+        output: {
+          _indexId: nanoid(),
+          id: 'result',
+          type: 'u',
+          name: '返回结果',
+          desc: 'API调用返回的结果',
+          required: false,
+          _status: 'new' as const,
+        },
+        inputs: [],
+      };
+    } else {
+      // 本地函数模式
+      return {
+        _indexId: nanoid(),
+        id: '',
+        name: '',
+        desc: '',
+        deprecated: false,
+        type: 'behavior' as const,
+        _status: 'new' as const,
+        output: {
+          _indexId: nanoid(),
+          id: 'result',
+          type: 'u',
+          name: '返回结果',
+          desc: '函数返回的结果',
+          required: false,
+          _status: 'new' as const,
+        },
+        inputs: [],
+      };
+    }
+  }, [routeState.route]);
 
   // 🎯 参考实体模式：当选择API变化时，更新当前编辑状态
   useEffect(() => {
     if (selectedExpressionId) {
       console.log('🔍 [ApiDetailPanel] 选择API变化:', selectedExpressionId);
+
+      // 处理新建模式
+      if (selectedExpressionId === 'new') {
+        console.log('🔍 [ApiDetailPanel] 进入新建模式');
+        currentExpressionActions.selectExpression(newApiTemplate);
+        return;
+      }
 
       // 从原始数据中获取API信息
       const originalApi = expressionStore.allItems.find((item) => item.id === selectedExpressionId);
@@ -35,7 +97,7 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
       // 清空选择
       currentExpressionActions.selectExpression(null);
     }
-  }, [selectedExpressionId, expressionStore.allItems, currentExpressionActions]);
+  }, [selectedExpressionId, expressionStore.allItems, currentExpressionActions, newApiTemplate]);
 
   // 🎯 获取当前编辑的表达式 - 简单直接
   const editingApi = currentExpression.editingExpression;
@@ -94,85 +156,41 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
     [currentExpressionActions]
   );
 
-  // 撤销更改
-  const handleUndo = useCallback(() => {
-    console.log('🔍 [ApiDetailPanel] 撤销更改');
-    currentExpressionActions.resetChanges();
-  }, [currentExpressionActions]);
-
-  // 保存更改
-  const handleSave = useCallback(async () => {
-    console.log('🔍 [ApiDetailPanel] 保存更改');
-    await currentExpressionActions.saveChanges();
-  }, [currentExpressionActions]);
-
-  // 删除API
-  const handleDelete = useCallback(async () => {
-    if (!selectedExpressionId) return;
-    console.log('删除API:', selectedExpressionId);
-    // TODO: 实现删除逻辑
-  }, [selectedExpressionId]);
-
   return (
-    <Content style={{ display: 'flex', flexDirection: 'column' }}>
+    <Content style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {editingApi ? (
-        <>
-          <div style={{ padding: '24px' }}>
-            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
-              <div style={{ width: '80px', fontWeight: 600, marginRight: '12px' }}>API ID</div>
-              <Input
-                value={editingApi.id || ''}
-                onChange={(value) => handleFieldChange('id', value)}
-                placeholder="API ID"
-                style={{ fontFamily: 'monospace', flex: 1 }}
+        <div
+          style={{
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            overflow: 'auto',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ width: '80px', fontWeight: 600, marginRight: '12px' }}>API ID</div>
+            <Input
+              value={editingApi.id || ''}
+              onChange={(value) => handleFieldChange('id', value)}
+              placeholder="API ID"
+              style={{ fontFamily: 'monospace', flex: 1 }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ width: '80px', fontWeight: 600, marginRight: '12px' }}>URL</div>
+            <div style={{ flex: 1 }}>
+              <ApiUrlToolbar
+                currentEditingApi={editingApi}
+                hasUnsavedChanges={currentExpression.isDirty}
+                onFieldChange={handleFieldChange}
+                hideActionButtons={true}
               />
-            </div>
-
-            <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
-              <div style={{ width: '80px', fontWeight: 600, marginRight: '12px' }}>URL</div>
-              <div style={{ flex: 1 }}>
-                <ApiUrlToolbar
-                  currentEditingApi={editingApi}
-                  hasUnsavedChanges={currentExpression.isDirty}
-                  onFieldChange={handleFieldChange}
-                  hideActionButtons={true}
-                />
-              </div>
-            </div>
-
-            <div>
-              <Space>
-                <Button
-                  icon={<IconUndo />}
-                  onClick={handleUndo}
-                  disabled={!currentExpression.isDirty}
-                >
-                  撤销
-                </Button>
-                <Button
-                  type="primary"
-                  icon={<IconSave />}
-                  onClick={handleSave}
-                  disabled={!currentExpression.isDirty}
-                  loading={currentExpression.isSaving}
-                >
-                  保存
-                </Button>
-                <Popconfirm
-                  title="确定删除这个API吗？"
-                  content="删除后将无法恢复"
-                  onConfirm={handleDelete}
-                >
-                  <Button type="danger" icon={<IconDelete />}>
-                    删除
-                  </Button>
-                </Popconfirm>
-              </Space>
             </div>
           </div>
 
-          {/* 标签页内容 */}
-          <div style={{ flex: 1, borderTop: '1px solid var(--semi-color-border)' }}>
+          <div style={{ flex: 1 }}>
             <ApiTabs
               currentEditingApi={editingApi}
               onFieldChange={handleFieldChange}
@@ -181,7 +199,7 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
               onDeleteParameter={handleDeleteParameter}
             />
           </div>
-        </>
+        </div>
       ) : (
         <div
           style={{

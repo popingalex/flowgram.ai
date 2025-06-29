@@ -1,8 +1,9 @@
 import React, { useCallback, useMemo } from 'react';
 
-import { Table, Button, Input, Space, Tooltip, Tag, Typography, Select } from '@douyinfe/semi-ui';
+import { Button, Input, Space, Tooltip, Tag, Typography, Select } from '@douyinfe/semi-ui';
 import { IconPlus, IconDelete, IconEdit, IconArticle } from '@douyinfe/semi-icons';
 
+import { UniversalTable } from '../universal-table';
 import { BaseAttribute } from '../../../typings/types';
 import { BehaviorParameter } from '../../../typings/behavior';
 
@@ -37,14 +38,11 @@ export const ParameterMapping: React.FC<ParameterMappingProps> = ({
     [behaviorParams]
   );
 
-  // 🎯 标准化函数参数数据，确保兼容本地函数和远程服务
+  // 标准化函数参数数据，确保兼容本地函数和远程服务
   const normalizedParams = useMemo((): NormalizedParameter[] => {
     console.log('🔍 [ParameterMapping] 原始函数参数:', functionParams);
 
     return functionParams.map((param, index) => {
-      // 本地函数：{id: "context", desc: "Context", type: "u", required: false}
-      // 远程服务：{_indexId: "...", id: "param1", name: "参数1", type: "s", ...}
-
       const normalized: NormalizedParameter = {
         ...param,
         // 确保有name字段：优先使用name，fallback到desc，再fallback到id
@@ -73,62 +71,43 @@ export const ParameterMapping: React.FC<ParameterMappingProps> = ({
     [parameterMapping, onChange]
   );
 
-  // 🎯 直接复制AttributeIdInput的实现
-  const AttributeIdInput = React.memo(({ record }: { record: NormalizedParameter }) => {
-    const value = record.id || record.name || '';
-
-    return (
-      <Input
-        value={value}
-        size="small"
-        readOnly
-        placeholder="参数ID"
-        style={{
-          fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-          fontSize: '12px',
-        }}
-        data-testid="property-id-input"
-      />
-    );
-  });
-  AttributeIdInput.displayName = 'AttributeIdInput';
-
-  // 🎯 直接复制AttributeNameInput的实现
-  const AttributeNameInput = React.memo(({ record }: { record: NormalizedParameter }) => {
-    // 优先使用name，fallback到desc，再fallback到id
-    const value = record.name || record.desc || record.id || '';
-
-    return (
-      <Input
-        value={value}
-        size="small"
-        readOnly
-        placeholder="参数名称"
-        style={{
-          fontSize: '13px',
-        }}
-        data-testid="property-name-input"
-      />
-    );
-  });
-  AttributeNameInput.displayName = 'AttributeNameInput';
-
-  // 🎯 直接复制columns的实现，只修改第三列
+  // 使用UniversalTable的列配置
   const columns = React.useMemo(
     () => [
       {
-        title: 'ID',
         key: 'id',
+        title: 'ID',
+        dataIndex: 'id',
         width: 100,
-        render: (_: any, record: NormalizedParameter) => <AttributeIdInput record={record} />,
+        render: (value: any, record: NormalizedParameter) => (
+          <Input
+            value={record.id || record.name || ''}
+            size="small"
+            readOnly
+            placeholder="参数ID"
+            style={{
+              fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+              fontSize: '12px',
+            }}
+          />
+        ),
       },
       {
-        title: '名称',
         key: 'name',
+        title: '名称',
+        dataIndex: 'name',
         width: 150,
-        render: (_: any, record: NormalizedParameter) => (
+        render: (value: any, record: NormalizedParameter) => (
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <AttributeNameInput record={record} />
+            <Input
+              value={record.name || record.desc || record.id || ''}
+              size="small"
+              readOnly
+              placeholder="参数名称"
+              style={{
+                fontSize: '13px',
+              }}
+            />
             {record.required && (
               <Tag
                 size="small"
@@ -147,10 +126,10 @@ export const ParameterMapping: React.FC<ParameterMappingProps> = ({
         ),
       },
       {
-        title: () => <span>映射配置</span>,
-        key: 'controls',
-        width: 40,
-        render: (_: any, record: NormalizedParameter) => {
+        key: 'mapping',
+        title: '映射配置',
+        dataIndex: 'mapping',
+        render: (value: any, record: NormalizedParameter) => {
           // 使用_rowKey作为映射键
           const paramKey = record._rowKey;
           const currentMapping = parameterMapping[paramKey];
@@ -219,19 +198,16 @@ export const ParameterMapping: React.FC<ParameterMappingProps> = ({
     );
   }
 
-  // 🎯 直接复制Table的渲染方式，使用标准化后的数据
+  // 使用UniversalTable替代原生Table
   return (
     <div style={{ width: '100%' }}>
-      <Table
+      <UniversalTable
         dataSource={normalizedParams}
         columns={columns}
-        pagination={false}
-        size="small"
         rowKey="_rowKey"
-        style={{
-          border: '1px solid var(--semi-color-border)',
-          borderRadius: '6px',
-        }}
+        size="small"
+        showPagination={false}
+        emptyText="暂无参数"
       />
     </div>
   );

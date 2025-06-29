@@ -66,25 +66,34 @@ const transformBackendBehavior = (backendBehavior: BackendBehaviorDef): Behavior
 
   // 转换参数 - 保持原始type
   const parameters: BehaviorParameter[] = backendBehavior.params.map((param) => ({
+    id: param.id,
     name: param.id,
     type: param.type, // 使用原始type
-    description: param.desc || param.id, // desc作为描述
+    desc: param.desc || param.id, // desc作为描述
+    _indexId: nanoid(),
+    _status: 'saved' as const,
   }));
 
   return {
     id: backendBehavior.id,
     name: methodName,
-    description: backendBehavior.javadoc || '',
+    desc: backendBehavior.javadoc || '',
     className: className, // Rain
     fullClassName: fullClassName, // com.gsafety.simulation.behavior.entity.Rain
     methodName: methodName, // simulateRain
     category: className, // 🔧 添加category字段，使用className作为分类
-    parameters,
-    returns: {
+    inputs: parameters,
+    output: {
+      id: backendBehavior.returns.id,
+      name: backendBehavior.returns.name || backendBehavior.returns.id,
       type: backendBehavior.returns.type,
-      description: '',
+      desc: '',
+      _indexId: nanoid(),
+      _status: 'saved' as const,
     },
-  };
+    _indexId: nanoid(),
+    _status: 'saved' as const,
+  } as BehaviorDef;
 };
 
 // API配置
@@ -586,28 +595,40 @@ export const behaviorApi = {
         const methodName = idParts[idParts.length - 1] || item.name || 'unknown';
         const className = idParts[idParts.length - 2] || 'Unknown';
 
-        // 转换参数格式：inputs -> parameters
-        const parameters = (item.inputs || []).map((input: any) => ({
+        // 转换输入参数格式：保持inputs字段名
+        const inputs = (item.inputs || []).map((input: any) => ({
+          id: input.id,
           name: input.id,
           type: input.type || 'any',
-          description: input.desc || input.id,
+          desc: input.desc || input.id,
+          _indexId: nanoid(),
+          _status: 'saved' as const,
         }));
+
+        // 转换输出格式
+        const output = {
+          id: item.output?.id || '$return',
+          name: item.output?.name || 'return',
+          type: item.output?.type || 'void',
+          desc: item.output?.desc || '',
+          _indexId: nanoid(),
+          _status: 'saved' as const,
+        };
 
         return {
           id: item.id,
-          name: methodName,
-          description: item.javadoc || item.desc || `${className}.${methodName}`,
+          name: item.name || methodName, // 🔧 修复：优先使用原始数据的name字段
+          desc: item.javadoc || item.desc || `${className}.${methodName}`,
+          exp: item.exp || '', // 🔧 保留Expression的exp字段
           className: className,
           fullClassName: idParts.slice(0, -1).join('.'),
           methodName: methodName,
           category: className,
-          parameters: parameters, // 转换后的参数
-          returns: {
-            type: item.output?.type || 'void',
-            description: item.output?.desc || '',
-          },
+          inputs: inputs, // 使用正确的字段名
+          output: output, // 添加output字段
           deprecated: item.deprecated || false,
           _indexId: nanoid(), // React key
+          _status: 'saved' as const,
         };
       });
     }

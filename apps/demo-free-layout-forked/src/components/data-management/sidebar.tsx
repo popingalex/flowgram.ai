@@ -205,11 +205,14 @@ function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & Drag
 
     if (moduleCount === 0 && attributeCount === 0) return null;
 
+    // 🔑 检测是否为模块管理页面（通过testId判断）
+    const isModulePage = testId?.includes('module');
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
         {moduleCount > 0 && (
           <Tag size="small" color="green">
-            模：{moduleCount}
+            {isModulePage ? '实' : '模'}：{moduleCount}
           </Tag>
         )}
         {attributeCount > 0 && (

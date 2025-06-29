@@ -55,6 +55,7 @@ export interface BaseExpression extends EditableIndexed {
   name: string;
   desc?: string;
   type?: string;
+  exp?: string; // 表达式内容 - 存储实际使用的函数调用或脚本代码
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   url?: string;
   body?: any;

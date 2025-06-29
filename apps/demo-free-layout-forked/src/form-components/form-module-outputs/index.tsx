@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 
+import { Typography } from '@douyinfe/semi-ui';
+
 import { useCurrentEntity, useCurrentEntityActions } from '../../stores';
 import { useIsSidebar } from '../../hooks';
-import { UniversalPropertyTable } from '../../components/bt/universal-property-table';
-import { ModuleSelectorTableModal } from '../../components/bt/module-selector-table';
+
+const { Text } = Typography;
 
 interface FormModuleOutputsProps {
   isSidebar?: boolean;
@@ -13,61 +15,45 @@ export function FormModuleOutputs({ isSidebar: propIsSidebar }: FormModuleOutput
   const hookIsSidebar = useIsSidebar();
   const isSidebar = propIsSidebar !== undefined ? propIsSidebar : hookIsSidebar;
   const { editingEntity } = useCurrentEntity();
-  const { updateEntity } = useCurrentEntityActions();
-
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [focusModuleId, setFocusModuleId] = useState<string | undefined>();
-  const [isExpanded, setIsExpanded] = useState(true);
 
   // 获取实体数据
   const currentEntity = editingEntity;
-
-  const handleConfigureModules = () => {
-    setFocusModuleId(undefined); // 一般打开，不聚焦
-    setIsModalVisible(true);
-  };
-
-  const handleNavigateToModule = (moduleId: string) => {
-    setFocusModuleId(moduleId); // 带滚动打开，设置聚焦ID
-    setIsModalVisible(true);
-  };
-
-  const handleModalConfirm = (selectedIds: string[]) => {
-    if (currentEntity) {
-      updateEntity({ bundles: selectedIds });
-    }
-    setIsModalVisible(false);
-  };
-
-  const handleModalCancel = () => {
-    setIsModalVisible(false);
-  };
-
-  // 不再需要准备模块数据，PropertyPanel内部会处理
 
   if (!currentEntity) {
     return null;
   }
 
-  return (
-    <>
-      <UniversalPropertyTable
-        mode={isSidebar ? 'sidebar' : 'node'}
-        editable={isSidebar}
-        showEntityProperties={false}
-        showModuleProperties={true}
-        moduleTitle="实体模块"
-      />
+  // 简化显示：只显示模块关联信息，不提供复杂的编辑功能
+  const associatedModules = currentEntity.bundles || [];
 
-      {isModalVisible && currentEntity && (
-        <ModuleSelectorTableModal
-          visible={isModalVisible}
-          onConfirm={handleModalConfirm}
-          onCancel={handleModalCancel}
-          selectedModuleIds={currentEntity.bundles}
-          entityId={currentEntity.id}
-        />
+  return (
+    <div style={{ padding: '8px' }}>
+      <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Text strong>关联模块</Text>
+        <Text type="secondary">({associatedModules.length}个)</Text>
+      </div>
+
+      {associatedModules.length > 0 ? (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+          {associatedModules.map((moduleId) => (
+            <div
+              key={moduleId}
+              style={{
+                padding: '2px 8px',
+                backgroundColor: 'var(--semi-color-fill-1)',
+                borderRadius: '4px',
+                fontSize: '12px',
+              }}
+            >
+              {moduleId}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Text type="tertiary" style={{ fontSize: '12px' }}>
+          暂无关联模块
+        </Text>
       )}
-    </>
+    </div>
   );
 }

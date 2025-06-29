@@ -196,252 +196,246 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
   }
   console.log(' 实体详情更新', currentEntity);
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* 实体配置表单 */}
-      <div style={{ padding: '24px', borderBottom: '1px solid var(--semi-color-border)' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Form.Label text="实体" required width={80} align="right" />
+    <div
+      style={{
+        padding: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        overflow: 'auto',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <Form.Label text="实体" required width={80} align="right" />
+        <Input
+          value={currentEntity.id || ''}
+          onChange={(value) => handleFieldChange('id', value)}
+          placeholder="实体ID（必填）"
+          validateStatus={!currentEntity.id?.trim() ? 'error' : undefined}
+          style={{
+            flex: 1,
+            marginLeft: '12px',
+            fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+            fontSize: '12px',
+          }}
+          data-testid="entity-id-input"
+        />
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <Form.Label text="名称" width={80} align="right" />
+        <Input
+          value={currentEntity.name || ''}
+          onChange={(value) => handleFieldChange('name', value)}
+          placeholder="实体名称"
+          style={{ flex: 1, marginLeft: '12px' }}
+          data-testid="entity-name-input"
+        />
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <Form.Label text="描述" width={80} align="right" />
+        <Input
+          value={(currentEntity as any).description || currentEntity.desc || ''}
+          onChange={(value) => handleFieldChange('description', value)}
+          placeholder="实体描述"
+          style={{ flex: 1, marginLeft: '12px' }}
+          data-testid="entity-description-input"
+        />
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+        <Form.Label text="实体属性" width={80} align="right" />
+        <div style={{ flex: 1, marginLeft: '12px' }}>
+          <div style={{ marginBottom: '12px' }}>
             <Input
-              value={currentEntity.id || ''}
-              onChange={(value) => handleFieldChange('id', value)}
-              placeholder="实体ID（必填）"
-              validateStatus={!currentEntity.id?.trim() ? 'error' : undefined}
-              style={{
-                flex: 1,
-                marginLeft: '12px',
-                fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-                fontSize: '12px',
-              }}
-              data-testid="entity-id-input"
+              prefix={<IconSearch />}
+              placeholder="搜索属性ID、名称或类型..."
+              value={attributeSearchText}
+              onChange={setAttributeSearchText}
+              showClear
+              style={{ width: '100%' }}
             />
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Form.Label text="名称" width={80} align="right" />
-            <Input
-              value={currentEntity.name || ''}
-              onChange={(value) => handleFieldChange('name', value)}
-              placeholder="实体名称"
-              style={{ flex: 1, marginLeft: '12px' }}
-              data-testid="entity-name-input"
-            />
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <Form.Label text="描述" width={80} align="right" />
-            <Input
-              value={(currentEntity as any).description || currentEntity.desc || ''}
-              onChange={(value) => handleFieldChange('description', value)}
-              placeholder="实体描述"
-              style={{ flex: 1, marginLeft: '12px' }}
-              data-testid="entity-description-input"
-            />
-          </div>
+          <UniversalTable
+            dataSource={currentEntity?.attributes || []}
+            searchText={attributeSearchText}
+            columns={[
+              createColumn('id', 'ID', 'id', {
+                width: 150,
+                searchable: true,
+                editable: true,
+              }),
+              createColumn('name', '名称', 'name', {
+                width: 200,
+                searchable: true,
+                editable: true,
+              }),
+              createColumn('type', '', 'type', {
+                width: 40,
+                searchable: true,
+                render: (value: any, record: any) => (
+                  <EntityPropertyTypeSelector
+                    value={{
+                      type: record.type,
+                      ...(record.enumClassId && { enumClassId: record.enumClassId }),
+                    }}
+                    onChange={(typeInfo: any) => {
+                      handleTypeChange(record._indexId, typeInfo);
+                    }}
+                  />
+                ),
+              }),
+            ]}
+            rowKey="_indexId"
+            editable={true}
+            deletable={true}
+            addable={true}
+            size="small"
+            emptyText="暂无属性"
+            onEdit={(key, field, value) => {
+              console.log('编辑:', { key, field, value });
+              handleAttributeFieldChange(key, field, value);
+            }}
+            onDelete={(key) => {
+              console.log('删除:', key);
+              handleDeleteAttribute(key);
+            }}
+            onAdd={handleAddAttribute}
+          />
         </div>
       </div>
 
-      {/* 属性表格区域 */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
-        {/* 实体属性表格 */}
-        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-          <Form.Label text="实体属性" width={80} align="right" />
-          <div style={{ flex: 1, marginLeft: '12px' }}>
-            {/* 搜索框 */}
-            <div style={{ marginBottom: '12px' }}>
-              <Input
-                prefix={<IconSearch />}
-                placeholder="搜索属性ID、名称或类型..."
-                value={attributeSearchText}
-                onChange={setAttributeSearchText}
-                showClear
-                style={{ width: '100%' }}
-              />
-            </div>
-
-            <UniversalTable
-              dataSource={currentEntity?.attributes || []}
-              searchText={attributeSearchText}
-              columns={[
-                createColumn('id', 'ID', 'id', {
-                  width: 150,
-                  searchable: true,
-                  editable: true,
-                }),
-                createColumn('name', '名称', 'name', {
-                  width: 200,
-                  searchable: true,
-                  editable: true,
-                }),
-                createColumn('type', '', 'type', {
-                  width: 40,
-                  searchable: true,
-                  render: (value: any, record: any) => (
-                    <EntityPropertyTypeSelector
-                      value={{
-                        type: record.type,
-                        ...(record.enumClassId && { enumClassId: record.enumClassId }),
-                      }}
-                      onChange={(typeInfo: any) => {
-                        handleTypeChange(record._indexId, typeInfo);
-                      }}
-                    />
-                  ),
-                }),
-              ]}
-              rowKey="_indexId"
-              editable={true}
-              deletable={true}
-              addable={true}
-              size="small"
-              emptyText="暂无属性"
-              onEdit={(key, field, value) => {
-                console.log('编辑:', { key, field, value });
-                handleAttributeFieldChange(key, field, value);
-              }}
-              onDelete={(key) => {
-                console.log('删除:', key);
-                handleDeleteAttribute(key);
-              }}
-              onAdd={handleAddAttribute}
+      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+        <Form.Label text="关联模块" width={80} align="right" />
+        <div style={{ flex: 1, marginLeft: '12px' }}>
+          <div style={{ marginBottom: '12px' }}>
+            <Input
+              prefix={<IconSearch />}
+              placeholder="搜索模块ID、名称或属性..."
+              value={moduleSearchText}
+              onChange={setModuleSearchText}
+              showClear
+              style={{ width: '100%' }}
             />
           </div>
-        </div>
 
-        {/* 模块关联表格 */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', marginTop: '16px' }}>
-          <Form.Label text="关联模块" width={80} align="right" />
-          <div style={{ flex: 1, marginLeft: '12px' }}>
-            {/* 搜索框 */}
-            <div style={{ marginBottom: '12px' }}>
-              <Input
-                prefix={<IconSearch />}
-                placeholder="搜索模块ID、名称或属性..."
-                value={moduleSearchText}
-                onChange={setModuleSearchText}
-                showClear
-                style={{ width: '100%' }}
-              />
-            </div>
+          <UniversalTable
+            dataSource={moduleTreeData}
+            searchText={moduleSearchText}
+            columns={[
+              createColumn('id', 'ID', 'id', {
+                width: 150,
+                searchable: true,
+                render: (value: any, record: any) => {
+                  const displayValue = record.displayId || record.id;
+                  const isGroupHeader = record.children && record.children.length > 0;
 
-            <UniversalTable
-              dataSource={moduleTreeData}
-              searchText={moduleSearchText}
-              columns={[
-                createColumn('id', 'ID', 'id', {
-                  width: 150,
-                  searchable: true,
-                  render: (value: any, record: any) => {
-                    const displayValue = record.displayId || record.id;
-                    const isGroupHeader = record.children && record.children.length > 0;
+                  if (isGroupHeader) {
+                    return (
+                      <Typography.Text
+                        link={{ href: `/modules/${record.id}` }}
+                        style={{
+                          fontFamily:
+                            'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: 'var(--semi-color-primary)',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {displayValue}
+                      </Typography.Text>
+                    );
+                  } else {
+                    return (
+                      <Typography.Text
+                        style={{
+                          fontFamily:
+                            'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                          fontSize: '12px',
+                        }}
+                      >
+                        {displayValue}
+                      </Typography.Text>
+                    );
+                  }
+                },
+              }),
+              createColumn('name', '名称', 'name', {
+                width: 200,
+                searchable: true,
+                render: (value: any, record: any) => {
+                  const isGroupHeader = record.children && record.children.length > 0;
 
-                    if (isGroupHeader) {
-                      return (
-                        <Typography.Text
-                          link={{ href: `/modules/${record.id}` }}
-                          style={{
-                            fontFamily:
-                              'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            color: 'var(--semi-color-primary)',
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {displayValue}
-                        </Typography.Text>
-                      );
-                    } else {
-                      return (
-                        <Typography.Text
-                          style={{
-                            fontFamily:
-                              'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-                            fontSize: '12px',
-                          }}
-                        >
-                          {displayValue}
-                        </Typography.Text>
-                      );
-                    }
-                  },
-                }),
-                createColumn('name', '名称', 'name', {
-                  width: 200,
-                  searchable: true,
-                  render: (value: any, record: any) => {
-                    const isGroupHeader = record.children && record.children.length > 0;
+                  if (isGroupHeader) {
+                    return (
+                      <Typography.Text
+                        link={{ href: `/modules/${record.id}` }}
+                        style={{
+                          fontSize: '13px',
+                          fontWeight: 600,
+                          color: 'var(--semi-color-primary)',
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {record.name}
+                      </Typography.Text>
+                    );
+                  } else {
+                    return (
+                      <Typography.Text style={{ fontSize: '13px' }}>{record.name}</Typography.Text>
+                    );
+                  }
+                },
+              }),
+              createColumn('typeOrCount', '', 'type', {
+                searchable: true,
+                render: (value: any, record: any) => {
+                  const isGroupHeader = record.children && record.children.length > 0;
 
-                    if (isGroupHeader) {
-                      return (
-                        <Typography.Text
-                          link={{ href: `/modules/${record.id}` }}
-                          style={{
-                            fontSize: '13px',
-                            fontWeight: 600,
-                            color: 'var(--semi-color-primary)',
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {record.name}
-                        </Typography.Text>
-                      );
-                    } else {
-                      return (
-                        <Typography.Text style={{ fontSize: '13px' }}>
-                          {record.name}
-                        </Typography.Text>
-                      );
-                    }
-                  },
-                }),
-                createColumn('typeOrCount', '', 'type', {
-                  searchable: true,
-                  render: (value: any, record: any) => {
-                    const isGroupHeader = record.children && record.children.length > 0;
-
-                    if (isGroupHeader) {
-                      // 模块行：显示属性统计
-                      return (
-                        <Tag size="small" color="cyan">
-                          {record.attributeCount || 0}
-                        </Tag>
-                      );
-                    } else {
-                      // 模块属性行：显示类型
-                      return (
-                        <EntityPropertyTypeSelector
-                          value={{
-                            type: record.type,
-                            ...(record.enumClassId && { enumClassId: record.enumClassId }),
-                          }}
-                          onChange={() => {}} // 只读
-                          disabled={true}
-                        />
-                      );
-                    }
-                  },
-                }),
-              ]}
-              rowKey="_indexId"
-              editable={false}
-              showSelection={true}
-              selectedKeys={selectedModuleKeys}
-              onSelectionChange={(keys) => {
-                const moduleIds = keys.map((key) => {
-                  const module = moduleTreeData.find((item) => item._indexId === key);
-                  return module?.id || key;
-                });
-                updateProperty('bundles', moduleIds);
-              }}
-              expandable={true}
-              childrenColumnName="children"
-              defaultExpandAllRows={false}
-              expandRowByClick={true}
-              size="small"
-              showPagination={false}
-            />
-          </div>
+                  if (isGroupHeader) {
+                    // 模块行：显示属性统计
+                    return (
+                      <Tag size="small" color="cyan">
+                        {record.attributeCount || 0}
+                      </Tag>
+                    );
+                  } else {
+                    // 模块属性行：显示类型
+                    return (
+                      <EntityPropertyTypeSelector
+                        value={{
+                          type: record.type,
+                          ...(record.enumClassId && { enumClassId: record.enumClassId }),
+                        }}
+                        onChange={() => {}} // 只读
+                        disabled={true}
+                      />
+                    );
+                  }
+                },
+              }),
+            ]}
+            rowKey="_indexId"
+            editable={false}
+            showSelection={true}
+            selectedKeys={selectedModuleKeys}
+            onSelectionChange={(keys) => {
+              const moduleIds = keys.map((key) => {
+                const module = moduleTreeData.find((item) => item._indexId === key);
+                return module?.id || key;
+              });
+              updateProperty('bundles', moduleIds);
+            }}
+            expandable={true}
+            childrenColumnName="children"
+            defaultExpandAllRows={false}
+            expandRowByClick={true}
+            size="small"
+            showPagination={false}
+          />
         </div>
       </div>
     </div>

@@ -51,13 +51,13 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
     return (
       item.id.toLowerCase().includes(searchTerm) ||
       (item.name || '').toLowerCase().includes(searchTerm) ||
-      (item.description || '').toLowerCase().includes(searchTerm)
+      (item.desc || '').toLowerCase().includes(searchTerm)
     );
   });
 
   // 默认选中第一条记录 - 根据路由类型导航到不同页面
   useEffect(() => {
-    if (!selectedApiId && filteredExpressions.length > 0) {
+    if (!selectedApiId && filteredExpressions.length > 0 && routeState.expressionId !== 'new') {
       const firstApi = filteredExpressions[0];
       setSelectedApiId(firstApi.id);
       navigate({
@@ -65,7 +65,7 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
         expressionId: firstApi.id,
       });
     }
-  }, [filteredExpressions, selectedApiId, navigate, isLocalMode]);
+  }, [filteredExpressions, selectedApiId, navigate, isLocalMode, routeState.expressionId]);
 
   // 处理API选择 - 根据路由类型导航
   const handleExpressionSelect = useCallback(
@@ -141,73 +141,25 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
     [expressionStore]
   );
 
-  // 创建API
+  // 检查是否有未保存的新建元素
+  const hasUnsavedNew = routeState.expressionId === 'new';
+
+  // 创建API - 改为与其他页面一致的内联新建模式
   const handleCreateApi = useCallback(() => {
-    console.log('创建API');
-    setApiModalVisible(true);
-  }, []);
+    // 如果已经有未保存的新建元素，禁用新建
+    if (hasUnsavedNew) return;
 
-  // 确认创建API
-  const handleApiConfirm = useCallback(
-    (values: any) => {
-      const apiId = values.apiId?.trim();
+    console.log('🔍 [ApiSidebar] 创建新API - 跳转到新建模式');
 
-      if (!apiId) {
-        return;
-      }
+    // 直接跳转到新建模式，与其他页面保持一致
+    navigate({
+      route: isLocalMode ? 'exp-local' : 'exp-remote',
+      expressionId: 'new',
+    });
 
-      // 创建新的API数据，符合expressions.json的结构
-      const newApiData = {
-        _indexId: nanoid(),
-        id: apiId,
-        name: apiId,
-        desc: `${apiId} API接口`,
-        deprecated: false,
-        method: 'GET' as const,
-        url: `http://localhost:3000/api/${apiId}`,
-        body: null,
-        group: 'remote/user',
-        type: 'expression' as const,
-        output: {
-          id: 'result',
-          type: 'u',
-          name: '返回结果',
-          desc: 'API调用返回的结果',
-          required: false,
-        },
-        inputs: [
-          {
-            _indexId: nanoid(),
-            id: 'param1',
-            type: 's',
-            name: '参数1',
-            desc: '示例参数',
-            value: '',
-            required: false,
-            scope: 'query',
-          },
-        ],
-      };
-
-      console.log('🔍 [ApiSidebar] 创建新API:', newApiData);
-
-      // 添加到expression store
-      expressionStore.addNewExpression(newApiData);
-
-      // 选中新API
-      setSelectedApiId(apiId);
-
-      // 同步更新URL
-      navigate({
-        route: isLocalMode ? 'exp-local' : 'exp-remote',
-        expressionId: apiId,
-      });
-
-      // 关闭模态框
-      setApiModalVisible(false);
-    },
-    [navigate, expressionStore, isLocalMode]
-  );
+    // 更新内部状态
+    setSelectedApiId('new');
+  }, [navigate, isLocalMode, hasUnsavedNew]);
 
   // 删除API
   const handleDeleteApi = useCallback(
@@ -343,8 +295,13 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
             <Tooltip content="新建分组">
               <Button size="small" icon={<IconFolder />} onClick={handleCreateGroup} />
             </Tooltip>
-            <Tooltip content="新建API">
-              <Button size="small" icon={<IconPlus />} onClick={handleCreateApi} />
+            <Tooltip content={hasUnsavedNew ? '请先保存当前新建项' : '新建API'}>
+              <Button
+                size="small"
+                icon={<IconPlus />}
+                onClick={handleCreateApi}
+                disabled={hasUnsavedNew}
+              />
             </Tooltip>
           </div>
 
@@ -415,49 +372,6 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
             rules={[
               { required: true, message: '请输入分组名称' },
               { min: 1, message: '分组名称不能为空' },
-            ]}
-            autoFocus
-          />
-        </Form>
-      </Modal>
-
-      {/* 创建API模态框 */}
-      <Modal
-        title="创建API"
-        visible={apiModalVisible}
-        onCancel={() => setApiModalVisible(false)}
-        onOk={() => {
-          // 获取表单值并处理
-          const formApi = (window as any).apiFormApi;
-          if (formApi) {
-            const values = formApi.getValues();
-            if (values.apiId?.trim()) {
-              handleApiConfirm(values);
-            }
-          }
-        }}
-        okText="确定"
-        cancelText="取消"
-      >
-        <Form
-          labelPosition="left"
-          labelAlign="left"
-          wrapperCol={{ span: 18 }}
-          getFormApi={(formApi) => {
-            (window as any).apiFormApi = formApi;
-          }}
-          initValues={{
-            apiMethod: 'GET',
-            apiGroup: 'remote/user',
-          }}
-        >
-          <Form.Input
-            field="apiId"
-            label="API ID"
-            placeholder="请输入API ID，如：getUserInfo"
-            rules={[
-              { required: true, message: '请输入API ID' },
-              { min: 1, message: 'API ID不能为空' },
             ]}
             autoFocus
           />

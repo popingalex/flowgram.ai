@@ -3,9 +3,9 @@ import React, { useCallback, useMemo } from 'react';
 import { nanoid } from 'nanoid';
 import { Select, Input, Space, Typography, Tag, Divider, Button } from '@douyinfe/semi-ui';
 
+import { ParameterMapping } from '../parameter-mapping';
 import { FunctionSelector } from '../function-selector';
 import { CodeEditor } from '../code-editor';
-import { UniversalPropertyTable } from '../../bt/universal-property-table';
 import { CodeType, CodeLanguage, CodeConfig } from '../../../typings/behavior';
 import { BehaviorParameter } from '../../../typings/behavior';
 import { useBehaviorStore, useBehaviorActions } from '../../../stores/function-list';
@@ -318,17 +318,16 @@ export const CodeConfigEditor: React.FC<CodeConfigEditorProps> = ({
               参数映射
             </div>
             <div style={{ flex: 1 }}>
-              <UniversalPropertyTable
-                mode="sidebar"
-                editable={!readonly}
-                readonly={readonly}
-                showEntityProperties={false}
-                showModuleProperties={false}
-                showFunctionParameters={true}
-                functionParameterTitle="函数参数"
-                hideInternalTitles={true}
-                functionParameters={functionParametersForTable}
-                onParameterMappingChange={handleParameterMappingChange}
+              <ParameterMapping
+                functionParams={selectedFunctionParams || []}
+                behaviorParams={behaviorParams}
+                parameterMapping={normalizedConfig.parameterMapping || {}}
+                onChange={(mapping) => {
+                  onChange({
+                    ...normalizedConfig,
+                    parameterMapping: mapping,
+                  });
+                }}
               />
             </div>
           </div>

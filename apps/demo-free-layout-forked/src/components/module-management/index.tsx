@@ -1,7 +1,16 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 
 import { nanoid } from 'nanoid';
-import { Toast, Badge, Button, Tooltip, Popconfirm, Typography } from '@douyinfe/semi-ui';
+import {
+  Toast,
+  Badge,
+  Button,
+  Tooltip,
+  Popconfirm,
+  Typography,
+  Tag,
+  Highlight,
+} from '@douyinfe/semi-ui';
 import { IconSave, IconUndo, IconDelete } from '@douyinfe/semi-icons';
 
 const { Text } = Typography;
@@ -9,14 +18,22 @@ const { Text } = Typography;
 import { DataListSidebar } from '../data-management/sidebar';
 import { DataManagementLayout } from '../data-management/layout';
 import { DetailPanel } from '../data-management/detail-panel';
-import { useModuleStore, useCurrentModule, useCurrentModuleActions } from '../../stores';
+import {
+  useModuleStore,
+  useCurrentModule,
+  useCurrentModuleActions,
+  useEntityList,
+} from '../../stores';
 import { useRouter } from '../../hooks/use-router';
 import { ModuleDetail } from './module-detail';
 
 export const ModuleManagementPage: React.FC = () => {
   const { modules, loading, loadModules } = useModuleStore();
-  const { addModule, updateModule, deleteModule } = useModuleStore();
+  const { deleteModule } = useModuleStore();
   const { routeState, navigate } = useRouter();
+
+  // 🔑 获取实体列表用于计算关联关系
+  const { entities } = useEntityList();
 
   // 🔑 使用CurrentModuleStore管理编辑状态
   const { editingModule, isDirty, isSaving } = useCurrentModule();
@@ -73,47 +90,80 @@ export const ModuleManagementPage: React.FC = () => {
     }
   }, [loading, modules, routeState.entityId, navigate]);
 
+  // 🔑 计算每个模块的关联实体数量
+  const moduleEntityCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+
+    modules.forEach((module) => {
+      // 计算有多少个实体的bundles包含这个模块ID
+      const relatedEntityCount = entities.filter((entity) =>
+        entity.bundles?.includes(module.id)
+      ).length;
+
+      counts[module.id] = relatedEntityCount;
+    });
+
+    console.log('🔍 模块关联实体统计:', counts);
+    return counts;
+  }, [modules, entities]);
+
   // 过滤后的模块列表
   const filteredModules = useMemo(() => {
-    if (!searchText.trim()) return modules;
+    const baseModules = !searchText.trim()
+      ? modules
+      : modules.filter((module) => {
+          const searchLower = searchText.toLowerCase();
 
-    const searchLower = searchText.toLowerCase();
-    return modules.filter((module) => {
-      // 搜索ID和名称 - 优先匹配单词边界
-      const matchesBasic =
-        module.id?.toLowerCase().includes(searchLower) ||
-        module.name?.toLowerCase().includes(searchLower);
+          // 搜索ID和名称 - 优先匹配单词边界
+          const matchesBasic =
+            module.id?.toLowerCase().includes(searchLower) ||
+            module.name?.toLowerCase().includes(searchLower);
 
-      // 搜索属性 - 更智能地匹配
-      const matchesAttributes = module.attributes?.some((attr: any) => {
-        const attrId = attr.id?.toLowerCase() || '';
-        const attrDisplayId = attr.displayId?.toLowerCase() || '';
-        const attrName = attr.name?.toLowerCase() || '';
+          // 搜索属性 - 更智能地匹配
+          const matchesAttributes = module.attributes?.some((attr: any) => {
+            const attrId = attr.id?.toLowerCase() || '';
+            const attrDisplayId = attr.displayId?.toLowerCase() || '';
+            const attrName = attr.name?.toLowerCase() || '';
 
-        // 优先匹配完整单词或以搜索词开头的情况
-        const matchesAttrId =
-          attrId === searchLower || // 完全匹配
-          attrId.startsWith(searchLower) || // 开头匹配
-          attrId.includes('_' + searchLower) || // 下划线后匹配
-          attrId.includes('/' + searchLower) || // 斜杠后匹配
-          (searchLower.length >= 3 && attrId.includes(searchLower)); // 长度>=3才允许包含匹配
+            // 优先匹配完整单词或以搜索词开头的情况
+            const matchesAttrId =
+              attrId === searchLower || // 完全匹配
+              attrId.startsWith(searchLower) || // 开头匹配
+              attrId.includes('_' + searchLower) || // 下划线后匹配
+              attrId.includes('/' + searchLower) || // 斜杠后匹配
+              (searchLower.length >= 3 && attrId.includes(searchLower)); // 长度>=3才允许包含匹配
 
-        const matchesAttrDisplayId =
-          attrDisplayId === searchLower || // 完全匹配
-          attrDisplayId.startsWith(searchLower) || // 开头匹配
-          (searchLower.length >= 3 && attrDisplayId.includes(searchLower)); // 长度>=3才允许包含匹配
+            const matchesAttrDisplayId =
+              attrDisplayId === searchLower || // 完全匹配
+              attrDisplayId.startsWith(searchLower) || // 开头匹配
+              (searchLower.length >= 3 && attrDisplayId.includes(searchLower)); // 长度>=3才允许包含匹配
 
-        const matchesAttrName =
-          attrName === searchLower || // 完全匹配
-          attrName.startsWith(searchLower) || // 开头匹配
-          (searchLower.length >= 3 && attrName.includes(searchLower)); // 长度>=3才允许包含匹配
+            const matchesAttrName =
+              attrName === searchLower || // 完全匹配
+              attrName.startsWith(searchLower) || // 开头匹配
+              (searchLower.length >= 3 && attrName.includes(searchLower)); // 长度>=3才允许包含匹配
 
-        return matchesAttrId || matchesAttrDisplayId || matchesAttrName;
-      });
+            return matchesAttrId || matchesAttrDisplayId || matchesAttrName;
+          });
 
-      return matchesBasic || matchesAttributes;
+          return matchesBasic || matchesAttributes;
+        });
+
+    // 为每个模块添加统计信息字段，以适配默认渲染器
+    return baseModules.map((module) => {
+      const entityCount = moduleEntityCounts[module.id] || 0;
+      const attributeCount = module.attributes?.length || 0;
+
+      return {
+        ...module,
+        // 重新映射字段以适配默认渲染器的统计显示
+        // bundles字段用于显示"实：X"标签（实体数量）
+        bundles: entityCount > 0 ? Array(entityCount).fill('entity') : undefined,
+        // attributes字段保持原样用于显示"属：Y"标签（属性数量）
+        attributes: module.attributes || [],
+      };
     });
-  }, [modules, searchText]);
+  }, [modules, searchText, moduleEntityCounts]);
 
   // 选择模块
   const handleModuleSelect = useCallback(

@@ -20,7 +20,7 @@ const { Text } = Typography;
 
 export const BehaviorEditor: React.FC = () => {
   const { behaviors, loading } = useSystemBehaviorList();
-  const { loadBehaviors, createBehavior, updateBehavior, deleteBehavior, resetChanges } =
+  const { loadBehaviors, createBehavior, updateBehavior, deleteBehavior, resetChanges, startEdit } =
     useSystemBehaviorActions();
   const { routeState, navigate } = useRouter();
   const { modules } = useModuleStore();
@@ -35,10 +35,20 @@ export const BehaviorEditor: React.FC = () => {
 
   // 获取当前选中的行为
   const selectedBehavior = useMemo(() => {
-    if (!routeState.entityId) return null;
+    console.log('🔍 [BehaviorEditor] 计算selectedBehavior:', {
+      entityId: routeState.entityId,
+      behaviorsCount: behaviors.length,
+      behaviors: behaviors.map((b) => ({ id: b.id, name: b.name })),
+    });
+
+    if (!routeState.entityId) {
+      console.log('🔍 [BehaviorEditor] 没有entityId，返回null');
+      return null;
+    }
 
     // 新建行为模式
     if (routeState.entityId === 'new') {
+      console.log('🔍 [BehaviorEditor] 新建模式');
       return {
         _indexId: 'new',
         id: '',
@@ -51,8 +61,22 @@ export const BehaviorEditor: React.FC = () => {
     }
 
     // 查找现有行为
-    return behaviors.find((behavior) => behavior.id === routeState.entityId);
+    const found = behaviors.find((behavior) => behavior.id === routeState.entityId);
+    console.log('🔍 [BehaviorEditor] 查找结果:', {
+      searchId: routeState.entityId,
+      found: found ? { id: found.id, name: found.name } : null,
+    });
+
+    return found || null;
   }, [behaviors, routeState.entityId]);
+
+  // 🔑 关键修复：当选中行为变化时，同步到SystemBehaviorStore的编辑状态
+  useEffect(() => {
+    if (selectedBehavior) {
+      console.log('🔄 [BehaviorEditor] 同步行为到编辑状态:', selectedBehavior.id || '新建行为');
+      startEdit(selectedBehavior);
+    }
+  }, [selectedBehavior, startEdit]);
 
   // 默认选中第一个行为
   useEffect(() => {
