@@ -1,0 +1,95 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# 行为管理页面优化指南
+
+## 🎯 核心设计原则
+
+### 统一的页面布局模式
+所有管理页面（实体、模块、行为）都应遵循相同的设计模式：
+
+1. **使用DataManagementLayout + DetailPanel组件**
+   - 主页面：[behavior-editor/index.tsx](mdc:apps/demo-free-layout-forked/src/components/behavior-editor/index.tsx)
+   - 详情页面：[behavior-editor/behavior-detail.tsx](mdc:apps/demo-free-layout-forked/src/components/behavior-editor/behavior-detail.tsx)
+
+2. **布局结构标准**
+   ```
+   <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+     {/* 顶部表单配置区域 */}
+     <div style={{ padding: '24px', borderBottom: '1px solid var(--semi-color-border)' }}>
+       基本信息表单
+     </div>
+
+     {/* 主要内容区域 */}
+     <div style={{ flex: 1, overflow: 'auto' }}>
+       功能模块分块
+     </div>
+   </div>
+   ```
+
+### 参考设计实现
+- **实体管理**：[entity-management/entity-detail.tsx](mdc:apps/demo-free-layout-forked/src/components/entity-management/entity-detail.tsx)
+- **模块管理**：[module-management/module-detail.tsx](mdc:apps/demo-free-layout-forked/src/components/module-management/module-detail.tsx)
+- **通用布局**：[data-management/detail-panel.tsx](mdc:apps/demo-free-layout-forked/src/components/data-management/detail-panel.tsx)
+
+## 🚫 避免的设计问题
+
+### 1. 重复的标题和操作按钮
+- ❌ 详情页面不应重复显示标题（主页面已有）
+- ❌ 详情页面不应重复显示操作按钮（主页面已有）
+- ✅ DetailPanel组件会自动处理操作按钮的显示
+
+### 2. 过多的Card分块
+- ❌ 避免每个小功能都用Card包装
+- ✅ 使用padding和边框分隔来组织内容
+- ✅ 保持界面简洁统一
+
+### 3. 不一致的表单样式
+- ❌ 避免使用不同的标签宽度和对齐方式
+- ✅ 统一使用Form.Label组件：`<Form.Label text="标签" width={80} align="right" />`
+
+## 📋 标准化组件使用
+
+### Form.Label统一标签样式
+```tsx
+<div style={{ display: 'flex', alignItems: 'center' }}>
+  <Form.Label text="实体" required width={80} align="right" />
+  <Input style={{ flex: 1, marginLeft: '12px' }} />
+</div>
+```
+
+### 功能模块分块样式
+```tsx
+<div style={{ padding: '16px', borderBottom: '1px solid var(--semi-color-border)' }}>
+  <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+    <Form.Label text="功能模块" width={80} align="right" />
+    <div style={{ flex: 1, marginLeft: '12px' }}>
+      功能内容
+    </div>
+  </div>
+</div>
+```
+
+## 🔧 已完成的优化示例
+
+### 行为管理页面重构
+- **文件**：[behavior-detail.tsx](mdc:apps/demo-free-layout-forked/src/components/behavior-editor/behavior-detail.tsx)
+- **改进**：
+  - 去除了重复的标题和操作按钮
+  - 简化了Card分块结构
+  - 统一了Form.Label使用
+  - 采用了与实体/模块管理一致的布局
+
+### 设计对比
+- **优化前**：多层Card嵌套，重复标题，界面复杂
+- **优化后**：简洁分块，统一样式，用户体验一致
+
+## 🎯 后续开发指导
+
+1. **新增管理页面时**：参考现有的实体/模块/行为管理页面结构
+2. **修改现有页面时**：确保遵循统一的设计模式
+3. **组件选择**：优先使用Semi Design的Form.Label等标准组件
+4. **布局原则**：保持简洁，避免过度分块，确保一致性
+

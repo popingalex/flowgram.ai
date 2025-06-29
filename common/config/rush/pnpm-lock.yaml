@@ -417,6 +417,9 @@ importers:
       '@flowgram.ai/variable-core':
         specifier: workspace:*
         version: link:../../packages/variable-engine/variable-core
+      '@monaco-editor/react':
+        specifier: ^4.6.0
+        version: 4.6.0(monaco-editor@0.52.2)(react-dom@18.3.1)(react@18.3.1)
       immer:
         specifier: ~10.1.1
         version: 10.1.1
@@ -426,6 +429,9 @@ importers:
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
+      monaco-editor:
+        specifier: ^0.52.2
+        version: 0.52.2
       nanoid:
         specifier: ^4.0.2
         version: 4.0.2

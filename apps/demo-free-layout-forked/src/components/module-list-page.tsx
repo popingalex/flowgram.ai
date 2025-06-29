@@ -27,81 +27,10 @@ import {
 
 import { DataRestrictionButton, EntityPropertyTypeSelector } from './ext/type-selector-ext';
 import { SearchFilterBar } from './ext/search-filter-bar';
+import { FieldInput } from './ext/common-inputs';
 import { useModuleStore } from '../stores';
 
 const { Text } = Typography;
-
-// 通用字段输入组件 - 🔧 优化memo条件和稳定性
-const FieldInput = React.memo(
-  ({
-    value,
-    onChange,
-    placeholder,
-    readonly = false,
-    isIdField = false, // ID字段使用等宽字体
-    required = false, // 是否必填
-    isDuplicate = false, // 是否重复
-    errorMessage = '', // 校验错误信息
-    inputKey, // 🔧 添加稳定的key参数
-  }: {
-    value: string;
-    onChange: (newValue: string) => void;
-    placeholder: string;
-    readonly?: boolean;
-    isIdField?: boolean;
-    required?: boolean;
-    isDuplicate?: boolean;
-    errorMessage?: string;
-    inputKey?: string; // 🔧 稳定的key，用于防止重绘
-  }) => {
-    if (readonly) {
-      const displayValue = isIdField && value ? value.split('/').pop() : value;
-      return (
-        <Text
-          style={{
-            fontFamily: isIdField
-              ? 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace'
-              : undefined,
-            fontSize: isIdField ? '12px' : '13px',
-          }}
-        >
-          {displayValue}
-        </Text>
-      );
-    }
-
-    // 检查是否为空（用于必填校验）
-    const isEmpty = !value || value.trim() === '';
-    const hasError = (required && isEmpty) || isDuplicate || !!errorMessage;
-
-    return (
-      <Input
-        key={inputKey} // 🔧 使用稳定的key防止重绘
-        value={value}
-        onChange={onChange}
-        onClick={(e) => e.stopPropagation()}
-        size="small"
-        placeholder={placeholder}
-        validateStatus={hasError ? 'error' : 'default'}
-        style={{
-          fontFamily: isIdField
-            ? 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace'
-            : undefined,
-          fontSize: isIdField ? '12px' : '13px',
-        }}
-      />
-    );
-  },
-  // 🔧 优化memo条件，只在关键属性变化时重新渲染
-  (prevProps, nextProps) =>
-    prevProps.value === nextProps.value &&
-    prevProps.readonly === nextProps.readonly &&
-    prevProps.required === nextProps.required &&
-    prevProps.isDuplicate === nextProps.isDuplicate &&
-    prevProps.errorMessage === nextProps.errorMessage &&
-    prevProps.inputKey === nextProps.inputKey
-);
-FieldInput.displayName = 'FieldInput';
 
 // 模块ID输入组件
 const ModuleIdInput = React.memo(
