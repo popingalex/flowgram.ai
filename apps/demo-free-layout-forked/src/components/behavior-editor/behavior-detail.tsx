@@ -16,6 +16,7 @@ import {
 } from '@douyinfe/semi-ui';
 import { IconPlus, IconDelete, IconFilter, IconInfoCircle } from '@douyinfe/semi-icons';
 
+import { UniversalTable } from '../ext/universal-table';
 import { EntityPropertyTypeSelector } from '../ext/type-selector-ext';
 import { SimpleConditionRow, SimpleConditionValue } from '../ext/simple-condition-row';
 import { ParameterFilterEditor } from '../ext/parameter-filter';
@@ -182,6 +183,7 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
     (functionId: string) => {
       const newConfig = {
         ...editingBehavior?.codeConfig,
+        type: editingBehavior?.codeConfig?.type || CodeType.LOCAL,
         functionId,
       };
       updateCodeConfig(newConfig);
@@ -207,7 +209,11 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
     (content: string) => {
       const newConfig = {
         ...editingBehavior?.codeConfig,
-        content,
+        type: editingBehavior?.codeConfig?.type || CodeType.CUSTOM,
+        customCode: {
+          language: editingBehavior?.codeConfig?.customCode?.language || CodeLanguage.JAVASCRIPT,
+          content,
+        },
       };
       updateCodeConfig(newConfig);
     },
@@ -599,7 +605,7 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
                 <Form.Label text="代码编辑" width={80} align="right" />
                 <div style={{ flex: 1, marginLeft: '12px' }}>
                   <CodeEditor
-                    value={editingBehavior.codeConfig?.content || ''}
+                    value={editingBehavior.codeConfig?.customCode?.content || ''}
                     onChange={handleCodeChange}
                     language={editingBehavior.codeConfig?.language || CodeLanguage.JAVASCRIPT}
                     onLanguageChange={(language) => {
@@ -648,18 +654,27 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
                   )}
                 </div>
 
-                <Table
+                <UniversalTable
                   dataSource={parameterTableData}
-                  columns={columns}
-                  pagination={false}
-                  size="small"
-                  empty={
-                    <div style={{ padding: '20px', textAlign: 'center' }}>
-                      <Text type="tertiary">
-                        {isCustomCode ? '暂无参数，点击"添加参数"创建' : '该函数暂无参数'}
-                      </Text>
-                    </div>
+                  columns={columns.map((col) => ({
+                    key: col.key,
+                    title: col.title,
+                    dataIndex: col.dataIndex,
+                    width: col.width,
+                    render: col.render,
+                  }))}
+                  onAdd={isCustomCode ? handleAddCustomParameter : undefined}
+                  onDelete={
+                    isCustomCode
+                      ? (record: any) => handleDeleteCustomParameter(record._indexId)
+                      : undefined
                   }
+                  rowKey="_indexId"
+                  size="small"
+                  showPagination={false}
+                  showActions={isCustomCode}
+                  addButtonText="添加参数"
+                  emptyText={isCustomCode ? '暂无参数，点击"添加参数"创建' : '该函数暂无参数'}
                 />
               </div>
             </div>
