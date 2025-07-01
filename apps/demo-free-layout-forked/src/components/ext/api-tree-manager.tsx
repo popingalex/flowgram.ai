@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 
-import { Tree, Typography, Tag, Button, Tooltip } from '@douyinfe/semi-ui';
-import { IconFolder, IconDelete } from '@douyinfe/semi-icons';
+import { Tree, Typography, Tag, Button, Tooltip, Input } from '@douyinfe/semi-ui';
+import { IconFolder, IconDelete, IconSearch, IconPlus } from '@douyinfe/semi-icons';
+
+import { useEndpointProbeStore, getStatusColor, getStatusText } from '../../stores/endpoint-probe';
 
 const { Text } = Typography;
 
@@ -79,7 +81,13 @@ const createGroupLabel = (
             e.stopPropagation();
             onDeleteGroup(groupKey);
           }}
-          style={{ opacity: 0.7 }}
+          style={{
+            padding: '2px',
+            width: '20px',
+            height: '20px',
+            flexShrink: 0,
+            opacity: 0.7,
+          }}
         />
       </Tooltip>
     </div>
@@ -91,81 +99,148 @@ const createApiLabel = (
   exp: any,
   handleApiClick: (expressionId: string, event: React.MouseEvent) => void,
   getMethodColor: (method: string) => 'blue' | 'green' | 'orange' | 'red' | 'purple' | 'grey',
-  onDeleteExpression: (expressionId: string) => void
-) => (
-  <div
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      width: '100%',
-      minWidth: 0, // 允许flex子元素收缩
-    }}
-  >
-    <a
-      href={generateApiUrl(exp.id)}
-      onClick={(e) => handleApiClick(exp.id, e)}
-      onMouseDown={(e) => {
-        if (e.button === 1) {
-          console.log('🔍 [ApiTreeManager] 中键点击，允许浏览器默认行为');
-        }
-      }}
+  onDeleteExpression: (expressionId: string) => void,
+  endpointProbe: any
+) => {
+  // 获取端点状态
+  const getEndpointStatus = () => {
+    if (!exp.url) return null;
+
+    try {
+      const url = new URL(exp.url);
+      const endpoint = `${url.hostname}:${url.port || (url.protocol === 'https:' ? 443 : 80)}`;
+      return endpointProbe.getEndpointStatus(endpoint);
+    } catch {
+      return null;
+    }
+  };
+
+  const endpointStatus = getEndpointStatus();
+
+  return (
+    <div
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-        flex: 1,
-        minWidth: 0, // 允许链接容器收缩
-        textDecoration: 'none',
-        color: 'inherit',
-        cursor: 'pointer',
-        overflow: 'hidden', // 防止内容溢出
+        width: '100%',
+        minWidth: 0,
+        padding: '4px 0',
       }}
     >
+      {/* 左侧：Method tag，不设固定宽度 */}
       {exp.method && (
         <Tag
           color={getMethodColor(exp.method)}
           size="small"
-          style={{ flexShrink: 0 }} // 防止标签被压缩
+          style={{
+            flexShrink: 0,
+            textAlign: 'center',
+            fontSize: '10px',
+            marginRight: '8px',
+          }}
         >
           {exp.method}
         </Tag>
       )}
-      <Text
+
+      {/* 中间：文本区域，填满剩余空间 */}
+      <a
+        href={generateApiUrl(exp.id)}
+        onClick={(e) => handleApiClick(exp.id, e)}
+        onMouseDown={(e) => {
+          if (e.button === 1) {
+            console.log('🔍 [ApiTreeManager] 中键点击，允许浏览器默认行为');
+          }
+        }}
         style={{
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
+          textDecoration: 'none',
+          color: 'inherit',
           flex: 1,
           minWidth: 0,
+          overflow: 'hidden',
         }}
       >
-        {exp.id}
-      </Text>
-    </a>
-    <div
-      style={{
-        flexShrink: 0, // 防止按钮被压缩
-        width: '32px', // 固定按钮区域宽度
-        display: 'flex',
-        justifyContent: 'flex-end',
-        marginLeft: '8px',
-      }}
-    >
-      <Tooltip content="删除API">
+        <div
+          style={{
+            fontSize: '13px',
+            fontFamily: 'monospace',
+            color: 'var(--semi-color-text-0)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {exp.id}
+        </div>
+        <div
+          style={{
+            fontSize: '11px',
+            color: 'var(--semi-color-text-2)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {exp.name || '未命名'}
+        </div>
+      </a>
+
+      {/* 右侧：按钮区 */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          flexShrink: 0,
+        }}
+      >
+        {/* 端点状态指示器 */}
+        {endpointStatus && (
+          <Tooltip
+            content={
+              <div>
+                <div>端点状态: {getStatusText(endpointStatus.status)}</div>
+                <div>最近探查: {new Date(endpointStatus.lastProbeTime).toLocaleString()}</div>
+                {endpointStatus.responseTimeMs && (
+                  <div>响应时间: {endpointStatus.responseTimeMs}ms</div>
+                )}
+                {endpointStatus.errorMessage && <div>错误: {endpointStatus.errorMessage}</div>}
+              </div>
+            }
+          >
+            <div
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: getStatusColor(endpointStatus.status),
+                border: '1px solid #fff',
+                boxShadow: '0 0 2px rgba(0,0,0,0.3)',
+              }}
+            />
+          </Tooltip>
+        )}
+
         <Button
-          size="small"
-          type="danger"
           icon={<IconDelete />}
+          type="danger"
+          size="small"
           onClick={(e) => {
             e.stopPropagation();
             onDeleteExpression(exp.id);
           }}
-          style={{ opacity: 0.7 }}
+          style={{
+            padding: '2px',
+            width: '20px',
+            height: '20px',
+            flexShrink: 0,
+            opacity: 0.7,
+          }}
         />
-      </Tooltip>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const ApiTreeManager: React.FC<ApiTreeManagerProps> = ({
   expressions,
@@ -176,6 +251,17 @@ export const ApiTreeManager: React.FC<ApiTreeManagerProps> = ({
   onMoveApiToGroup,
   onReorderApi,
 }) => {
+  const [searchText, setSearchText] = useState('');
+
+  // 使用端点探查store
+  const endpointProbe = useEndpointProbeStore();
+
+  // 启动端点探查轮询
+  useEffect(() => {
+    endpointProbe.startPolling();
+    return () => endpointProbe.stopPolling();
+  }, []); // 移除依赖项，只在组件挂载时执行一次
+
   // 拖拽处理函数
   const onDrop = (info: any) => {
     console.log('拖拽操作:', info);
@@ -342,7 +428,13 @@ export const ApiTreeManager: React.FC<ApiTreeManagerProps> = ({
         children: groupApis.map((exp) => ({
           key: `api-${exp.id}`,
           value: exp.id,
-          label: createApiLabel(exp, handleApiClick, getMethodColor, onDeleteExpression!),
+          label: createApiLabel(
+            exp,
+            handleApiClick,
+            getMethodColor,
+            onDeleteExpression!,
+            endpointProbe
+          ),
         })),
       });
 
@@ -362,7 +454,13 @@ export const ApiTreeManager: React.FC<ApiTreeManagerProps> = ({
         children: groupApis.map((exp) => ({
           key: `api-${exp.id}`,
           value: exp.id,
-          label: createApiLabel(exp, handleApiClick, getMethodColor, onDeleteExpression!),
+          label: createApiLabel(
+            exp,
+            handleApiClick,
+            getMethodColor,
+            onDeleteExpression!,
+            endpointProbe
+          ),
         })),
       });
     });

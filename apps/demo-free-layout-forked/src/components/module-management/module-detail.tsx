@@ -2,14 +2,19 @@ import React, { useCallback, useMemo, ReactNode } from 'react';
 
 import { nanoid } from 'nanoid';
 import { Typography, Input, Form } from '@douyinfe/semi-ui';
+import { Divider } from '@douyinfe/semi-ui';
 import { IconSearch } from '@douyinfe/semi-icons';
 
 import { createColumn } from '../ext/universal-table/column-configs';
 import { UniversalTable } from '../ext/universal-table';
 import { EntityPropertyTypeSelector } from '../ext/type-selector-ext';
-import { useCurrentModule, useCurrentModuleActions, useEntityList } from '../../stores';
+import {
+  useCurrentModule,
+  useCurrentModuleActions,
+  useEntityList,
+  useModuleStore,
+} from '../../stores';
 import type { ModuleAttribute } from '../../services/types';
-
 // const { Title } = Typography; // 未使用
 
 interface ModuleDetailProps {
@@ -38,21 +43,82 @@ export const ModuleDetail: React.FC<ModuleDetailProps> = ({
   const { updateProperty, updateAttributeProperty, addAttribute, removeAttribute } =
     useCurrentModuleActions();
 
-  // 🔑 获取实体列表
+  // 🔑 获取实体列表和模块列表
   const { entities } = useEntityList();
+  const { modules } = useModuleStore();
 
   // 🔑 搜索状态
   const [searchText, setSearchText] = React.useState('');
+  const [moduleSearchText, setModuleSearchText] = React.useState('');
 
   // 🔑 使用CurrentModuleStore的editingModule作为数据源
   const currentModule = editingModule || selectedModule;
 
-  // 🔑 计算关联的实体列表
+  // 🔑 计算关联的实体列表（通过bundles字段）
   const relatedEntities = useMemo(() => {
     if (!currentModule?.id || !entities) return [];
 
     return entities.filter((entity) => entity.bundles?.includes(currentModule.id));
   }, [currentModule?.id, entities]);
+
+  // 🔑 获取选中的模块IDs（从modules字段）
+  const selectedModuleIds = useMemo(() => {
+    if (!currentModule?.modules) return [];
+
+    // currentModule.modules 可能是字符串数组或对象数组
+    return currentModule.modules.map((module: any) => {
+      if (typeof module === 'string') {
+        return module; // 如果是字符串，直接返回
+      } else {
+        return module.id; // 如果是对象，返回id字段
+      }
+    });
+  }, [currentModule?.modules]);
+
+  // 🔑 构建模块表格数据（排除当前正在编辑的模块），已选中的排在前面
+  const moduleTableData = useMemo(() => {
+    if (!modules) return [];
+
+    const filteredModules = modules.filter((module) => module.id !== currentModule?.id);
+
+    // 分离已选中和未选中的模块
+    const selectedModules = filteredModules.filter((module) =>
+      selectedModuleIds.includes(module.id)
+    );
+    const unselectedModules = filteredModules.filter(
+      (module) => !selectedModuleIds.includes(module.id)
+    );
+
+    // 已选中的排在前面，然后是未选中的
+    return [...selectedModules, ...unselectedModules].map((module) => ({
+      ...module,
+      key: module._indexId,
+    }));
+  }, [modules, currentModule?.id, selectedModuleIds]);
+
+  // 🔑 过滤模块列表
+  const filteredModules = useMemo(() => {
+    if (!moduleSearchText.trim()) return moduleTableData;
+
+    const searchLower = moduleSearchText.toLowerCase();
+    return moduleTableData.filter(
+      (module) =>
+        module.id?.toLowerCase().includes(searchLower) ||
+        module.name?.toLowerCase().includes(searchLower)
+    );
+  }, [moduleTableData, moduleSearchText]);
+
+  // 🔑 获取选中的模块keys（用于表格选中状态）
+  const selectedModuleKeys = useMemo(() => {
+    if (!modules) return [];
+
+    return selectedModuleIds
+      .map((moduleId: string) => {
+        const module = modules.find((m) => m.id === moduleId);
+        return module?._indexId;
+      })
+      .filter(Boolean);
+  }, [selectedModuleIds, modules]);
 
   // 🔑 过滤后的属性列表
   const filteredAttributes = useMemo(() => {
@@ -154,6 +220,39 @@ export const ModuleDetail: React.FC<ModuleDetailProps> = ({
     [updateAttributeProperty]
   );
 
+  // 🔑 模块关联变更处理
+  const handleModuleSelectionChange = useCallback(
+    (selectedKeys: string[]) => {
+      if (!modules) return;
+
+      // 将选中的_indexId转换为完整的模块对象
+      const selectedModuleObjects = selectedKeys
+        .map((key) => {
+          const module = modules.find((m) => m._indexId === key);
+          if (module) {
+            return {
+              id: module.id,
+              deprecated: module.deprecated || false,
+              name: module.name,
+              _indexId: module._indexId, // 保留_indexId用于前端关联
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
+      console.log('🔧 模块关联变更:', {
+        selectedKeys,
+        selectedModuleObjects,
+        oldModules: currentModule?.modules || [],
+      });
+
+      // 更新模块的modules字段为完整的模块对象数组
+      updateProperty('modules', selectedModuleObjects);
+    },
+    [modules, currentModule?.modules, updateProperty]
+  );
+
   return (
     <div style={{ height: '100%', padding: '24px', overflow: 'auto' }}>
       {/* 基本信息 */}
@@ -196,42 +295,6 @@ export const ModuleDetail: React.FC<ModuleDetailProps> = ({
             data-testid="module-description-input"
           />
         </div>
-
-        {/* 关联实体 */}
-        {relatedEntities.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-            <Form.Label text="关联实体" width={80} align="right" />
-            <div style={{ flex: 1, marginLeft: '12px' }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {relatedEntities.map((entity) => (
-                  <Typography.Text
-                    key={entity._indexId}
-                    link={{
-                      href: `/entities/${entity.id}/`,
-                    }}
-                    style={{
-                      fontSize: '12px',
-                      padding: '2px 6px',
-                      backgroundColor: 'var(--semi-color-fill-1)',
-                      borderRadius: '4px',
-                      border: '1px solid var(--semi-color-border)',
-                    }}
-                    data-testid={`related-entity-${entity.id}`}
-                  >
-                    {entity.id} {entity.name && `(${entity.name})`}
-                  </Typography.Text>
-                ))}
-              </div>
-              <Typography.Text
-                type="secondary"
-                size="small"
-                style={{ display: 'block', marginTop: '4px' }}
-              >
-                共 {relatedEntities.length} 个实体使用此模块，点击可跳转
-              </Typography.Text>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 模块属性 */}
@@ -256,12 +319,7 @@ export const ModuleDetail: React.FC<ModuleDetailProps> = ({
               searchText=""
               columns={[
                 createColumn('id', 'ID', 'displayId', {
-                  width: 150,
-                  searchable: true,
-                  editable: true,
-                }),
-                createColumn('name', '名称', 'name', {
-                  width: 200,
+                  width: 180,
                   searchable: true,
                   editable: true,
                 }),
@@ -279,6 +337,16 @@ export const ModuleDetail: React.FC<ModuleDetailProps> = ({
                       }}
                     />
                   ),
+                }),
+                createColumn('value', '默认值', 'value', {
+                  width: 200,
+                  searchable: true,
+                  editable: true,
+                }),
+                createColumn('name', '名称', 'name', {
+                  width: 150,
+                  searchable: true,
+                  editable: true,
                 }),
               ]}
               rowKey="_indexId"
@@ -301,6 +369,113 @@ export const ModuleDetail: React.FC<ModuleDetailProps> = ({
               onAdd={() => {
                 handleAddAttribute();
               }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 关联实体（只读显示） */}
+      {relatedEntities.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+          <Form.Label text="被使用" width={80} align="right" />
+          <div style={{ flex: 1, marginLeft: '12px' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {relatedEntities.map((entity) => (
+                <Typography.Text
+                  key={entity._indexId}
+                  link={{
+                    href: `/entities/${entity.id}/`,
+                  }}
+                  style={{
+                    fontSize: '12px',
+                    padding: '2px 6px',
+                    backgroundColor: 'var(--semi-color-fill-1)',
+                    borderRadius: '4px',
+                    border: '1px solid var(--semi-color-border)',
+                  }}
+                  data-testid={`related-entity-${entity.id}`}
+                >
+                  {entity.id} {entity.name && `(${entity.name})`}
+                </Typography.Text>
+              ))}
+            </div>
+            <Typography.Text
+              type="secondary"
+              size="small"
+              style={{ display: 'block', marginTop: '4px' }}
+            >
+              共 {relatedEntities.length} 个实体使用此模块，点击可跳转
+            </Typography.Text>
+          </div>
+        </div>
+      )}
+      <Divider />
+
+      {/* 嵌套模块（可编辑） */}
+      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+        <Form.Label text="嵌套模块" width={80} align="right" />
+        <div style={{ flex: 1, marginLeft: '12px' }}>
+          <div style={{ marginBottom: '12px' }}>
+            <Input
+              prefix={<IconSearch />}
+              placeholder="搜索模块ID、名称..."
+              value={moduleSearchText}
+              onChange={setModuleSearchText}
+              showClear
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div
+            style={{
+              height: '300px',
+              overflow: 'auto',
+              border: '1px solid var(--semi-color-border)',
+              borderRadius: '6px',
+            }}
+          >
+            <UniversalTable
+              dataSource={filteredModules}
+              searchText=""
+              columns={[
+                createColumn('id', 'ID', 'id', {
+                  width: 150,
+                  searchable: true,
+                  render: (value: any, record: any) => (
+                    <Typography.Text
+                      style={{
+                        fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                        fontSize: '12px',
+                      }}
+                    >
+                      {value}
+                    </Typography.Text>
+                  ),
+                }),
+                createColumn('name', '名称', 'name', {
+                  width: 200,
+                  searchable: true,
+                  render: (value: any) => (
+                    <Typography.Text style={{ fontSize: '13px' }}>{value}</Typography.Text>
+                  ),
+                }),
+                createColumn('description', '描述', 'desc', {
+                  searchable: true,
+                  render: (value: any) => (
+                    <Typography.Text type="secondary" size="small" ellipsis={{ showTooltip: true }}>
+                      {value || '-'}
+                    </Typography.Text>
+                  ),
+                }),
+              ]}
+              rowKey="_indexId"
+              editable={false}
+              showSelection={true}
+              selectedKeys={selectedModuleKeys}
+              onSelectionChange={handleModuleSelectionChange}
+              size="small"
+              emptyText="暂无模块"
+              showPagination={false}
             />
           </div>
         </div>

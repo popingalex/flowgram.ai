@@ -86,13 +86,13 @@ export const ModuleManagementPage: React.FC = () => {
     if (!loading && modules.length > 0 && !routeState.entityId) {
       const firstModule = modules[0];
       console.log('🎯 默认选中第一个模块:', firstModule.id);
-      navigate({ route: 'modules', entityId: firstModule.id });
+      navigate({ route: 'module', entityId: firstModule.id });
     }
   }, [loading, modules, routeState.entityId, navigate]);
 
-  // 🔑 计算每个模块的关联实体数量
-  const moduleEntityCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
+  // 🔑 计算每个模块的关联实体数量和模块关联数量
+  const moduleStats = useMemo(() => {
+    const stats: Record<string, { entityCount: number; moduleCount: number }> = {};
 
     modules.forEach((module) => {
       // 计算有多少个实体的bundles包含这个模块ID
@@ -100,11 +100,17 @@ export const ModuleManagementPage: React.FC = () => {
         entity.bundles?.includes(module.id)
       ).length;
 
-      counts[module.id] = relatedEntityCount;
+      // 计算模块关联的其他模块数量（modules字段）
+      const relatedModuleCount = module.modules?.length || 0;
+
+      stats[module.id] = {
+        entityCount: relatedEntityCount,
+        moduleCount: relatedModuleCount,
+      };
     });
 
-    console.log('🔍 模块关联实体统计:', counts);
-    return counts;
+    console.log('🔍 模块统计信息:', stats);
+    return stats;
   }, [modules, entities]);
 
   // 过滤后的模块列表
@@ -151,25 +157,25 @@ export const ModuleManagementPage: React.FC = () => {
 
     // 为每个模块添加统计信息字段，以适配默认渲染器
     return baseModules.map((module) => {
-      const entityCount = moduleEntityCounts[module.id] || 0;
+      const stats = moduleStats[module.id] || { entityCount: 0, moduleCount: 0 };
       const attributeCount = module.attributes?.length || 0;
 
       return {
         ...module,
         // 重新映射字段以适配默认渲染器的统计显示
-        // bundles字段用于显示"实：X"标签（实体数量）
-        bundles: entityCount > 0 ? Array(entityCount).fill('entity') : undefined,
+        // bundles字段用于显示"实：X"标签（实体数量）或"模：X"标签（模块数量）
+        bundles: stats.moduleCount > 0 ? Array(stats.moduleCount).fill('module') : undefined,
         // attributes字段保持原样用于显示"属：Y"标签（属性数量）
         attributes: module.attributes || [],
       };
     });
-  }, [modules, searchText, moduleEntityCounts]);
+  }, [modules, searchText, moduleStats]);
 
   // 选择模块
   const handleModuleSelect = useCallback(
     (module: any) => {
       // 🔑 修复：使用原始ID而不是nanoid作为URL参数
-      navigate({ route: 'modules', entityId: module.id });
+      navigate({ route: 'module', entityId: module.id });
     },
     [navigate]
   );
@@ -188,7 +194,7 @@ export const ModuleManagementPage: React.FC = () => {
     if (hasUnsavedNew) return;
 
     // 🔑 修复：直接导航到新建模式，不要预先创建模块对象
-    navigate({ route: 'modules', entityId: 'new' });
+    navigate({ route: 'module', entityId: 'new' });
   }, [navigate, hasUnsavedNew]);
 
   // 刷新数据
@@ -217,7 +223,7 @@ export const ModuleManagementPage: React.FC = () => {
       // 🎯 如果是新建模块，保存成功后跳转到该模块的详情页面
       if (isNewModule && moduleId) {
         console.log('🔄 新建模块保存成功，跳转到详情页面:', moduleId);
-        navigate({ route: 'modules', entityId: moduleId });
+        navigate({ route: 'module', entityId: moduleId });
       }
     } catch (error) {
       console.error('❌ 模块保存失败:', error);
@@ -247,7 +253,7 @@ export const ModuleManagementPage: React.FC = () => {
       console.log('🔄 模块列表已刷新');
 
       // 删除后清空选择
-      navigate({ route: 'modules' });
+      navigate({ route: 'module' });
 
       Toast.success('模块删除成功');
     } catch (error) {

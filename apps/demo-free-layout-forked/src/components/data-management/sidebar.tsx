@@ -212,7 +212,7 @@ function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & Drag
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
         {moduleCount > 0 && (
           <Tag size="small" color="green">
-            {isModulePage ? '实' : '模'}：{moduleCount}
+            模：{moduleCount}
           </Tag>
         )}
         {attributeCount > 0 && (

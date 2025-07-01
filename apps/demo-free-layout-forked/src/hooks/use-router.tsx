@@ -2,9 +2,16 @@ import React, { useState, useEffect, useCallback, createContext, useContext } fr
 
 export type RouteType =
   | 'entities'
-  | 'modules'
+  | 'modules' // 模块列表页（保留兼容性）
+  | 'module' // 模块详情页和主路由
+  | 'system'
+  | 'behavior-remote'
+  | 'behavior-local'
+  | 'behavior-script'
+  | 'exp' // 行为管理根路由
   | 'exp-remote'
   | 'exp-local'
+  | 'exp-inline' // 脚本改名为inline
   | 'entity-workflow'
   | 'behavior'
   | 'api-test'
@@ -44,7 +51,31 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
     }
 
     if (hashPath === 'modules') {
-      return { route: 'modules' };
+      return { route: 'module' }; // 修复：统一使用'module'路由
+    }
+
+    if (hashPath === 'module') {
+      return { route: 'module' };
+    }
+
+    if (hashPath === 'system') {
+      return { route: 'system' };
+    }
+
+    if (hashPath === 'behavior/remote') {
+      return { route: 'behavior-remote' };
+    }
+
+    if (hashPath === 'behavior/local') {
+      return { route: 'behavior-local' };
+    }
+
+    if (hashPath === 'behavior/script') {
+      return { route: 'behavior-script' };
+    }
+
+    if (hashPath === 'exp') {
+      return { route: 'exp' };
     }
 
     if (hashPath === 'exp/remote') {
@@ -53,6 +84,10 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
 
     if (hashPath === 'exp/local') {
       return { route: 'exp-local' };
+    }
+
+    if (hashPath === 'exp/inline') {
+      return { route: 'exp-inline' };
     }
 
     // 匹配 exp/remote/{expressionId}
@@ -112,7 +147,31 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
   }
 
   if (path === 'modules') {
-    return { route: 'modules' };
+    return { route: 'module' }; // 修复：统一使用'module'路由
+  }
+
+  if (path === 'module') {
+    return { route: 'module' };
+  }
+
+  if (path === 'system') {
+    return { route: 'system' };
+  }
+
+  if (path === 'behavior/remote') {
+    return { route: 'behavior-remote' };
+  }
+
+  if (path === 'behavior/local') {
+    return { route: 'behavior-local' };
+  }
+
+  if (path === 'behavior/script') {
+    return { route: 'behavior-script' };
+  }
+
+  if (path === 'exp') {
+    return { route: 'exp' };
   }
 
   if (path === 'exp/remote') {
@@ -121,6 +180,10 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
 
   if (path === 'exp/local') {
     return { route: 'exp-local' };
+  }
+
+  if (path === 'exp/inline') {
+    return { route: 'exp-inline' };
   }
 
   // 匹配 exp/remote/{expressionId}
@@ -170,7 +233,7 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
   const moduleDetailMatch = path.match(/^modules\/([^/]+)\/?$/);
   if (moduleDetailMatch) {
     return {
-      route: 'modules',
+      route: 'module', // 修复：返回'module'以匹配导航项的itemKey
       entityId: moduleDetailMatch[1], // 复用entityId字段
     };
   }
@@ -200,8 +263,8 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
     };
   }
 
-  // 默认返回实体列表
-  const result = { route: 'entities' as const };
+  // 默认返回模块管理
+  const result = { route: 'module' as const };
   console.log('🔍 [parseUrl] 解析结果:', result);
   return result;
 };
@@ -213,10 +276,26 @@ const generateUrl = (routeState: RouteState): string => {
       return routeState.entityId ? `/entities/${routeState.entityId}/` : '/entities/';
     case 'modules':
       return routeState.entityId ? `/modules/${routeState.entityId}/` : '/modules/';
+    case 'module':
+      return routeState.entityId ? `/modules/${routeState.entityId}/` : '/module/';
+    case 'system':
+      return routeState.entityId ? `/system/${routeState.entityId}/` : '/system/';
+    case 'behavior-remote':
+      return routeState.expressionId
+        ? `/behavior/remote/${routeState.expressionId}/`
+        : '/behavior/remote/';
+    case 'behavior-local':
+      return '/behavior/local/';
+    case 'behavior-script':
+      return '/behavior/script/';
+    case 'exp':
+      return '/exp/';
     case 'exp-remote':
       return routeState.expressionId ? `/exp/remote/${routeState.expressionId}/` : '/exp/remote/';
     case 'exp-local':
       return '/exp/local/';
+    case 'exp-inline':
+      return '/exp/inline/';
     case 'entity-workflow':
       return routeState.entityId ? `/entity-workflow/${routeState.entityId}/` : '/entity-workflow/';
     case 'behavior':
@@ -234,7 +313,7 @@ const generateUrl = (routeState: RouteState): string => {
     case 'test-properties':
       return '/test-properties/';
     default:
-      return '/entities/';
+      return '/module/';
   }
 };
 
@@ -260,9 +339,9 @@ export const RouterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     // 只有在根路径且没有hash时才重定向
     if ((currentPath === '/' || currentPath === '') && !currentHash) {
-      const newUrl = '/entities/';
+      const newUrl = '/module/';
       window.history.replaceState({}, '', newUrl);
-      setRouteState({ route: 'entities' });
+      setRouteState({ route: 'module' });
     } else {
       // 设置解析的路由状态，但不强制修改URL
       setRouteState(parsedRoute);

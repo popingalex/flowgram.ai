@@ -61,7 +61,7 @@ import { EntitySelector } from './components/entity-selector';
 import { EntityManagementPage } from './components/entity-management';
 import { DebugPanel } from './components/debug-panel';
 import { BehaviorEditor } from './components/behavior-editor';
-import { ApiTestPanel } from './components/api-test-panel';
+import { ApiTestPanel } from './components/api-test/api-test-panel';
 // import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
 
 const { Header, Content } = Layout;
@@ -372,11 +372,12 @@ const AppContent: React.FC = () => {
         };
 
       case 'modules':
+      case 'module':
         const selectedModule = modules.find((m) => m.id === routeState.entityId);
 
         // 模块页面暂时没有编辑状态，直接展示选中的模块
         return {
-          pageType: 'modules',
+          pageType: 'module',
           selectedModule,
           routeState,
           metadata: {
@@ -518,20 +519,34 @@ const AppContent: React.FC = () => {
   // 主要导航项
   const mainNavItems = React.useMemo(
     () => [
-      { itemKey: 'entities', text: '实体管理', link: '/#entities' },
-      { itemKey: 'modules', text: '模块管理', link: '/#modules' },
-      { itemKey: 'behavior', text: '行为管理', link: '/#behavior' },
+      { itemKey: 'module', text: '模块管理', link: '/module' },
+      { itemKey: 'system', text: '系统管理', link: '/system' },
       {
-        itemKey: 'expressions',
-        text: '表达式管理',
+        itemKey: 'exp',
+        text: '行为管理',
         items: [
-          { itemKey: 'exp-remote', text: '远程服务', link: '/#exp/remote' },
-          { itemKey: 'exp-local', text: '本地行为函数', link: '/#exp/local' },
+          { itemKey: 'exp-remote', text: '远程', link: '/exp/remote' },
+          { itemKey: 'exp-local', text: '本地', link: '/exp/local' },
+          { itemKey: 'exp-inline', text: '脚本', link: '/exp/inline' },
         ],
       },
     ],
     []
   );
+
+  // 处理导航点击
+  const handleNavClick = (data: any) => {
+    const itemKey = data.itemKey;
+    console.log('🔍 [Nav] 点击导航项:', itemKey, data);
+
+    // 处理一级导航"行为管理"的点击
+    if (itemKey === 'exp') {
+      navigate({ route: 'exp' });
+      return;
+    }
+
+    // 其他导航项通过link属性处理，这里不需要特殊处理
+  };
 
   // 测试页面导航项
   const testNavItems = React.useMemo(
@@ -579,16 +594,26 @@ const AppContent: React.FC = () => {
   // 渲染主要内容区域
   const renderMainContent = () => {
     switch (routeState.route) {
-      case 'entities':
-        return <EntityManagementPage />;
       case 'modules':
         return <ModuleManagementPage />;
+      case 'module':
+        return <ModuleManagementPage />;
+      case 'system':
+        return <BehaviorEditor />;
+      case 'exp':
+        return <ExpressionListPage />;
       case 'exp-remote':
         return <ExpressionListPage />;
       case 'exp-local':
         return <ExpressionListPage />;
-      case 'behavior':
-        return <BehaviorEditor />;
+      case 'exp-inline':
+        return <ExpressionListPage />;
+      case 'behavior-remote':
+        return <ExpressionListPage />;
+      case 'behavior-local':
+        return <ExpressionListPage />;
+      case 'behavior-script':
+        return <ExpressionListPage />;
       case 'entity-workflow':
         return <WorkflowEditPage />;
       case 'api-test':
@@ -603,8 +628,13 @@ const AppContent: React.FC = () => {
         return <div>VariableSelector测试页面</div>;
       case 'test-properties':
         return <div>属性测试页面</div>;
+      // 兼容旧路由
+      case 'entities':
+        return <ModuleManagementPage />;
+      case 'behavior':
+        return <BehaviorEditor />;
       default:
-        return <EntityManagementPage />;
+        return <ModuleManagementPage />;
     }
   };
 
@@ -623,6 +653,7 @@ const AppContent: React.FC = () => {
         <Nav
           mode="horizontal"
           selectedKeys={[currentPage]}
+          onClick={handleNavClick}
           header={{
             logo: <IconBranch style={{ fontSize: 36 }} />,
             text: 'Flowgram 流程设计器',

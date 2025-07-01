@@ -53,3 +53,52 @@ export interface BehaviorReturn extends BaseAttribute {
 export type ExpressionItem =
   | (BaseExpression & { type: 'behavior' })
   | (BaseExpression & { type: 'expression' });
+
+// 新的后端API数据结构
+export interface BackendModule {
+  id: string;
+  name: string;
+  deprecated: boolean;
+  // 其他字段根据实际API返回添加
+}
+
+export interface BackendSystem {
+  id: string;
+  name: string;
+  type: string;
+  version: string;
+  enabled: boolean;
+  deprecated: boolean;
+  // 其他字段根据实际API返回添加
+}
+
+export interface BackendRemoteBehavior {
+  type: 'remote';
+  id: string;
+  name: string;
+  url: string;
+  deprecated: boolean;
+  // 其他字段根据实际API返回添加
+}
+
+export interface BackendLocalBehavior {
+  type: 'local';
+  id: string;
+  name: string;
+  functionName: string;
+  className?: string;
+  modulePath?: string;
+  deprecated: boolean;
+  // 其他字段根据实际API返回添加
+}
+
+export interface BackendScriptBehavior {
+  type: 'script';
+  id: string;
+  name: string;
+  content: string;
+  language: string;
+  runtime?: string;
+  deprecated: boolean;
+  // 其他字段根据实际API返回添加
+}

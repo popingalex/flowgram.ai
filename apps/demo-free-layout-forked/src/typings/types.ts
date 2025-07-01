@@ -47,6 +47,7 @@ export interface BaseModule extends EditableIndexed {
   desc?: string;
   category?: string;
   attributes: BaseAttribute[];
+  modules?: string[]; // 关联的实体ID列表（与实体的bundles字段形成双向关联）
   deprecated?: boolean;
 }
 

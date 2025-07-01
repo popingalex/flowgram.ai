@@ -7,7 +7,7 @@ import Icon from '@douyinfe/semi-icons';
 import { options, DataRestrictionIcon, getSchemaIcon } from './constants';
 
 // 统一按钮尺寸常量
-const BUTTON_SIZE = 24;
+const BUTTON_SIZE = 32;
 
 export interface EntityPropertyTypeSelectorProps {
   value?: Partial<IJsonSchema>;

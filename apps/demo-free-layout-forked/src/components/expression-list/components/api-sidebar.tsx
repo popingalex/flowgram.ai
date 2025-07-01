@@ -2,7 +2,14 @@ import React, { useState, useCallback, useEffect } from 'react';
 
 import { nanoid } from 'nanoid';
 import { Layout, Input, Button, Space, Tooltip, Spin, Modal, Form, Toast } from '@douyinfe/semi-ui';
-import { IconSearch, IconPlus, IconFolder, IconGlobe, IconDelete } from '@douyinfe/semi-icons';
+import {
+  IconSearch,
+  IconPlus,
+  IconFolder,
+  IconGlobe,
+  IconDelete,
+  IconRefresh,
+} from '@douyinfe/semi-icons';
 
 import { ApiTreeManager } from '../../ext/api-tree-manager';
 import { useExpressionStore } from '../../../stores/api-list';
@@ -269,6 +276,18 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
     [expressionStore]
   );
 
+  // 刷新数据
+  const handleRefresh = useCallback(async () => {
+    console.log('🔍 [ApiSidebar] 强制刷新数据');
+    try {
+      await expressionStore.refreshAll();
+      Toast.success('数据已刷新');
+    } catch (error) {
+      console.error('刷新失败:', error);
+      Toast.error('刷新失败');
+    }
+  }, [expressionStore]);
+
   return (
     <Layout style={{ height: '100%' }}>
       {/* 左侧API列表 */}
@@ -302,6 +321,9 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
                 onClick={handleCreateApi}
                 disabled={hasUnsavedNew}
               />
+            </Tooltip>
+            <Tooltip content="刷新">
+              <Button size="small" icon={<IconRefresh />} onClick={handleRefresh} />
             </Tooltip>
           </div>
 

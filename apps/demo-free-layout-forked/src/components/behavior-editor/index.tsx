@@ -238,92 +238,95 @@ export const BehaviorEditor: React.FC = () => {
 
   return (
     <DataManagementLayout
-      title="行为管理"
+      title="系统管理"
       headerActions={
-        selectedBehavior && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {isSaving && (
-              <Text type="secondary" size="small">
-                正在保存...
-              </Text>
-            )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* 原有的行为操作按钮 */}
+          {selectedBehavior && (
+            <>
+              {isSaving && (
+                <Text type="secondary" size="small">
+                  正在保存...
+                </Text>
+              )}
 
-            {/* 保存按钮 */}
-            {validationErrors.length > 0 ? (
-              <Tooltip
-                content={
-                  <div>
-                    <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
-                      发现 {validationErrors.length} 个问题：
+              {/* 保存按钮 */}
+              {validationErrors.length > 0 ? (
+                <Tooltip
+                  content={
+                    <div>
+                      <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+                        发现 {validationErrors.length} 个问题：
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: '16px' }}>
+                        {validationErrors.map((error, index) => (
+                          <li key={index} style={{ marginBottom: '4px' }}>
+                            {error}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <ul style={{ margin: 0, paddingLeft: '16px' }}>
-                      {validationErrors.map((error, index) => (
-                        <li key={index} style={{ marginBottom: '4px' }}>
-                          {error}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                }
-                position="bottomLeft"
-              >
-                <Badge count={validationErrors.length} type="danger">
-                  <Button
-                    icon={<IconSave />}
-                    onClick={handleSave}
-                    disabled={!canSave || !isDirty}
-                    loading={isSaving}
-                    type="primary"
-                    size="small"
-                    data-testid="save-behavior-btn"
-                  >
-                    保存
-                  </Button>
-                </Badge>
-              </Tooltip>
-            ) : (
-              <Button
-                icon={<IconSave />}
-                onClick={handleSave}
-                disabled={!canSave || !isDirty}
-                loading={isSaving}
-                type="primary"
-                size="small"
-                data-testid="save-behavior-btn"
-              >
-                保存
-              </Button>
-            )}
+                  }
+                  position="bottomLeft"
+                >
+                  <Badge count={validationErrors.length} type="danger">
+                    <Button
+                      icon={<IconSave />}
+                      onClick={handleSave}
+                      disabled={!canSave || !isDirty}
+                      loading={isSaving}
+                      type="primary"
+                      size="small"
+                      data-testid="save-behavior-btn"
+                    >
+                      保存
+                    </Button>
+                  </Badge>
+                </Tooltip>
+              ) : (
+                <Button
+                  icon={<IconSave />}
+                  onClick={handleSave}
+                  disabled={!canSave || !isDirty}
+                  loading={isSaving}
+                  type="primary"
+                  size="small"
+                  data-testid="save-behavior-btn"
+                >
+                  保存
+                </Button>
+              )}
 
-            {selectedBehavior?._status !== 'new' && (
-              <Button
-                icon={<IconUndo />}
-                onClick={handleUndo}
-                disabled={!isDirty}
-                size="small"
-                data-testid="undo-behavior-btn"
-              >
-                撤销
-              </Button>
-            )}
+              {selectedBehavior?._status !== 'new' && (
+                <Button
+                  icon={<IconUndo />}
+                  onClick={handleUndo}
+                  disabled={!isDirty}
+                  size="small"
+                  data-testid="undo-behavior-btn"
+                >
+                  撤销
+                </Button>
+              )}
 
-            <Popconfirm
-              title="确定删除这个行为吗？"
-              content="删除后将无法恢复"
-              onConfirm={handleDelete}
-            >
-              <Button
-                icon={<IconDelete />}
-                type="danger"
-                theme="borderless"
-                size="small"
-                data-testid="delete-behavior-btn"
+              <Popconfirm
+                title="确定删除这个行为吗？"
+                content="删除后将无法恢复"
+                onConfirm={handleDelete}
               >
-                删除
-              </Button>
-            </Popconfirm>
-          </div>
-        )
+                <Button
+                  icon={<IconDelete />}
+                  type="danger"
+                  theme="borderless"
+                  size="small"
+                  data-testid="delete-behavior-btn"
+                >
+                  删除
+                </Button>
+              </Popconfirm>
+            </>
+          )}
+        </div>
       }
       sidebarContent={
         <DataListSidebar

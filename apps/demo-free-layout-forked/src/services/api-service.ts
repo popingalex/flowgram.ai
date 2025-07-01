@@ -11,6 +11,11 @@ import type {
   ExpressionDef,
   ExpressionCallResult,
   BehaviorParameter,
+  BackendModule,
+  BackendSystem,
+  BackendRemoteBehavior,
+  BackendLocalBehavior,
+  BackendScriptBehavior,
 } from './types';
 import {
   REAL_MODULES,
@@ -98,9 +103,14 @@ const transformBackendBehavior = (backendBehavior: BackendBehaviorDef): Behavior
 
 // API配置
 const API_CONFIG = {
-  BASE_URL: 'http://localhost:9999',
+  BASE_URL: 'http://localhost:8080',
   ENDPOINTS: {
-    MODULE: '/cm/module/',
+    MODULE: '/api/modules',
+    SYSTEM: '/api/systems',
+    BEHAVIOR_REMOTE: '/exp/remote',
+    BEHAVIOR_LOCAL: '/api/behaviors/local',
+    BEHAVIOR_SCRIPT: '/api/behaviors/script',
+    // 保持向后兼容的旧端点
     ENTITY: '/cm/entity/',
     ENUM: '/cm/enum/',
     FUNCTION: '/hub/behaviors/',
@@ -469,7 +479,7 @@ export const moduleApi = {
 
   // 获取单个模块
   getById: (id: string): Promise<Module> => {
-    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.MODULE}${id}/`);
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.MODULE}/${id}`);
     return apiRequest(url);
   },
 
@@ -484,7 +494,7 @@ export const moduleApi = {
 
   // 更新模块
   update: (id: string, updates: Partial<Module>): Promise<Module> => {
-    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.MODULE}${id}/`);
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.MODULE}/${id}`);
     return apiRequest(url, {
       method: 'PUT',
       body: JSON.stringify(updates),
@@ -493,7 +503,7 @@ export const moduleApi = {
 
   // 删除模块
   delete: (id: string): Promise<void> => {
-    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.MODULE}${id}/`);
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.MODULE}/${id}`);
     return apiRequest(url, { method: 'DELETE' });
   },
 };
@@ -580,7 +590,7 @@ export const enumApi = {
 export const behaviorApi = {
   // 获取所有函数行为 - 转换后台数据格式
   getAll: async () => {
-    const rawData = await apiRequest('http://localhost:9999/hub/behaviors/');
+    const rawData = await apiRequest('http://localhost:8080/hub/behaviors/');
     console.log('🔍 [behaviorApi] 原始API数据:', {
       isArray: Array.isArray(rawData),
       length: rawData?.length,
@@ -710,7 +720,7 @@ export const graphApi = {
 export const expressionApi = {
   // 获取所有远程服务
   getAll: async (): Promise<ExpressionDef[]> => {
-    const rawData = await apiRequest('http://localhost:9999/hub/expressions/');
+    const rawData = await apiRequest('http://localhost:8080/hub/expressions/');
     console.log('🔍 [expressionApi] 原始API数据:', {
       isArray: Array.isArray(rawData),
       length: rawData?.length,
@@ -832,5 +842,161 @@ export const expressionApi = {
         timestamp: Date.now(),
       };
     }
+  },
+};
+
+// System相关API
+export const systemApi = {
+  // 获取所有系统
+  getAll: (): Promise<BackendSystem[]> => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.SYSTEM);
+    return apiRequest(url);
+  },
+
+  // 获取单个系统
+  getById: (id: string): Promise<BackendSystem> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.SYSTEM}/${id}`);
+    return apiRequest(url);
+  },
+
+  // 创建系统
+  create: (system: Partial<BackendSystem>): Promise<BackendSystem> => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.SYSTEM);
+    return apiRequest(url, {
+      method: 'POST',
+      body: JSON.stringify(system),
+    });
+  },
+
+  // 更新系统
+  update: (id: string, updates: Partial<BackendSystem>): Promise<BackendSystem> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.SYSTEM}/${id}`);
+    return apiRequest(url, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  // 删除系统
+  delete: (id: string): Promise<void> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.SYSTEM}/${id}`);
+    return apiRequest(url, { method: 'DELETE' });
+  },
+};
+
+// 远程行为相关API
+export const remoteBehaviorApi = {
+  // 获取所有远程行为
+  getAll: (): Promise<BackendRemoteBehavior[]> => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.BEHAVIOR_REMOTE);
+    return apiRequest(url);
+  },
+
+  // 获取单个远程行为
+  getById: (id: string): Promise<BackendRemoteBehavior> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.BEHAVIOR_REMOTE}/${id}`);
+    return apiRequest(url);
+  },
+
+  // 创建远程行为
+  create: (behavior: Partial<BackendRemoteBehavior>): Promise<BackendRemoteBehavior> => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.BEHAVIOR_REMOTE);
+    return apiRequest(url, {
+      method: 'POST',
+      body: JSON.stringify(behavior),
+    });
+  },
+
+  // 更新远程行为
+  update: (id: string, updates: Partial<BackendRemoteBehavior>): Promise<BackendRemoteBehavior> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.BEHAVIOR_REMOTE}/${id}`);
+    return apiRequest(url, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  // 删除远程行为
+  delete: (id: string): Promise<void> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.BEHAVIOR_REMOTE}/${id}`);
+    return apiRequest(url, { method: 'DELETE' });
+  },
+};
+
+// 本地行为相关API
+export const localBehaviorApi = {
+  // 获取所有本地行为
+  getAll: (): Promise<BackendLocalBehavior[]> => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.BEHAVIOR_LOCAL);
+    return apiRequest(url);
+  },
+
+  // 获取单个本地行为
+  getById: (id: string): Promise<BackendLocalBehavior> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.BEHAVIOR_LOCAL}/${id}`);
+    return apiRequest(url);
+  },
+
+  // 创建本地行为
+  create: (behavior: Partial<BackendLocalBehavior>): Promise<BackendLocalBehavior> => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.BEHAVIOR_LOCAL);
+    return apiRequest(url, {
+      method: 'POST',
+      body: JSON.stringify(behavior),
+    });
+  },
+
+  // 更新本地行为
+  update: (id: string, updates: Partial<BackendLocalBehavior>): Promise<BackendLocalBehavior> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.BEHAVIOR_LOCAL}/${id}`);
+    return apiRequest(url, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  // 删除本地行为
+  delete: (id: string): Promise<void> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.BEHAVIOR_LOCAL}/${id}`);
+    return apiRequest(url, { method: 'DELETE' });
+  },
+};
+
+// 脚本行为相关API
+export const scriptBehaviorApi = {
+  // 获取所有脚本行为
+  getAll: (): Promise<BackendScriptBehavior[]> => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.BEHAVIOR_SCRIPT);
+    return apiRequest(url);
+  },
+
+  // 获取单个脚本行为
+  getById: (id: string): Promise<BackendScriptBehavior> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.BEHAVIOR_SCRIPT}/${id}`);
+    return apiRequest(url);
+  },
+
+  // 创建脚本行为
+  create: (behavior: Partial<BackendScriptBehavior>): Promise<BackendScriptBehavior> => {
+    const url = buildApiUrl(API_CONFIG.ENDPOINTS.BEHAVIOR_SCRIPT);
+    return apiRequest(url, {
+      method: 'POST',
+      body: JSON.stringify(behavior),
+    });
+  },
+
+  // 更新脚本行为
+  update: (id: string, updates: Partial<BackendScriptBehavior>): Promise<BackendScriptBehavior> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.BEHAVIOR_SCRIPT}/${id}`);
+    return apiRequest(url, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  // 删除脚本行为
+  delete: (id: string): Promise<void> => {
+    const url = buildApiUrl(`${API_CONFIG.ENDPOINTS.BEHAVIOR_SCRIPT}/${id}`);
+    return apiRequest(url, { method: 'DELETE' });
   },
 };

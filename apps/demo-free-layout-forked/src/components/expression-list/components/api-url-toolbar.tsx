@@ -55,7 +55,7 @@ export const ApiUrlToolbar: React.FC<ApiUrlToolbarProps> = ({
       <Select
         key={componentKeys.method}
         value={currentEditingApi.method || 'POST'}
-        style={{ width: 80 }}
+        style={{ width: 100 }}
         onChange={(value) => handleUpdateApiField('method', value)}
       >
         <Select.Option value="GET">GET</Select.Option>

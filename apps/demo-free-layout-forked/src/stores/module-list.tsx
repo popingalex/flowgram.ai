@@ -140,13 +140,23 @@ export const useModuleStore = create<ModuleStore>()(
             return {
               ...m,
               _indexId: m._indexId || nanoid(),
+              _status: 'saved' as const,
               ...((m as any)._originalId
                 ? { _originalId: (m as any)._originalId }
                 : { _originalId: m.id }), // 🔑 保存原始业务ID用于API调用
+              // 后端可能不返回attributes字段，需要提供默认值
               attributes: (m.attributes || []).map((a) => ({
                 ...a,
                 _indexId: a._indexId || nanoid(),
-                displayId: a.displayId || a.id.split('/').pop() || a.id,
+                _status: 'saved' as const,
+                displayId: a.displayId || (a.id ? a.id.split('/').pop() || a.id : ''),
+              })),
+              // 添加缺失的前端字段
+              desc: m.desc || '',
+              // 🔑 为嵌套模块添加_indexId
+              modules: (m.modules || []).map((nestedModule: any) => ({
+                ...nestedModule,
+                _indexId: nestedModule._indexId || nanoid(),
               })),
             } as Module;
           });

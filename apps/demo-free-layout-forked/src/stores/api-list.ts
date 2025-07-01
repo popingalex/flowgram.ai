@@ -11,7 +11,7 @@ import type {
   ExpressionCallResult,
   BehaviorParameter,
 } from '../services/types';
-import { behaviorApi, expressionApi } from '../services/api-service';
+import { behaviorApi, expressionApi, remoteBehaviorApi } from '../services/api-service';
 
 // 扩展的参数类型，支持编辑状态
 export interface EditableBehaviorParameter extends BehaviorParameter {
@@ -166,16 +166,61 @@ const useExpressionStoreBase = create<ExpressionStore>()(
 
         try {
           // 并行加载行为函数和远程服务
-          const [behaviors, expressions] = await Promise.all([
+          const [behaviors, remoteData] = await Promise.all([
             behaviorApi.getAll(),
-            expressionApi.getAll(),
+            remoteBehaviorApi.getAll(),
           ]);
 
           console.log('🔍 [ExpressionStore] API返回的数据:', {
             behaviorsCount: behaviors.length,
-            expressionsCount: expressions.length,
+            remoteDataCount: remoteData?.length,
             firstBehavior: behaviors[0],
-            firstExpression: expressions[0],
+            firstRemoteData: remoteData?.[0],
+          });
+
+          // 转换远程行为数据为表达式格式
+          const expressions = (remoteData || []).map((item: any) => {
+            // 根据contentType和inputs推断HTTP方法
+            const inferredMethod =
+              item.contentType === 'application/json' && item.inputs?.length > 0 ? 'POST' : 'GET';
+
+            return {
+              id: item.id,
+              name: item.name,
+              description: item.description || item.desc || '',
+              url: item.url || '',
+              method: (item.method || inferredMethod) as
+                | 'GET'
+                | 'POST'
+                | 'PUT'
+                | 'DELETE'
+                | 'PATCH',
+              contentType: item.contentType || 'application/json',
+              inputs: (item.inputs || []).map((input: any) => ({
+                id: input.id,
+                name: input.name || input.id,
+                type: input.type || 'string',
+                description: input.desc || input.description || '',
+                required: input.required || false,
+                value: input.value || input.defaultValue,
+                scope: input.scope || 'body', // 默认为body参数，因为大部分是POST请求
+                _indexId: input._indexId || nanoid(),
+                _status: 'saved' as const,
+              })),
+              output: {
+                id: item.output?.id || 'result',
+                name: item.output?.name || '返回结果',
+                type: item.output?.type || 'any',
+                description: item.output?.desc || item.output?.description || '',
+                _indexId: nanoid(),
+                _status: 'saved' as const,
+              },
+              group: item.group || 'remote',
+              category: '远程服务',
+              deprecated: item.deprecated || false,
+              _indexId: nanoid(),
+              _status: 'saved' as const,
+            };
           });
 
           // 为数据添加稳定的索引ID和类型标记
@@ -255,7 +300,58 @@ const useExpressionStoreBase = create<ExpressionStore>()(
       // 单独加载远程服务
       loadExpressions: async () => {
         try {
-          const expressions = await expressionApi.getAll();
+          const remoteData = await remoteBehaviorApi.getAll();
+          console.log('🔍 [ExpressionStore] 远程行为API返回的原始数据:', {
+            isArray: Array.isArray(remoteData),
+            length: remoteData?.length,
+            firstItem: remoteData?.[0],
+          });
+
+          // 转换远程行为数据为表达式格式
+          const expressions = (remoteData || []).map((item: any) => {
+            // 根据contentType和inputs推断HTTP方法
+            const inferredMethod =
+              item.contentType === 'application/json' && item.inputs?.length > 0 ? 'POST' : 'GET';
+
+            return {
+              id: item.id,
+              name: item.name,
+              description: item.description || item.desc || '',
+              url: item.url || '',
+              method: (item.method || inferredMethod) as
+                | 'GET'
+                | 'POST'
+                | 'PUT'
+                | 'DELETE'
+                | 'PATCH',
+              contentType: item.contentType || 'application/json',
+              inputs: (item.inputs || []).map((input: any) => ({
+                id: input.id,
+                name: input.name || input.id,
+                type: input.type || 'string',
+                description: input.desc || input.description || '',
+                required: input.required || false,
+                value: input.value || input.defaultValue,
+                scope: input.scope || 'body', // 默认为body参数，因为大部分是POST请求
+                _indexId: input._indexId || nanoid(),
+                _status: 'saved' as const,
+              })),
+              output: {
+                id: item.output?.id || 'result',
+                name: item.output?.name || '返回结果',
+                type: item.output?.type || 'any',
+                description: item.output?.desc || item.output?.description || '',
+                _indexId: nanoid(),
+                _status: 'saved' as const,
+              },
+              group: item.group || 'remote',
+              category: '远程服务',
+              deprecated: item.deprecated || false,
+              _indexId: nanoid(),
+              _status: 'saved' as const,
+            };
+          });
+
           set((state) => {
             state.expressions = expressions;
             // 重新合并allItems

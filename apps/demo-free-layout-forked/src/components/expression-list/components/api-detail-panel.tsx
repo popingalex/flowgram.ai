@@ -1,8 +1,28 @@
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 
 import { nanoid } from 'nanoid';
-import { Layout, Typography, Input } from '@douyinfe/semi-ui';
+import {
+  Layout,
+  Typography,
+  Input,
+  Form,
+  Divider,
+  Button,
+  Card,
+  Spin,
+  Tag,
+  Tooltip,
+  Toast,
+} from '@douyinfe/semi-ui';
+import { IconSend, IconRefresh, IconEyeOpened, IconSync } from '@douyinfe/semi-icons';
 
+import { EntityPropertyTypeSelector } from '../../ext/type-selector-ext';
+import { useRemoteApiRequestStore } from '../../../stores/remote-api-request';
+import {
+  useEndpointProbeStore,
+  getStatusColor,
+  getStatusText,
+} from '../../../stores/endpoint-probe';
 import { useCurrentExpression, useCurrentExpressionActions } from '../../../stores/current-api';
 import { useExpressionStore } from '../../../stores/api-list';
 import { useRouter } from '../../../hooks/use-router';
@@ -21,6 +41,13 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
   const currentExpression = useCurrentExpression();
   const currentExpressionActions = useCurrentExpressionActions();
   const { routeState } = useRouter();
+
+  // 远程API请求和端点探查stores
+  const remoteApiRequest = useRemoteApiRequestStore();
+  const endpointProbe = useEndpointProbeStore();
+
+  // 本地状态
+  const [requestParameters, setRequestParameters] = useState<Record<string, any>>({});
 
   // 🎯 创建新API的默认数据
   const newApiTemplate = useMemo(() => {
@@ -91,7 +118,32 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
       const originalApi = expressionStore.allItems.find((item) => item.id === selectedExpressionId);
       if (originalApi) {
         console.log('🔍 [ApiDetailPanel] 设置当前编辑表达式:', selectedExpressionId);
-        currentExpressionActions.selectExpression(originalApi);
+
+        // 确保参数和输出都有 _indexId
+        const processedApi = {
+          ...originalApi,
+          inputs: (originalApi.inputs || []).map((input) => ({
+            ...input,
+            _indexId: input._indexId || nanoid(),
+          })),
+          output: originalApi.output
+            ? {
+                ...originalApi.output,
+                _indexId: originalApi.output._indexId || nanoid(),
+              }
+            : {
+                // 提供默认的output，确保符合BaseAttribute类型
+                _indexId: nanoid(),
+                id: 'result',
+                name: '返回结果',
+                type: 'u',
+                desc: 'API调用返回的结果',
+                required: false,
+                _status: 'saved' as const,
+              },
+        };
+
+        currentExpressionActions.selectExpression(processedApi);
       }
     } else {
       // 清空选择
@@ -134,6 +186,7 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
       // 🔧 修复大小写
       console.log('🔍 [ApiDetailPanel] 添加参数:', scope);
       const newParameter = {
+        _indexId: nanoid(), // 添加 _indexId
         id: `param${(editingApi?.inputs?.length || 0) + 1}`, // ✅ 添加id字段
         name: `参数${(editingApi?.inputs?.length || 0) + 1}`, // ✅ 中文名称
         type: 's', // ✅ 使用简化类型
@@ -156,6 +209,72 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
     [currentExpressionActions]
   );
 
+  // 🎯 收集参数值
+  const collectParameters = useCallback(() => {
+    if (!editingApi?.inputs) return {};
+
+    const params: Record<string, any> = {};
+    editingApi.inputs.forEach((input) => {
+      if (input.value !== undefined && input.value !== '') {
+        params[input.id] = input.value;
+      }
+    });
+
+    // 合并手动设置的参数
+    return { ...params, ...requestParameters };
+  }, [editingApi?.inputs, requestParameters]);
+
+  // 🎯 发送API请求
+  const handleSendRequest = useCallback(async () => {
+    if (!editingApi?.id) {
+      console.warn('没有选择API');
+      return;
+    }
+
+    try {
+      const parameters = collectParameters();
+      console.log('🚀 [ApiDetailPanel] 发送请求:', { apiId: editingApi.id, parameters });
+
+      await remoteApiRequest.sendRequest(editingApi.id, parameters);
+    } catch (error) {
+      console.error('发送请求失败:', error);
+    }
+  }, [editingApi?.id, collectParameters, remoteApiRequest]);
+
+  // 🎯 测试连接
+  const handleTestConnection = useCallback(async () => {
+    if (!editingApi?.id) {
+      console.warn('没有选择API');
+      return;
+    }
+
+    try {
+      console.log('🔗 [ApiDetailPanel] 测试连接:', editingApi.id);
+      await remoteApiRequest.testConnection(editingApi.id);
+    } catch (error) {
+      console.error('连接测试失败:', error);
+    }
+  }, [editingApi?.id, remoteApiRequest]);
+
+  // 🎯 获取端点状态
+  const endpointStatus = useMemo(() => {
+    if (!editingApi?.url) return null;
+
+    try {
+      const url = new URL(editingApi.url);
+      const endpoint = `${url.hostname}:${url.port || (url.protocol === 'https:' ? 443 : 80)}`;
+      return endpointProbe.getEndpointStatus(endpoint);
+    } catch {
+      return null;
+    }
+  }, [editingApi?.url, endpointProbe]);
+
+  // 🎯 启动端点探查轮询
+  useEffect(() => {
+    endpointProbe.startPolling();
+    return () => endpointProbe.stopPolling();
+  }, []); // 移除依赖项，只在组件挂载时执行一次
+
   return (
     <Content style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {editingApi ? (
@@ -169,18 +288,28 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ width: '80px', fontWeight: 600, marginRight: '12px' }}>API ID</div>
+            <Form.Label text="接口" width={80} align="right" />
             <Input
               value={editingApi.id || ''}
               onChange={(value) => handleFieldChange('id', value)}
-              placeholder="API ID"
-              style={{ fontFamily: 'monospace', flex: 1 }}
+              placeholder="ID"
+              style={{ fontFamily: 'monospace', flex: 1, marginLeft: '12px' }}
             />
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div style={{ width: '80px', fontWeight: 600, marginRight: '12px' }}>URL</div>
-            <div style={{ flex: 1 }}>
+            <Form.Label text="名称" width={80} align="right" />
+            <Input
+              value={editingApi.name || ''}
+              onChange={(value) => handleFieldChange('name', value)}
+              placeholder="API名称"
+              style={{ flex: 1, marginLeft: '12px' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Form.Label text="URL" width={80} align="right" />
+            <div style={{ flex: 1, marginLeft: '12px' }}>
               <ApiUrlToolbar
                 currentEditingApi={editingApi}
                 hasUnsavedChanges={currentExpression.isDirty}
@@ -199,6 +328,131 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
               onDeleteParameter={handleDeleteParameter}
             />
           </div>
+
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <Form.Label text="返回类型" width={80} align="right" />
+            <div style={{ flex: 1, marginLeft: '12px' }}>
+              <EntityPropertyTypeSelector
+                value={{
+                  type: editingApi.output?.type || 'u',
+                  ...(editingApi.output?.enumClassId && {
+                    enumClassId: editingApi.output.enumClassId,
+                  }),
+                }}
+                onChange={(typeInfo: any) => {
+                  console.log('🔍 [ApiDetailPanel] 返回类型变更:', typeInfo);
+                  // 使用通用的 updateProperty 方法更新 output 对象
+                  const updatedOutput = {
+                    ...editingApi.output,
+                    type: typeInfo.type,
+                    ...(typeInfo.enumClassId
+                      ? { enumClassId: typeInfo.enumClassId }
+                      : { enumClassId: undefined }),
+                  };
+                  handleFieldChange('output', updatedOutput);
+                }}
+                disabled={false}
+              />
+            </div>
+          </div>
+
+          <Divider margin="16px" />
+
+          {/* 请求发送区域 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Form.Label text="API测试" width={80} align="right" />
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Button
+                icon={<IconSend />}
+                onClick={handleSendRequest}
+                loading={remoteApiRequest.loading}
+                disabled={!editingApi.url}
+                type="primary"
+              >
+                发送请求
+              </Button>
+
+              <Button
+                icon={<IconRefresh />}
+                onClick={handleTestConnection}
+                loading={remoteApiRequest.loading}
+                disabled={!editingApi.url}
+              >
+                测试连接
+              </Button>
+
+              {/* 端点状态指示器 */}
+              {endpointStatus && (
+                <Tooltip
+                  content={
+                    <div>
+                      <div>状态: {getStatusText(endpointStatus.status)}</div>
+                      <div>最近探查: {new Date(endpointStatus.lastProbeTime).toLocaleString()}</div>
+                      {endpointStatus.responseTimeMs && (
+                        <div>响应时间: {endpointStatus.responseTimeMs}ms</div>
+                      )}
+                      {endpointStatus.errorMessage && (
+                        <div>错误: {endpointStatus.errorMessage}</div>
+                      )}
+                    </div>
+                  }
+                >
+                  <div
+                    style={{
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      backgroundColor: getStatusColor(endpointStatus.status),
+                      border: '2px solid #fff',
+                      boxShadow: '0 0 4px rgba(0,0,0,0.3)',
+                    }}
+                  />
+                </Tooltip>
+              )}
+            </div>
+          </div>
+
+          {/* 响应结果展示 */}
+          <div style={{ padding: '16px', borderBottom: '1px solid var(--semi-color-border)' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+              <Form.Label text="响应结果" width={80} align="right" />
+              <div style={{ flex: 1, marginLeft: '12px' }}>
+                {remoteApiRequest.currentResponse ? (
+                  <div>
+                    <div style={{ marginBottom: '8px', fontSize: '12px', color: '#666' }}>
+                      状态: {remoteApiRequest.currentResponse.statusCode}{' '}
+                      {remoteApiRequest.currentResponse.statusText} | 耗时:{' '}
+                      {remoteApiRequest.currentResponse.responseTimeMs}ms | 时间:{' '}
+                      {new Date(remoteApiRequest.currentResponse.requestTime).toLocaleString()}
+                    </div>
+                    <pre
+                      style={{
+                        background: '#f6f8fa',
+                        padding: '12px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        maxHeight: '300px',
+                        overflow: 'auto',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {JSON.stringify(remoteApiRequest.currentResponse.body, null, 2)}
+                    </pre>
+                  </div>
+                ) : (
+                  <div style={{ color: '#999', fontStyle: 'italic' }}>点击发送请求按钮测试API</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 错误信息显示 */}
+          {remoteApiRequest.error && (
+            <Card title="错误信息" style={{ marginTop: '16px', borderColor: '#ff4d4f' }}>
+              <Text type="danger">{remoteApiRequest.error}</Text>
+            </Card>
+          )}
         </div>
       ) : (
         <div
