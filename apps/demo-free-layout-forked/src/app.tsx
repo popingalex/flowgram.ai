@@ -52,6 +52,7 @@ import { Editor } from './editor';
 import { TestNewArchitecture } from './components/test-new-architecture';
 // import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
 // import { IndexedStoreTest } from './components/test/indexed-store-test'; // 已移除
+import { SystemManagementPage } from './components/system-management';
 import { ModuleManagementPage } from './components/module-management';
 import { EnumStoreProvider } from './components/ext/type-selector-ext/enum-store';
 import { ExpressionListPage } from './components/expression-list';
@@ -519,6 +520,7 @@ const AppContent: React.FC = () => {
   // 主要导航项
   const mainNavItems = React.useMemo(
     () => [
+      { itemKey: 'entities', text: '实体管理', link: '/entities' },
       { itemKey: 'module', text: '模块管理', link: '/module' },
       { itemKey: 'system', text: '系统管理', link: '/system' },
       {
@@ -630,7 +632,7 @@ const AppContent: React.FC = () => {
         return <div>属性测试页面</div>;
       // 兼容旧路由
       case 'entities':
-        return <ModuleManagementPage />;
+        return <EntityManagementPage />;
       case 'behavior':
         return <BehaviorEditor />;
       default:
@@ -656,7 +658,7 @@ const AppContent: React.FC = () => {
           onClick={handleNavClick}
           header={{
             logo: <IconBranch style={{ fontSize: 36 }} />,
-            text: 'Flowgram 流程设计器',
+            text: '推演内容管理',
           }}
           footer={
             <Space>

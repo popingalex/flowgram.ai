@@ -11,6 +11,7 @@ import {
   Tooltip,
   Modal,
   TextArea,
+  Badge,
 } from '@douyinfe/semi-ui';
 import { IconPlus, IconDelete, IconInfoCircle } from '@douyinfe/semi-icons';
 
@@ -30,6 +31,8 @@ const { Text } = Typography;
 
 interface BehaviorDetailProps {
   selectedBehavior: SystemBehavior | null;
+  isSystemMode?: boolean;
+  systemData?: any;
 }
 
 // 扩展的参数类型，包含过滤配置
@@ -49,10 +52,17 @@ interface ExtendedBehaviorParameter extends BehaviorParameter {
   type?: string; // 参数类型（自定义参数）
 }
 
-export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior }) => {
+export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({
+  selectedBehavior,
+  isSystemMode,
+  systemData,
+}) => {
   const { editingBehavior } = useSystemBehaviorEdit();
   const { updateEditingBehavior, updateCodeConfig } = useSystemBehaviorActions();
   const { modules } = useModuleStore();
+
+  // 🔑 修复：在系统管理模式下，使用selectedBehavior作为数据源
+  const displayBehavior = editingBehavior || selectedBehavior;
 
   // 🔑 修复：所有Hooks必须在早期返回之前调用
   const [descriptionModalVisible, setDescriptionModalVisible] = useState(false);
@@ -126,22 +136,22 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
 
   // 🔑 获取实际显示的代码类型（优先使用智能推断）
   const actualCodeType = useMemo(() => {
-    if (!editingBehavior?.exp) return editingBehavior?.codeConfig?.type || CodeType.LOCAL;
-    return getInferredCodeType(editingBehavior.exp);
-  }, [editingBehavior?.exp, editingBehavior?.codeConfig?.type, getInferredCodeType]);
+    if (!displayBehavior?.exp) return displayBehavior?.codeConfig?.type || CodeType.LOCAL;
+    return getInferredCodeType(displayBehavior.exp);
+  }, [displayBehavior?.exp, displayBehavior?.codeConfig?.type, getInferredCodeType]);
 
   // 🔑 计算是否为自定义代码模式
   const isCustomCode = actualCodeType === CodeType.CUSTOM;
 
   // 🎯 获取选中函数的参数信息
   const selectedFunctionParams = useMemo(() => {
-    if (!editingBehavior?.codeConfig?.functionId) {
+    if (!displayBehavior?.codeConfig?.functionId) {
       console.log('🔍 [selectedFunctionParams] 没有选中函数ID');
       return [];
     }
 
     let selectedFunction: any = null;
-    const config = editingBehavior.codeConfig;
+    const config = displayBehavior.codeConfig;
     console.log('🔍 [selectedFunctionParams] 查找函数参数:', {
       functionId: config.functionId,
       type: config.type,
@@ -190,17 +200,17 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
     }
 
     return [];
-  }, [editingBehavior?.codeConfig, expressions, expressionStoreBehaviors, localBehaviors]);
+  }, [displayBehavior?.codeConfig, expressions, expressionStoreBehaviors, localBehaviors]);
 
   // 🎯 构建参数表格数据
   const parameterTableData = useMemo(() => {
-    if (!editingBehavior) return [];
+    if (!displayBehavior) return [];
 
-    const config = editingBehavior.codeConfig;
+    const config = displayBehavior.codeConfig;
 
     if (isCustomCode) {
       // 自定义代码：使用用户定义的参数
-      return (editingBehavior.parameters || []).map((param) => ({
+      return (displayBehavior.parameters || []).map((param) => ({
         ...param,
         key: param._indexId,
         editable: true, // 可编辑
@@ -211,7 +221,7 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
       // API/本地函数：使用函数定义的参数
       return selectedFunctionParams.map((funcParam: any) => {
         // 查找对应的行为参数（用于获取过滤器配置）
-        const behaviorParam = editingBehavior.parameters?.find(
+        const behaviorParam = displayBehavior.parameters?.find(
           (p) => p.name === funcParam.id || p.name === funcParam.name
         );
 
@@ -239,7 +249,7 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
         } as ExtendedBehaviorParameter;
       });
     }
-  }, [editingBehavior, selectedFunctionParams]);
+  }, [displayBehavior, selectedFunctionParams, isCustomCode]);
 
   // 🎯 处理函数类型变更
   const handleCodeTypeChange = useCallback(
@@ -616,43 +626,18 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
     handleDeleteCustomParameter,
   ]);
 
-  // 🔑 修复：早期返回必须在所有Hooks之后
-  if (!editingBehavior) {
-    return (
-      <div
-        style={{
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'var(--semi-color-text-2)',
-        }}
-      >
-        请选择左侧行为查看详情
-      </div>
-    );
-  }
-
-  if (!selectedBehavior) {
-    return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <Text type="tertiary">请选择左侧行为查看详情</Text>
-      </div>
-    );
-  }
-
-  if (!editingBehavior) {
+  if (!displayBehavior) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
         <Spin size="large" />
         <div style={{ marginTop: '16px' }}>
-          <Text type="tertiary">加载行为数据...</Text>
+          <Text type="tertiary">加载数据...</Text>
         </div>
       </div>
     );
   }
 
-  const hasFunction = editingBehavior?.codeConfig?.functionId;
+  const hasFunction = displayBehavior?.codeConfig?.functionId;
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -669,7 +654,7 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <Form.Label text="行为" required width={80} align="right" />
           <Input
-            value={editingBehavior.id}
+            value={displayBehavior.id}
             onChange={(value) => updateField('id', value)}
             placeholder="行为ID"
             style={{ flex: 1, marginLeft: '12px' }}
@@ -680,7 +665,7 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <Form.Label text="名称" width={80} align="right" />
           <Input
-            value={editingBehavior.name}
+            value={displayBehavior.name}
             onChange={(value) => updateField('name', value)}
             placeholder="行为名称"
             style={{ flex: 1, marginLeft: '12px' }}
@@ -691,7 +676,7 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <Form.Label text="描述" width={80} align="right" />
           <Input
-            value={editingBehavior.description || ''}
+            value={displayBehavior.description || ''}
             onChange={(value) => updateField('description', value)}
             placeholder="行为描述"
             style={{ flex: 1, marginLeft: '12px' }}
@@ -730,18 +715,140 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
               <div style={{ flex: 1 }}>
                 <FunctionSelector
                   type={actualCodeType === CodeType.LOCAL ? 'local_function' : 'remote_service'}
-                  value={editingBehavior.codeConfig?.functionId || ''}
+                  value={displayBehavior.codeConfig?.functionId || ''}
                   onChange={handleFunctionChange}
                 />
               </div>
-              {editingBehavior.codeConfig?.functionId && (
+              {displayBehavior.codeConfig?.functionId && (
                 <Text
-                  link={{ href: `/expressions/${editingBehavior.codeConfig.functionId}/` }}
+                  link={{ href: `/expressions/${displayBehavior.codeConfig.functionId}/` }}
                   size="small"
                 >
                   查看详情
                 </Text>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* 系统参与者信息 - 仅在系统管理模式下显示 */}
+        {isSystemMode && systemData?.participants && (
+          <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+            <Form.Label text="系统参与者" width={80} align="right" />
+            <div style={{ flex: 1, marginLeft: '12px' }}>
+              <div style={{ marginBottom: '8px' }}>
+                <Text type="secondary" size="small">
+                  该系统关联的ECS组件（基于源码分析）
+                </Text>
+              </div>
+              <div
+                style={{
+                  border: '1px solid var(--semi-color-border)',
+                  borderRadius: '4px',
+                  overflow: 'hidden',
+                }}
+              >
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead style={{ backgroundColor: 'var(--semi-color-fill-0)' }}>
+                    <tr>
+                      <th
+                        style={{
+                          padding: '8px 12px',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--semi-color-border)',
+                        }}
+                      >
+                        组件ID
+                      </th>
+                      <th
+                        style={{
+                          padding: '8px 12px',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--semi-color-border)',
+                        }}
+                      >
+                        组件名称
+                      </th>
+                      <th
+                        style={{
+                          padding: '8px 12px',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--semi-color-border)',
+                        }}
+                      >
+                        参与类型
+                      </th>
+                      <th
+                        style={{
+                          padding: '8px 12px',
+                          textAlign: 'left',
+                          borderBottom: '1px solid var(--semi-color-border)',
+                        }}
+                      >
+                        描述
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {systemData.participants.map((participant: any, index: number) => (
+                      <tr
+                        key={participant.id}
+                        style={{
+                          backgroundColor:
+                            index % 2 === 0 ? 'transparent' : 'var(--semi-color-fill-0)',
+                        }}
+                      >
+                        <td
+                          style={{
+                            padding: '8px 12px',
+                            borderBottom: '1px solid var(--semi-color-border)',
+                          }}
+                        >
+                          <Text code size="small">
+                            {participant.id}
+                          </Text>
+                        </td>
+                        <td
+                          style={{
+                            padding: '8px 12px',
+                            borderBottom: '1px solid var(--semi-color-border)',
+                          }}
+                        >
+                          <Text>{participant.name}</Text>
+                        </td>
+                        <td
+                          style={{
+                            padding: '8px 12px',
+                            borderBottom: '1px solid var(--semi-color-border)',
+                          }}
+                        >
+                          <Badge
+                            count={participant.type}
+                            type={
+                              participant.type === 'required'
+                                ? 'danger'
+                                : participant.type === 'optional'
+                                ? 'warning'
+                                : 'secondary'
+                            }
+                            size="small"
+                          />
+                        </td>
+                        <td
+                          style={{
+                            padding: '8px 12px',
+                            borderBottom: '1px solid var(--semi-color-border)',
+                          }}
+                        >
+                          <Text type="tertiary" size="small">
+                            {participant.description}
+                          </Text>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -818,10 +925,10 @@ export const BehaviorDetail: React.FC<BehaviorDetailProps> = ({ selectedBehavior
               <CodeEditor
                 value={getCodeWithUpdateFunction()}
                 onChange={handleCodeChange}
-                language={editingBehavior.codeConfig?.language || CodeLanguage.JAVASCRIPT}
+                language={displayBehavior.codeConfig?.language || CodeLanguage.JAVASCRIPT}
                 onLanguageChange={(language) => {
                   const newConfig = {
-                    ...editingBehavior.codeConfig,
+                    ...displayBehavior.codeConfig,
                     language,
                   };
                   updateField('codeConfig', newConfig);

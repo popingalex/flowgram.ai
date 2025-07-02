@@ -64,8 +64,8 @@ interface EndpointProbeState {
 }
 
 // API服务配置
-const API_BASE_URL = 'http://localhost:8080/api/endpoint-monitoring';
-const POLL_INTERVAL = 30000; // 30秒轮询一次
+const API_BASE_URL = 'http://192.168.239.7:8080/api/endpoint-monitoring';
+const POLL_INTERVAL = 120000; // 2分钟轮询一次 (120秒)
 
 let pollTimer: NodeJS.Timeout | null = null;
 
@@ -231,7 +231,7 @@ export const useEndpointProbeStore = create<EndpointProbeState>()(
         fetchKumaStatus();
       }, POLL_INTERVAL);
 
-      console.log('🔍 [EndpointProbeStore] 开始轮询Kuma状态，间隔 %d 秒', POLL_INTERVAL / 1000);
+      console.log('🔍 [EndpointProbeStore] 开始轮询Kuma状态，间隔 %d 分钟', POLL_INTERVAL / 60000);
     },
 
     // 停止轮询
@@ -239,8 +239,8 @@ export const useEndpointProbeStore = create<EndpointProbeState>()(
       if (pollTimer) {
         clearInterval(pollTimer);
         pollTimer = null;
-        console.log('🔍 [EndpointProbeStore] 停止轮询');
       }
+      console.log('🔍 [EndpointProbeStore] 停止轮询');
     },
 
     // 重置状态
@@ -288,4 +288,105 @@ export const getStatusText = (status: ProbeStatus): string => {
     default:
       return '未知';
   }
+};
+
+// 模拟监控数据 - 按分组组织
+const mockMonitoringData = {
+  // Java服务器分组
+  'java-servers': [
+    {
+      endpoint: '10.3.10.73:8080',
+      name: '@autopingjava-server-1',
+      status: 'down' as EndpointStatus,
+      lastProbeTime: Date.now() - 5000,
+      responseTimeMs: null,
+      errorMessage: '连接超时',
+      monitorId: 'java-server-1',
+      group: 'Java服务器',
+      uptime: '0%',
+    },
+    {
+      endpoint: '10.3.7.139:8080',
+      name: '@autopingjava-server-2',
+      status: 'up' as EndpointStatus,
+      lastProbeTime: Date.now() - 2000,
+      responseTimeMs: 145,
+      errorMessage: null,
+      monitorId: 'java-server-2',
+      group: 'Java服务器',
+      uptime: '100%',
+    },
+    {
+      endpoint: '10.3.9.138:8080',
+      name: '@autopingjava-server-3',
+      status: 'down' as EndpointStatus,
+      lastProbeTime: Date.now() - 3000,
+      responseTimeMs: null,
+      errorMessage: '服务不可用',
+      monitorId: 'java-server-3',
+      group: 'Java服务器',
+      uptime: '0%',
+    },
+    {
+      endpoint: '10.3.9.34:8080',
+      name: '@autopingjava-server-4',
+      status: 'down' as EndpointStatus,
+      lastProbeTime: Date.now() - 4000,
+      responseTimeMs: null,
+      errorMessage: '连接被拒绝',
+      monitorId: 'java-server-4',
+      group: 'Java服务器',
+      uptime: '0%',
+    },
+    {
+      endpoint: '120.52.31.31:8080',
+      name: '@autopingjava-external',
+      status: 'down' as EndpointStatus,
+      lastProbeTime: Date.now() - 6000,
+      responseTimeMs: null,
+      errorMessage: '网络不可达',
+      monitorId: 'java-external',
+      group: 'Java服务器',
+      uptime: '0%',
+    },
+  ],
+
+  // 通用服务分组
+  'common-services': [
+    {
+      endpoint: 'safety-common:8080',
+      name: 'safety-common',
+      status: 'up' as EndpointStatus,
+      lastProbeTime: Date.now() - 1000,
+      responseTimeMs: 89,
+      errorMessage: null,
+      monitorId: 'safety-common',
+      group: '通用服务',
+      uptime: '100%',
+    },
+    {
+      endpoint: 'simple-port:3000',
+      name: 'simple port',
+      status: 'up' as EndpointStatus,
+      lastProbeTime: Date.now() - 1500,
+      responseTimeMs: 56,
+      errorMessage: null,
+      monitorId: 'simple-port',
+      group: '通用服务',
+      uptime: '100%',
+      tags: ['common'],
+    },
+    {
+      endpoint: 'simple-local:8080',
+      name: 'simple-local',
+      status: 'up' as EndpointStatus,
+      lastProbeTime: Date.now() - 2000,
+      responseTimeMs: 78,
+      errorMessage: null,
+      monitorId: 'simple-local',
+      group: '通用服务',
+      uptime: '100%',
+      tags: ['common'],
+    },
+  ],
 };

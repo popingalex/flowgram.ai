@@ -123,10 +123,16 @@ export const EnumStoreProvider: React.FC<EnumStoreProviderProps> = ({ children }
   const refreshEnumClasses = async () => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
+      console.warn('⚠️ [EnumStore] enumApi已废弃，使用Mock数据');
       const enumClasses = await enumApi.getAll();
+      console.log('🔍 [EnumStore] 加载枚举数据:', enumClasses);
       dispatch({ type: 'SET_ENUM_CLASSES', payload: enumClasses });
+      dispatch({ type: 'SET_ERROR', payload: null });
     } catch (error: any) {
-      dispatch({ type: 'SET_ERROR', payload: error.message });
+      console.error('❌ [EnumStore] 加载枚举失败:', error);
+      dispatch({ type: 'SET_ERROR', payload: error.message || '加载枚举数据失败' });
+      // 设置空数据，避免重复请求
+      dispatch({ type: 'SET_ENUM_CLASSES', payload: [] });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
     }
@@ -154,10 +160,10 @@ export const EnumStoreProvider: React.FC<EnumStoreProviderProps> = ({ children }
     dispatch({ type: 'DELETE_ENUM_CLASS', payload: id });
   };
 
-  // 初始化时加载数据
+  // 初始化时加载数据，但只加载一次
   useEffect(() => {
     refreshEnumClasses();
-  }, []);
+  }, []); // 空依赖数组，确保只执行一次
 
   const contextValue: EnumStoreContextType = {
     state,

@@ -3,7 +3,7 @@ import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Tree, Typography, Tag, Button, Tooltip, Input } from '@douyinfe/semi-ui';
 import { IconFolder, IconDelete, IconSearch, IconPlus } from '@douyinfe/semi-icons';
 
-import { useEndpointProbeStore, getStatusColor, getStatusText } from '../../stores/endpoint-probe';
+import { EndpointHealthStatus } from './endpoint-health-status';
 
 const { Text } = Typography;
 
@@ -99,23 +99,28 @@ const createApiLabel = (
   exp: any,
   handleApiClick: (expressionId: string, event: React.MouseEvent) => void,
   getMethodColor: (method: string) => 'blue' | 'green' | 'orange' | 'red' | 'purple' | 'grey',
-  onDeleteExpression: (expressionId: string) => void,
-  endpointProbe: any
+  onDeleteExpression: (expressionId: string) => void
 ) => {
-  // 获取端点状态
-  const getEndpointStatus = () => {
-    if (!exp.url) return null;
+  // 提取endpoint信息
+  const getEndpoint = () => {
+    if (!exp.url) {
+      console.log('🔍 [ApiTreeManager] 没有URL:', exp.id);
+      return null;
+    }
 
     try {
       const url = new URL(exp.url);
-      const endpoint = `${url.hostname}:${url.port || (url.protocol === 'https:' ? 443 : 80)}`;
-      return endpointProbe.getEndpointStatus(endpoint);
-    } catch {
+      const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+      const endpoint = `${url.hostname}:${port}`;
+      console.log('🔍 [ApiTreeManager] 解析endpoint:', exp.id, exp.url, '->', endpoint);
+      return endpoint;
+    } catch (error) {
+      console.log('🔍 [ApiTreeManager] URL解析失败:', exp.id, exp.url, error);
       return null;
     }
   };
 
-  const endpointStatus = getEndpointStatus();
+  const endpoint = getEndpoint();
 
   return (
     <div
@@ -194,32 +199,8 @@ const createApiLabel = (
           flexShrink: 0,
         }}
       >
-        {/* 端点状态指示器 */}
-        {endpointStatus && (
-          <Tooltip
-            content={
-              <div>
-                <div>端点状态: {getStatusText(endpointStatus.status)}</div>
-                <div>最近探查: {new Date(endpointStatus.lastProbeTime).toLocaleString()}</div>
-                {endpointStatus.responseTimeMs && (
-                  <div>响应时间: {endpointStatus.responseTimeMs}ms</div>
-                )}
-                {endpointStatus.errorMessage && <div>错误: {endpointStatus.errorMessage}</div>}
-              </div>
-            }
-          >
-            <div
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: getStatusColor(endpointStatus.status),
-                border: '1px solid #fff',
-                boxShadow: '0 0 2px rgba(0,0,0,0.3)',
-              }}
-            />
-          </Tooltip>
-        )}
+        {/* 端点健康状况 */}
+        <EndpointHealthStatus endpoint={endpoint || undefined} mode="compact" />
 
         <Button
           icon={<IconDelete />}
@@ -252,15 +233,6 @@ export const ApiTreeManager: React.FC<ApiTreeManagerProps> = ({
   onReorderApi,
 }) => {
   const [searchText, setSearchText] = useState('');
-
-  // 使用端点探查store
-  const endpointProbe = useEndpointProbeStore();
-
-  // 启动端点探查轮询
-  useEffect(() => {
-    endpointProbe.startPolling();
-    return () => endpointProbe.stopPolling();
-  }, []); // 移除依赖项，只在组件挂载时执行一次
 
   // 拖拽处理函数
   const onDrop = (info: any) => {
@@ -428,13 +400,7 @@ export const ApiTreeManager: React.FC<ApiTreeManagerProps> = ({
         children: groupApis.map((exp) => ({
           key: `api-${exp.id}`,
           value: exp.id,
-          label: createApiLabel(
-            exp,
-            handleApiClick,
-            getMethodColor,
-            onDeleteExpression!,
-            endpointProbe
-          ),
+          label: createApiLabel(exp, handleApiClick, getMethodColor, onDeleteExpression!),
         })),
       });
 
@@ -454,13 +420,7 @@ export const ApiTreeManager: React.FC<ApiTreeManagerProps> = ({
         children: groupApis.map((exp) => ({
           key: `api-${exp.id}`,
           value: exp.id,
-          label: createApiLabel(
-            exp,
-            handleApiClick,
-            getMethodColor,
-            onDeleteExpression!,
-            endpointProbe
-          ),
+          label: createApiLabel(exp, handleApiClick, getMethodColor, onDeleteExpression!),
         })),
       });
     });

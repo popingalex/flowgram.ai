@@ -158,13 +158,16 @@ export const ModuleManagementPage: React.FC = () => {
     // 为每个模块添加统计信息字段，以适配默认渲染器
     return baseModules.map((module) => {
       const stats = moduleStats[module.id] || { entityCount: 0, moduleCount: 0 };
-      const attributeCount = module.attributes?.length || 0;
+
+      // 🔑 为模块添加关联实体信息，用于在DataListSidebar中显示"实：实体名"标签
+      const relatedEntities = entities
+        .filter((entity) => entity.bundles?.includes(module.id))
+        .map((entity) => entity.id);
 
       return {
         ...module,
-        // 重新映射字段以适配默认渲染器的统计显示
-        // bundles字段用于显示"实：X"标签（实体数量）或"模：X"标签（模块数量）
-        bundles: stats.moduleCount > 0 ? Array(stats.moduleCount).fill('module') : undefined,
+        // 🔑 设置关联的实体ID列表，DataListSidebar会根据这个显示"实：实体名"标签
+        bundles: relatedEntities,
         // attributes字段保持原样用于显示"属：Y"标签（属性数量）
         attributes: module.attributes || [],
       };
@@ -417,6 +420,7 @@ export const ModuleManagementPage: React.FC = () => {
           onAdd={handleAddModule}
           onRefresh={handleRefresh}
           emptyText="暂无模块"
+          entities={entities}
           testId="module-sidebar"
         />
       }

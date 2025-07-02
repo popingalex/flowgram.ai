@@ -54,6 +54,14 @@ export type ExpressionItem =
   | (BaseExpression & { type: 'behavior' })
   | (BaseExpression & { type: 'expression' });
 
+// 系统参与者接口 - 表示ECS系统关联的组件
+export interface SystemParticipant {
+  id: string; // 组件ID，如 "AgentComponent"
+  name: string; // 组件显示名称，如 "智能体组件"
+  type: 'required' | 'optional' | 'query'; // 参与类型
+  description?: string; // 组件描述
+}
+
 // 新的后端API数据结构
 export interface BackendModule {
   id: string;
@@ -69,6 +77,7 @@ export interface BackendSystem {
   version: string;
   enabled: boolean;
   deprecated: boolean;
+  participants?: SystemParticipant[]; // 新增：系统参与者（关联的组件）
   // 其他字段根据实际API返回添加
 }
 

@@ -62,6 +62,15 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
       return { route: 'system' };
     }
 
+    // 匹配 system/{systemId} hash路径
+    const systemHashMatch = hashPath.match(/^system\/([^/]+)\/?$/);
+    if (systemHashMatch) {
+      return {
+        route: 'system',
+        entityId: systemHashMatch[1],
+      };
+    }
+
     if (hashPath === 'behavior/remote') {
       return { route: 'behavior-remote' };
     }
@@ -156,6 +165,15 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
 
   if (path === 'system') {
     return { route: 'system' };
+  }
+
+  // 匹配 system/{systemId}
+  const systemDetailMatch = path.match(/^system\/([^/]+)\/?$/);
+  if (systemDetailMatch) {
+    return {
+      route: 'system',
+      entityId: systemDetailMatch[1], // 复用entityId字段存储systemId
+    };
   }
 
   if (path === 'behavior/remote') {

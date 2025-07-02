@@ -355,7 +355,7 @@ export const ApiSidebar: React.FC<ApiSidebarProps> = ({
         </div>
       </Sider>
 
-      {/* 右侧API详情 */}
+      {/* 右侧内容区域 */}
       <Content>
         <ApiDetailPanel selectedExpressionId={selectedApiId} />
       </Content>

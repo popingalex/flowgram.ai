@@ -139,11 +139,10 @@ export const ModuleDetail: React.FC<ModuleDetailProps> = ({
         module.name?.toLowerCase().includes(searchLower);
 
       // 属性匹配
-      const attributeMatch = module.children?.some(
-        (attr: any) =>
-          attr.id?.toLowerCase().includes(searchLower) ||
-          attr.name?.toLowerCase().includes(searchLower) ||
-          attr.type?.toLowerCase().includes(searchLower)
+      const attributeMatch = module.children?.some((attr: any) =>
+        attr.id?.toLowerCase().includes(searchLower) ||
+        attr.name?.toLowerCase().includes(searchLower) ||
+        attr.type?.toLowerCase().includes(searchLower)
       );
 
       return moduleMatch || attributeMatch;
@@ -166,7 +165,7 @@ export const ModuleDetail: React.FC<ModuleDetailProps> = ({
       selectedModuleIds,
       selectedModuleKeys: keys,
       moduleTableDataCount: moduleTableData.length,
-      moduleTableDataIds: moduleTableData.map((m) => ({ id: m.id, _indexId: m._indexId })),
+      moduleTableDataIds: moduleTableData.map(m => ({ id: m.id, _indexId: m._indexId })),
     });
 
     return keys;
@@ -277,22 +276,30 @@ export const ModuleDetail: React.FC<ModuleDetailProps> = ({
     (selectedKeys: string[]) => {
       if (!modules) return;
 
-      // 将选中的_indexId转换为模块ID字符串数组
-      const selectedModuleIds = selectedKeys
+      // 将选中的_indexId转换为完整的模块对象
+      const selectedModuleObjects = selectedKeys
         .map((key) => {
           const module = modules.find((m) => m._indexId === key);
-          return module?.id;
+          if (module) {
+            return {
+              id: module.id,
+              deprecated: module.deprecated || false,
+              name: module.name,
+              _indexId: module._indexId, // 保留_indexId用于前端关联
+            };
+          }
+          return null;
         })
         .filter(Boolean);
 
       console.log('🔧 模块关联变更:', {
         selectedKeys,
-        selectedModuleIds,
+        selectedModuleObjects,
         oldModules: currentModule?.modules || [],
       });
 
-      // 更新模块的modules字段为ID字符串数组
-      updateProperty('modules', selectedModuleIds);
+      // 更新模块的modules字段为完整的模块对象数组
+      updateProperty('modules', selectedModuleObjects);
     },
     [modules, currentModule?.modules, updateProperty]
   );
@@ -542,9 +549,7 @@ export const ModuleDetail: React.FC<ModuleDetailProps> = ({
                       );
                     } else {
                       return (
-                        <Typography.Text style={{ fontSize: '13px' }}>
-                          {record.name}
-                        </Typography.Text>
+                        <Typography.Text style={{ fontSize: '13px' }}>{record.name}</Typography.Text>
                       );
                     }
                   },

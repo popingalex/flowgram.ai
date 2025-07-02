@@ -114,6 +114,7 @@ interface RenderContext<T extends BaseDataItem> {
   index?: number;
   searchText: string;
   modules?: Array<{ id: string; name?: string; [key: string]: any }>;
+  entities?: Array<{ id: string; name?: string; bundles?: string[]; [key: string]: any }>;
   onItemSelect: (item: T) => void;
   // 拖拽排序相关
   enableDragSort?: boolean;
@@ -173,6 +174,7 @@ interface DataListSidebarProps<T extends BaseDataItem> {
   // 其他配置
   emptyText?: string;
   modules?: Array<{ id: string; name?: string; [key: string]: any }>;
+  entities?: Array<{ id: string; name?: string; bundles?: string[]; [key: string]: any }>;
   style?: React.CSSProperties;
   testId?: string;
 }
@@ -184,6 +186,7 @@ function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & Drag
   index,
   searchText,
   modules,
+  entities,
   onItemSelect,
   enableDragSort,
   onDragSort,
@@ -203,14 +206,28 @@ function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & Drag
     const moduleCount = item.bundles?.length || 0;
     const attributeCount = item.attributes?.length || 0;
 
-    if (moduleCount === 0 && attributeCount === 0) return null;
-
     // 🔑 检测是否为模块管理页面（通过testId判断）
     const isModulePage = testId?.includes('module');
 
+    // 🔑 计算被实体引用次数（仅在模块管理页面显示）
+    let entityReferenceCount = 0;
+    if (isModulePage && entities && entities.length > 0) {
+      entityReferenceCount = entities.filter((entity) => entity.bundles?.includes(item.id)).length;
+    }
+
+    // 如果所有统计都为0，不显示统计区域
+    if (moduleCount === 0 && attributeCount === 0 && entityReferenceCount === 0) return null;
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
-        {moduleCount > 0 && (
+        {/* 在模块页面显示被实体引用次数 */}
+        {isModulePage && entityReferenceCount > 0 && (
+          <Tag size="small" color="orange">
+            实：{entityReferenceCount}
+          </Tag>
+        )}
+        {/* 在实体页面显示关联的模块数量 */}
+        {!isModulePage && moduleCount > 0 && (
           <Tag size="small" color="green">
             模：{moduleCount}
           </Tag>
@@ -224,32 +241,61 @@ function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & Drag
     );
   };
 
-  // 渲染模块标签
-  const renderModuleTags = () => {
-    if (!item.bundles || !modules || item.bundles.length === 0) return null;
+  // 渲染关联标签（模块或实体）
+  const renderRelationTags = () => {
+    const tags: JSX.Element[] = [];
+
+    // 如果是实体，显示关联的模块
+    if (item.bundles && modules && item.bundles.length > 0) {
+      item.bundles.forEach((moduleId: string) => {
+        const module = modules.find((m) => m.id === moduleId);
+        const displayText = module?.name || moduleId;
+
+        tags.push(
+          <Tag
+            key={`module-${moduleId}`}
+            size="small"
+            color="blue"
+            style={{
+              fontSize: '11px',
+              lineHeight: '16px',
+              padding: '2px 6px',
+            }}
+          >
+            <Highlight sourceString={displayText} searchWords={searchWords} />
+          </Tag>
+        );
+      });
+    }
+
+    // 如果是模块，显示关联的实体
+    if (entities && entities.length > 0) {
+      const relatedEntities = entities.filter((entity) => entity.bundles?.includes(item.id));
+
+      relatedEntities.forEach((entity) => {
+        const displayText = entity.name || entity.id;
+
+        tags.push(
+          <Tag
+            key={`entity-${entity.id}`}
+            size="small"
+            color="green"
+            style={{
+              fontSize: '11px',
+              lineHeight: '16px',
+              padding: '2px 6px',
+            }}
+          >
+            <Highlight sourceString={displayText} searchWords={searchWords} />
+          </Tag>
+        );
+      });
+    }
+
+    if (tags.length === 0) return null;
 
     return (
-      <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-        {item.bundles.map((moduleId: string) => {
-          const module = modules.find((m) => m.id === moduleId);
-          const displayText = module?.name || moduleId;
-
-          return (
-            <Tag
-              key={moduleId}
-              size="small"
-              color="blue"
-              style={{
-                fontSize: '11px',
-                lineHeight: '16px',
-                padding: '2px 6px',
-              }}
-            >
-              <Highlight sourceString={displayText} searchWords={searchWords} />
-            </Tag>
-          );
-        })}
-      </div>
+      <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>{tags}</div>
     );
   };
 
@@ -336,8 +382,8 @@ function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & Drag
           <div style={{ flexShrink: 0, marginLeft: '8px' }}>{renderStats()}</div>
         </div>
 
-        {/* 第二行：模块标签 */}
-        {renderModuleTags()}
+        {/* 第二行：关联标签 */}
+        {renderRelationTags()}
       </div>
     </List.Item>
   );
@@ -361,6 +407,7 @@ export function DataListSidebar<T extends BaseDataItem>({
   renderItem, // 向后兼容
   emptyText = '暂无数据',
   modules,
+  entities,
   style,
   testId = 'data-sidebar',
 }: DataListSidebarProps<T>) {
@@ -510,6 +557,7 @@ export function DataListSidebar<T extends BaseDataItem>({
                       index,
                       searchText,
                       modules,
+                      entities,
                       onItemSelect,
                       enableDragSort,
                       onDragSort,
@@ -545,6 +593,7 @@ export function DataListSidebar<T extends BaseDataItem>({
                   index,
                   searchText,
                   modules,
+                  entities,
                   onItemSelect,
                   enableDragSort,
                   onDragSort,

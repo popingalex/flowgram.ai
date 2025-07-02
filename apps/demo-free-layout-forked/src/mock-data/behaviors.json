@@ -1,83 +1,909 @@
 [
   {
-    "id": "api_weather_query",
-    "name": "API天气查询",
     "type": "remote",
-    "exp": "api.call('weather/query', { location: $location, date: $date })",
-    "deprecated": false,
+    "id": "rain_landslide_model",
+    "name": "降雨滑坡模型",
+    "desc": "基于降雨数据计算滑坡安全系数",
     "output": {
-      "id": "$return",
-      "type": "object",
-      "desc": "WeatherInfo",
+      "id": "landslide_result",
+      "type": "u",
+      "name": "滑坡安全系数结果",
+      "desc": "安全系数计算结果，包含图像和栅格文件",
       "required": false
     },
     "inputs": [
       {
         "id": "location",
-        "type": "string",
-        "desc": "位置",
-        "required": true
+        "type": "s",
+        "name": "位置信息",
+        "desc": "如堰塞湖、滑坡、泥石流等",
+        "required": false
       },
       {
-        "id": "date",
-        "type": "string",
-        "desc": "日期",
+        "id": "token",
+        "type": "n",
+        "name": "访问令牌",
+        "value": -1,
+        "required": false
+      },
+      {
+        "id": "validDays",
+        "type": "n",
+        "name": "有效天数",
+        "value": -1,
         "required": false
       }
-    ]
+    ],
+    "url": "http://10.3.9.34:8890/rain_landslide",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8890",
+    "method": "POST"
   },
   {
-    "id": "drain_device.simulate",
-    "name": "排水设备模拟",
+    "type": "remote",
+    "id": "dammed_lake_elevation",
+    "name": "堰塞湖水位计算",
+    "desc": "计算堰塞湖水位高程变化",
+    "output": {
+      "id": "elevation",
+      "type": "n",
+      "name": "水位高程",
+      "desc": "计算后的水位高程",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "initialElevation",
+        "type": "n",
+        "name": "初始水位",
+        "desc": "初始水位高程",
+        "required": false
+      },
+      {
+        "id": "inFlow",
+        "type": "n",
+        "name": "入流量",
+        "desc": "入流量 m³/s",
+        "required": false
+      },
+      {
+        "id": "outFlow",
+        "type": "n",
+        "name": "出流量",
+        "desc": "出流量",
+        "required": false
+      },
+      {
+        "id": "timeStep",
+        "type": "n",
+        "name": "时间步长",
+        "desc": "时间步长，默认60秒",
+        "value": 60,
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.34:8840/dammed_lake_elevation",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8840",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "dammed_lake_overtoptime",
+    "name": "堰塞湖漫坝时间计算",
+    "desc": "计算堰塞湖漫坝时间",
+    "output": {
+      "id": "overtoptime",
+      "type": "n",
+      "name": "漫坝时间",
+      "desc": "漫坝时间(秒)，需要除以3600/9.5转换为小时",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "H",
+        "type": "n",
+        "name": "水位",
+        "desc": "当前水位",
+        "required": false
+      },
+      {
+        "id": "inFlow",
+        "type": "n",
+        "name": "入流量",
+        "desc": "入流量 m³/s",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.34:8840/dammed_lake_overtoptime",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8840",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "dam_breach_expand",
+    "name": "溃口扩展计算",
+    "desc": "计算溃口扩展后的宽度、高程、角度",
+    "output": {
+      "id": "breach_expand_result",
+      "type": "u",
+      "name": "溃口扩展结果",
+      "desc": "溃口扩展后的宽度、高程、角度",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "depth",
+        "type": "n",
+        "name": "溃口深度",
+        "desc": "溃口深度",
+        "required": false
+      },
+      {
+        "id": "velocity",
+        "type": "n",
+        "name": "流速",
+        "desc": "水流速度",
+        "required": false
+      },
+      {
+        "id": "z_bottom",
+        "type": "n",
+        "name": "底部高程",
+        "desc": "溃口底部高程",
+        "required": false
+      },
+      {
+        "id": "z_bottom_init",
+        "type": "n",
+        "name": "初始底部高程",
+        "desc": "初始底部高程",
+        "required": false
+      },
+      {
+        "id": "breachWidth",
+        "type": "n",
+        "name": "溃口宽度",
+        "desc": "当前溃口宽度",
+        "required": false
+      },
+      {
+        "id": "breachAngle",
+        "type": "n",
+        "name": "溃口角度",
+        "desc": "当前溃口角度",
+        "required": false
+      },
+      {
+        "id": "breachAngle_init",
+        "type": "n",
+        "name": "初始溃口角度",
+        "desc": "初始溃口角度",
+        "required": false
+      },
+      {
+        "id": "soilType",
+        "type": "n",
+        "name": "土壤类型",
+        "desc": "土壤类型 0或1",
+        "required": false
+      },
+      {
+        "id": "specificWeight",
+        "type": "n",
+        "name": "比重",
+        "desc": "土壤比重",
+        "required": false
+      },
+      {
+        "id": "diameter50",
+        "type": "n",
+        "name": "粒径",
+        "desc": "土壤粒径",
+        "required": false
+      },
+      {
+        "id": "thickness",
+        "type": "n",
+        "name": "厚度",
+        "desc": "土层厚度",
+        "required": false
+      },
+      {
+        "id": "porosity",
+        "type": "n",
+        "name": "孔隙率",
+        "desc": "土壤孔隙率",
+        "required": false
+      },
+      {
+        "id": "internalFrictionAngle",
+        "type": "n",
+        "name": "内摩擦角",
+        "desc": "土壤内摩擦角",
+        "required": false
+      },
+      {
+        "id": "cohesion",
+        "type": "n",
+        "name": "粘聚力",
+        "desc": "土壤粘聚力",
+        "required": false
+      },
+      {
+        "id": "m1",
+        "type": "n",
+        "name": "参数m1",
+        "desc": "模型参数m1",
+        "required": false
+      },
+      {
+        "id": "m2",
+        "type": "n",
+        "name": "参数m2",
+        "desc": "模型参数m2",
+        "required": false
+      },
+      {
+        "id": "manning",
+        "type": "n",
+        "name": "曼宁系数",
+        "desc": "曼宁系数",
+        "required": false
+      },
+      {
+        "id": "incipient_velocity",
+        "type": "n",
+        "name": "起动流速",
+        "desc": "起动流速",
+        "required": false
+      },
+      {
+        "id": "critical_shear_stress",
+        "type": "n",
+        "name": "临界剪切应力",
+        "desc": "临界剪切应力",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.34:8800/breach_expand",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8800",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "dam_breach_flow",
+    "name": "溃口流量计算",
+    "desc": "计算溃口深度、流速、流量",
+    "output": {
+      "id": "breach_flow_result",
+      "type": "u",
+      "name": "溃口流量结果",
+      "desc": "溃口深度、流速、流量计算结果",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "breachWidth",
+        "type": "n",
+        "name": "溃口宽度",
+        "desc": "当前溃口宽度",
+        "required": false
+      },
+      {
+        "id": "z_bottom",
+        "type": "n",
+        "name": "底部高程",
+        "desc": "溃口底部高程",
+        "required": false
+      },
+      {
+        "id": "h_upstream",
+        "type": "n",
+        "name": "上游水深",
+        "desc": "上游水深",
+        "required": false
+      },
+      {
+        "id": "h_downstream",
+        "type": "n",
+        "name": "下游水深",
+        "desc": "下游水深",
+        "required": false
+      },
+      {
+        "id": "breachAngle",
+        "type": "n",
+        "name": "溃口角度",
+        "desc": "当前溃口角度",
+        "required": false
+      },
+      {
+        "id": "m",
+        "type": "n",
+        "name": "参数m",
+        "desc": "模型参数m",
+        "required": false
+      },
+      {
+        "id": "b",
+        "type": "n",
+        "name": "参数b",
+        "desc": "模型参数b",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.34:8800/breach_flow",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8800",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "material_stability",
+    "name": "材料稳定性计算",
+    "desc": "计算材料在水流中的稳定性",
+    "output": {
+      "id": "stability_score",
+      "type": "n",
+      "name": "稳定性评分",
+      "desc": "稳定性评分",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "diameter",
+        "type": "n",
+        "name": "直径",
+        "desc": "材料直径",
+        "required": false
+      },
+      {
+        "id": "velocity",
+        "type": "n",
+        "name": "速度",
+        "desc": "流速",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.34:8800/material_stabilty",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8800",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "spillway_size",
+    "name": "泄流槽尺寸计算",
+    "desc": "计算推荐的泄流槽宽度和底部高程",
+    "output": {
+      "id": "spillway_size_result",
+      "type": "u",
+      "name": "泄流槽尺寸结果",
+      "desc": "推荐的槽宽(Width)和底部高程(Zb)",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "spillwayParams",
+        "type": "u",
+        "name": "泄流槽参数",
+        "desc": "泄流槽参数对象",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.34:8850/spillway_size",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8850",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "spillway_volume",
+    "name": "泄流槽体积计算",
+    "desc": "计算挖土总方量",
+    "output": {
+      "id": "total_volume",
+      "type": "n",
+      "name": "挖土总方量",
+      "desc": "挖土总方量",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "width",
+        "type": "n",
+        "name": "宽度",
+        "desc": "槽宽",
+        "required": false
+      },
+      {
+        "id": "zb",
+        "type": "n",
+        "name": "底部高程",
+        "desc": "底部高程",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.34:8850/spillway_volume",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8850",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "flume_explode_model",
+    "name": "爆破模型计算",
+    "desc": "计算爆破方案参数",
+    "output": {
+      "id": "explode_result",
+      "type": "u",
+      "name": "爆破方案结果",
+      "desc": "爆破方案结果",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "explodeParams",
+        "type": "u",
+        "name": "爆破参数",
+        "desc": "爆破参数对象",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.34:8850/flume_explode",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8850",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "flood_landslide_evaluate",
+    "name": "洪水滑坡评估",
+    "desc": "评估洪水引发滑坡的概率",
+    "output": {
+      "id": "landslide_evaluate_result",
+      "type": "u",
+      "name": "滑坡评估结果",
+      "desc": "滑坡评估结果",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "rain_before",
+        "type": "s",
+        "name": "降雨前置条件",
+        "desc": "降雨前置条件",
+        "value": "True",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.34:8890/flood_landslide_evaluate",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8890",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "tunnel_runoff",
+    "name": "隧道径流计算",
+    "desc": "计算隧道径流量",
+    "output": {
+      "id": "discharge",
+      "type": "n",
+      "name": "径流量",
+      "desc": "隧道径流量",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "rainfall",
+        "type": "n",
+        "name": "降雨量",
+        "desc": "降雨量",
+        "required": false
+      },
+      {
+        "id": "roadLength",
+        "type": "n",
+        "name": "隧道长度",
+        "desc": "隧道长度",
+        "required": false
+      },
+      {
+        "id": "roadWidth",
+        "type": "n",
+        "name": "隧道宽度",
+        "desc": "隧道宽度",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.34:8840/tunnel_runoff",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8840",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "tunnel_inundepth",
+    "name": "隧道淹没深度计算",
+    "desc": "计算隧道淹没深度",
+    "output": {
+      "id": "depth",
+      "type": "n",
+      "name": "淹没深度",
+      "desc": "隧道淹没深度",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "initialDepth",
+        "type": "n",
+        "name": "初始深度",
+        "desc": "初始深度",
+        "required": false
+      },
+      {
+        "id": "tunnelLength",
+        "type": "n",
+        "name": "隧道长度",
+        "desc": "隧道长度",
+        "required": false
+      },
+      {
+        "id": "tunnelWidth",
+        "type": "n",
+        "name": "隧道宽度",
+        "desc": "隧道宽度",
+        "required": false
+      },
+      {
+        "id": "inFlow",
+        "type": "n",
+        "name": "入流量",
+        "desc": "入流量",
+        "required": false
+      },
+      {
+        "id": "outFlow",
+        "type": "n",
+        "name": "出流量",
+        "desc": "出流量",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.34:8840/tunnel_inundepth",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8840",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "tif_subtract",
+    "name": "TIF文件处理",
+    "desc": "处理TIF格式的地理数据文件",
+    "output": {
+      "id": "tif_result",
+      "type": "u",
+      "name": "TIF处理结果",
+      "desc": "处理后的TIF数据",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "tifParams",
+        "type": "u",
+        "name": "TIF处理参数",
+        "desc": "TIF处理参数对象",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.138:16000/tif_subtract",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.138:16000",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "dam_flush_model",
+    "name": "大坝冲刷模型",
+    "desc": "模拟大坝冲刷过程",
+    "output": {
+      "id": "flush_result",
+      "type": "u",
+      "name": "冲刷模拟结果",
+      "desc": "冲刷模拟结果",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "params",
+        "type": "s",
+        "name": "冲刷参数",
+        "desc": "冲刷参数JSON字符串",
+        "required": false
+      },
+      {
+        "id": "token",
+        "type": "s",
+        "name": "访问令牌",
+        "desc": "固定值-1",
+        "value": "-1",
+        "required": false
+      },
+      {
+        "id": "validDays",
+        "type": "n",
+        "name": "有效天数",
+        "desc": "固定值-1",
+        "value": -1,
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.138:3045/gsafety/model/damflush",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.138:3045",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "material_volume_calc",
+    "name": "材料体积计算",
+    "desc": "计算所需材料体积",
+    "output": {
+      "id": "material_volume",
+      "type": "n",
+      "name": "材料体积",
+      "desc": "计算的材料体积",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "width",
+        "type": "n",
+        "name": "宽度",
+        "desc": "工程宽度",
+        "required": false
+      },
+      {
+        "id": "length",
+        "type": "n",
+        "name": "长度",
+        "desc": "工程长度",
+        "required": false
+      },
+      {
+        "id": "height",
+        "type": "n",
+        "name": "高度",
+        "desc": "工程高度",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.9.34:8800/material_volume",
+    "contentType": "application/json",
+    "endpoint": "10.3.9.34:8800",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "dig_work_calc",
+    "name": "挖掘工作计算",
+    "desc": "计算挖掘工作量和时间",
+    "output": {
+      "id": "dig_work_result",
+      "type": "u",
+      "name": "挖掘工作结果",
+      "desc": "挖掘工作量和时间计算结果",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "volume",
+        "type": "n",
+        "name": "挖掘体积",
+        "desc": "需要挖掘的土方体积",
+        "required": false
+      },
+      {
+        "id": "soilType",
+        "type": "s",
+        "name": "土壤类型",
+        "desc": "土壤类型描述",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.10.73:16000/dig_work",
+    "contentType": "application/json",
+    "endpoint": "10.3.10.73:16000",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "personnel_transfer_forward",
+    "name": "人员转移正推",
+    "desc": "根据人员数量计算转移时间",
+    "output": {
+      "id": "transfer_time",
+      "type": "n",
+      "name": "转移时间",
+      "desc": "根据人员数量计算的转移时间",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "peopleCount",
+        "type": "n",
+        "name": "人员数量",
+        "desc": "需要转移的人员数量",
+        "required": false
+      },
+      {
+        "id": "distance",
+        "type": "n",
+        "name": "转移距离",
+        "desc": "转移距离（公里）",
+        "required": false
+      },
+      {
+        "id": "transportType",
+        "type": "s",
+        "name": "运输方式",
+        "desc": "运输方式类型",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.10.73:16000/people_relocate_num2time",
+    "contentType": "application/json",
+    "endpoint": "10.3.10.73:16000",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "personnel_transfer_reverse",
+    "name": "人员转移反推",
+    "desc": "根据时间限制计算可转移人员数量",
+    "output": {
+      "id": "max_people_count",
+      "type": "n",
+      "name": "最大人员数量",
+      "desc": "根据时间限制计算的可转移人员数量",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "timeLimit",
+        "type": "n",
+        "name": "时间限制",
+        "desc": "可用转移时间（小时）",
+        "required": false
+      },
+      {
+        "id": "distance",
+        "type": "n",
+        "name": "转移距离",
+        "desc": "转移距离（公里）",
+        "required": false
+      },
+      {
+        "id": "transportType",
+        "type": "s",
+        "name": "运输方式",
+        "desc": "运输方式类型",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.10.73:16000/people_relocate_time2num",
+    "contentType": "application/json",
+    "endpoint": "10.3.10.73:16000",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "drainage_equipment_forward",
+    "name": "抽排水装备正推",
+    "desc": "根据装备数量计算抽排水能力",
+    "output": {
+      "id": "drainage_capacity",
+      "type": "u",
+      "name": "抽排水能力",
+      "desc": "根据装备数量计算的抽排水能力",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "equipmentCount",
+        "type": "n",
+        "name": "装备数量",
+        "desc": "抽排水装备数量",
+        "required": false
+      },
+      {
+        "id": "equipmentType",
+        "type": "s",
+        "name": "装备类型",
+        "desc": "抽排水装备类型",
+        "required": false
+      },
+      {
+        "id": "waterVolume",
+        "type": "n",
+        "name": "积水量",
+        "desc": "需要抽排的水量",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.10.73:16000/pump_water_equipment",
+    "contentType": "application/json",
+    "endpoint": "10.3.10.73:16000",
+    "method": "POST"
+  },
+  {
+    "type": "remote",
+    "id": "drainage_equipment_reverse",
+    "name": "抽排水装备反推",
+    "desc": "根据抽排水需求计算所需装备数量",
+    "output": {
+      "id": "required_equipment_count",
+      "type": "n",
+      "name": "所需装备数量",
+      "desc": "根据抽排水需求计算的所需装备数量",
+      "required": false
+    },
+    "inputs": [
+      {
+        "id": "waterVolume",
+        "type": "n",
+        "name": "积水量",
+        "desc": "需要抽排的水量",
+        "required": false
+      },
+      {
+        "id": "timeLimit",
+        "type": "n",
+        "name": "时间限制",
+        "desc": "要求完成抽排的时间",
+        "required": false
+      },
+      {
+        "id": "equipmentType",
+        "type": "s",
+        "name": "装备类型",
+        "desc": "抽排水装备类型",
+        "required": false
+      }
+    ],
+    "url": "http://10.3.10.73:16000/pump_water_equipment_reverse",
+    "contentType": "application/json",
+    "endpoint": "10.3.10.73:16000",
+    "method": "POST"
+  },
+  {
     "type": "local",
-    "exp": "com.flowgram.devices.DrainDevice.simulate($context, $instance)",
-    "deprecated": false,
+    "id": "test-local-1",
+    "name": "测试本地表达式1",
+    "desc": "这是一个测试本地表达式",
+    "body": "body content",
     "output": {
-      "id": "$return",
-      "type": "void",
-      "desc": "void",
       "required": false
     },
-    "inputs": [
-      {
-        "id": "context",
-        "type": "Context",
-        "desc": "Context",
-        "required": false
-      },
-      {
-        "id": "instance",
-        "type": "InstanceIO",
-        "desc": "InstanceIO",
-        "required": false
-      }
-    ]
+    "functionName": "testFunction",
+    "className": "TestClass",
+    "modulePath": "/path/to/module"
   },
   {
-    "id": "traffic_control_script",
-    "name": "交通管制脚本",
-    "type": "custom",
-    "exp": "function(maxSpeed, vehicles) {\n  return vehicles.filter(v => v.speed <= maxSpeed)\n    .map(v => ({ id: v.id, status: 'controlled' }));\n}",
-    "deprecated": false,
+    "type": "script",
+    "id": "test-script-1",
+    "name": "测试脚本表达式1",
+    "desc": "这是一个测试脚本表达式",
+    "body": "body content",
     "output": {
-      "id": "$return",
-      "type": "object",
-      "desc": "ControlResult",
       "required": false
     },
-    "inputs": [
-      {
-        "id": "maxSpeed",
-        "type": "number",
-        "desc": "最大限速",
-        "required": true
-      },
-      {
-        "id": "vehicles",
-        "type": "array",
-        "desc": "车辆列表",
-        "required": true
-      }
-    ]
+    "content": "console.log(\"test\")",
+    "language": "javascript",
+    "runtime": "node"
   }
 ]

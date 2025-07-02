@@ -7,7 +7,6 @@ import {
   systemApi,
   remoteBehaviorApi,
   localBehaviorApi,
-  scriptBehaviorApi,
 } from '../../services/api-service';
 
 const { Title, Text } = Typography;
@@ -41,7 +40,6 @@ export const ApiTestPanel: React.FC = () => {
       { name: 'systems', call: () => systemApi.getAll() },
       { name: 'remoteBehaviors', call: () => remoteBehaviorApi.getAll() },
       { name: 'localBehaviors', call: () => localBehaviorApi.getAll() },
-      { name: 'scriptBehaviors', call: () => scriptBehaviorApi.getAll() },
     ];
 
     for (const test of tests) {
@@ -80,9 +78,6 @@ export const ApiTestPanel: React.FC = () => {
             </Button>
             <Button onClick={() => testApi('localBehaviors', () => localBehaviorApi.getAll())}>
               测试本地行为API
-            </Button>
-            <Button onClick={() => testApi('scriptBehaviors', () => scriptBehaviorApi.getAll())}>
-              测试脚本行为API
             </Button>
           </Space>
         </Card>

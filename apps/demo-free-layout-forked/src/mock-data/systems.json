@@ -1,0 +1,224 @@
+[
+  {
+    "id": "agent_system",
+    "name": "智能体系统",
+    "expression": {
+      "type": "local",
+      "id": "agent_system_logic",
+      "name": "智能体系统逻辑",
+      "desc": "实现智能体的状态机行为：idle -> approaching_fire -> suppressing_fire -> returning_to_refill -> refilling",
+      "body": "function updateAgentSystem(world, timeStep) {\n    const agents = world.getEntitiesWithComponent('AgentComponent');\n\n    for (const agentId of agents) {\n        const agent = world.getComponent(agentId, 'AgentComponent');\n\n        switch (agent.current_action) {\n            case 'idle':\n                handleIdleAgent(world, agentId);\n                break;\n            case 'approaching_fire':\n                handleApproachingAgent(world, agentId);\n                break;\n            case 'suppressing_fire':\n                handleSuppressingAgent(world, agentId);\n                break;\n            case 'returning_to_refill':\n                handleReturningToRefillAgent(world, agentId);\n                break;\n            case 'refilling':\n                handleRefillingAgent(world, agentId);\n                break;\n        }\n    }\n}\n"
+    },
+    "type": "ecs",
+    "version": "1.0",
+    "enabled": true,
+    "desc": "管理消防员等智能体的行为状态机，包括目标选择、状态转换、资源管理等",
+    "participants": [
+      {
+        "id": "agents",
+        "type": "s",
+        "name": "智能体集合",
+        "desc": "执行行为决策的智能体实体 [组件:agent_component,position_component] [角色:primary]",
+        "value": "primary",
+        "required": false
+      },
+      {
+        "id": "fire_targets",
+        "type": "s",
+        "name": "火灾目标集合",
+        "desc": "智能体需要扑灭的火灾目标 [组件:burning_component,flammable_component,position_component] [角色:target]",
+        "value": "target",
+        "required": false
+      },
+      {
+        "id": "refill_stations",
+        "type": "s",
+        "name": "补给站集合",
+        "desc": "提供资源补给的站点 [组件:refill_station_component,position_component] [角色:query]",
+        "value": "query",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "movement_system",
+    "name": "移动系统",
+    "expression": {
+      "type": "local",
+      "id": "movement_system_logic",
+      "name": "移动系统逻辑",
+      "desc": "计算实体向目标位置的移动",
+      "body": "function updateMovementSystem(world, timeStep) {\n    const entitiesWithTargets = world.getEntitiesWithComponent('TargetComponent');\n\n    for (const entityId of entitiesWithTargets) {\n        const agent = world.getComponent(entityId, 'AgentComponent');\n\n        // 如果是智能体且正在执行特定动作，则不移动\n        if (agent && (agent.current_action === 'suppressing_fire' || agent.current_action === 'refilling')) {\n            continue;\n        }\n\n        const position = world.getComponent(entityId, 'PositionComponent');\n        const target = world.getComponent(entityId, 'TargetComponent');\n\n        if (position && target) {\n            moveTowardsTarget(position, target, agent?.speed || 2.0, timeStep);\n        }\n    }\n}\n"
+    },
+    "type": "ecs",
+    "version": "1.0",
+    "enabled": true,
+    "desc": "处理具有目标的实体的位置移动，基于速度和时间步长计算新位置",
+    "participants": [
+      {
+        "id": "moving_entities",
+        "type": "s",
+        "name": "可移动实体集合",
+        "desc": "具有移动目标的实体 [组件:position_component,target_component] [角色:primary]",
+        "value": "primary",
+        "required": false
+      },
+      {
+        "id": "agents",
+        "type": "s",
+        "name": "智能体集合",
+        "desc": "需要检查行为状态的智能体 [组件:agent_component] [角色:optional]",
+        "value": "optional",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "fire_system",
+    "name": "火灾系统",
+    "expression": {
+      "type": "local",
+      "id": "fire_system_logic",
+      "name": "火灾系统逻辑",
+      "desc": "实现火灾的物理模拟，包括温度传递、燃料消耗、点燃判断等",
+      "body": "function updateFireSystem(world, timeStep) {\n    // 1. 自然冷却所有可燃实体\n    applyCooling(world, timeStep);\n\n    // 2. 检查点燃条件\n    checkIgnition(world);\n\n    // 3. 处理燃烧过程\n    processBurning(world, timeStep);\n\n    // 4. 热量传播\n    propagateHeat(world, timeStep);\n\n    // 5. 处理压力容器\n    handlePressureVessels(world, timeStep);\n}\n"
+    },
+    "type": "ecs",
+    "version": "1.0",
+    "enabled": true,
+    "desc": "管理火灾的整个生命周期，实现基于物理的热力学模型，处理点燃、燃烧、热量传播和熄灭",
+    "participants": [
+      {
+        "id": "flammable_entities",
+        "type": "s",
+        "name": "可燃实体集合",
+        "desc": "所有可燃烧的实体，进行温度管理和点燃检查 [组件:flammable_component,position_component] [角色:primary]",
+        "value": "primary",
+        "required": false
+      },
+      {
+        "id": "burning_entities",
+        "type": "s",
+        "name": "燃烧实体集合",
+        "desc": "正在燃烧的实体，消耗燃料并传播热量 [组件:flammable_component,burning_component,position_component] [角色:active]",
+        "value": "active",
+        "required": false
+      },
+      {
+        "id": "wind_entities",
+        "type": "s",
+        "name": "风力实体集合",
+        "desc": "影响火势传播方向的风力实体 [组件:wind_component] [角色:environment]",
+        "value": "environment",
+        "required": false
+      },
+      {
+        "id": "pressure_vessels",
+        "type": "s",
+        "name": "压力容器集合",
+        "desc": "受高温影响可能爆炸的压力容器 [组件:pressure_vessel_component,position_component] [角色:special]",
+        "value": "special",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "interaction_system",
+    "name": "交互系统",
+    "expression": {
+      "type": "local",
+      "id": "interaction_system_logic",
+      "name": "交互系统逻辑",
+      "desc": "处理智能体使用物质对目标的交互效果",
+      "body": "function updateInteractionSystem(world, timeStep) {\n    const agents = world.getEntitiesWithComponent('AgentComponent');\n\n    for (const agentId of agents) {\n        const target = world.getComponent(agentId, 'TargetComponent');\n        const inventory = world.getComponent(agentId, 'InventoryComponent');\n        const emitter = world.getComponent(agentId, 'EmitterComponent');\n\n        if (target && inventory && emitter && emitter.is_active) {\n            processInteraction(world, agentId, target.target_entity_id, timeStep);\n        }\n    }\n}\n"
+    },
+    "type": "ecs",
+    "version": "1.0",
+    "enabled": true,
+    "desc": "处理智能体与环境的交互，基于本体论计算不同物质对不同材料的作用效果",
+    "participants": [
+      {
+        "id": "active_agents",
+        "type": "s",
+        "name": "活跃智能体集合",
+        "desc": "具备交互能力的智能体 [组件:agent_component,inventory_component,emitter_component,position_component] [角色:primary]",
+        "value": "primary",
+        "required": false
+      },
+      {
+        "id": "interaction_targets",
+        "type": "s",
+        "name": "可交互目标集合",
+        "desc": "可以被智能体作用的目标实体 [组件:flammable_component,material_component,position_component] [角色:target]",
+        "value": "target",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "explosion_system",
+    "name": "爆炸系统",
+    "expression": {
+      "type": "local",
+      "id": "explosion_system_logic",
+      "name": "爆炸系统逻辑",
+      "desc": "监控压力容器并触发爆炸",
+      "body": "function updateExplosionSystem(world, timeStep) {\n    const pressureVessels = world.getEntitiesWithComponent('PressureVesselComponent');\n\n    for (const vesselId of pressureVessels) {\n        const vessel = world.getComponent(vesselId, 'PressureVesselComponent');\n\n        if (vessel.internal_pressure >= vessel.max_pressure) {\n            triggerExplosion(world, vesselId, vessel);\n        }\n    }\n}\n"
+    },
+    "type": "ecs",
+    "version": "1.0",
+    "enabled": true,
+    "desc": "监控压力容器的压力状态，当超过最大压力时触发爆炸事件",
+    "participants": [
+      {
+        "id": "pressure_vessels",
+        "type": "s",
+        "name": "压力容器集合",
+        "desc": "监控压力状态的压力容器实体 [组件:pressure_vessel_component,position_component] [角色:primary]",
+        "value": "primary",
+        "required": false
+      }
+    ]
+  },
+  {
+    "id": "resource_system",
+    "name": "资源系统",
+    "expression": {
+      "type": "local",
+      "id": "resource_system_logic",
+      "name": "资源系统逻辑",
+      "desc": "处理资源消耗和补给",
+      "body": "function updateResourceSystem(world, timeStep) {\n    const agents = world.getEntitiesWithComponent('AgentComponent');\n\n    for (const agentId of agents) {\n        const agent = world.getComponent(agentId, 'AgentComponent');\n\n        if (agent.current_action === 'suppressing_fire') {\n            handleResourceConsumption(world, agentId, timeStep);\n        } else if (agent.current_action === 'refilling') {\n            handleResourceRefill(world, agentId, timeStep);\n        }\n    }\n}\n"
+    },
+    "type": "ecs",
+    "version": "1.0",
+    "enabled": true,
+    "desc": "管理智能体的资源消耗和在补给站的资源补充，处理资源的物理转移",
+    "participants": [
+      {
+        "id": "consuming_agents",
+        "type": "s",
+        "name": "资源消耗智能体集合",
+        "desc": "正在消耗资源的智能体 [组件:agent_component,inventory_component,emitter_component] [角色:primary]",
+        "value": "primary",
+        "required": false
+      },
+      {
+        "id": "refilling_agents",
+        "type": "s",
+        "name": "资源补给智能体集合",
+        "desc": "正在补给资源的智能体 [组件:agent_component,inventory_component,position_component] [角色:primary]",
+        "value": "primary",
+        "required": false
+      },
+      {
+        "id": "refill_stations",
+        "type": "s",
+        "name": "补给站集合",
+        "desc": "提供资源补给的服务站点 [组件:refill_station_component,position_component] [角色:service]",
+        "value": "service",
+        "required": false
+      }
+    ]
+  }
+]

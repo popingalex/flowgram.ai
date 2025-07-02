@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endpoint Health Status Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-item { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .status { display: inline-block; padding: 4px 8px; border-radius: 3px; color: white; font-size: 12px; }
+        .status.UP { background-color: green; }
+        .status.DOWN { background-color: red; }
+        .status.PENDING { background-color: orange; }
+        .status.UNKNOWN { background-color: grey; }
+    </style>
+</head>
+<body>
+    <h1>Endpoint Health Status Test</h1>
+    
+    <div class="test-item">
+        <h3>测试API状态获取</h3>
+        <button onclick="testEndpointStatus()">获取健康状态</button>
+        <div id="status-result"></div>
+    </div>
+
+    <div class="test-item">
+        <h3>模拟健康状况显示</h3>
+        <div id="mock-status">
+            <p>Endpoint: 192.168.239.7:8080 <span class="status UP">正常</span> 
+               <a href="http://localhost:3001/dashboard" target="_blank">跳转到Uptime Kuma</a>
+            </p>
+            <p>Endpoint: 10.3.9.34:8850 <span class="status DOWN">异常</span> 
+               <a href="http://localhost:3001/dashboard" target="_blank">跳转到Uptime Kuma</a>
+            </p>
+            <p>Endpoint: localhost:3000 <span class="status PENDING">检测中</span> 
+               <a href="http://localhost:3001/dashboard" target="_blank">跳转到Uptime Kuma</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        async function testEndpointStatus() {
+            const resultDiv = document.getElementById('status-result');
+            resultDiv.innerHTML = '<p>正在获取状态...</p>';
+            
+            try {
+                const response = await fetch('http://192.168.239.7:8080/api/endpoints/status');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('API响应:', data);
+                    
+                    let html = '<h4>API响应结果:</h4>';
+                    html += `<p>总监控数: ${data.totalCount}</p>`;
+                    html += `<p>正常: ${data.upCount}, 异常: ${data.downCount}, 检测中: ${data.pendingCount}</p>`;
+                    html += `<p>Dashboard URL: <a href="${data.dashboardUrl}" target="_blank">${data.dashboardUrl}</a></p>`;
+                    
+                    if (data.monitors && data.monitors.length > 0) {
+                        html += '<h5>监控项列表:</h5>';
+                        data.monitors.forEach(monitor => {
+                            const statusClass = monitor.status || 'UNKNOWN';
+                            html += `<p>${monitor.name}: <span class="status ${statusClass}">${getStatusText(monitor.status)}</span></p>`;
+                        });
+                    }
+                    
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.innerHTML = `<p style="color: red;">API请求失败: ${response.status}</p>`;
+                }
+            } catch (error) {
+                console.error('请求失败:', error);
+                resultDiv.innerHTML = `<p style="color: red;">请求失败: ${error.message}</p>`;
+            }
+        }
+        
+        function getStatusText(status) {
+            switch (status) {
+                case 'UP': return '正常';
+                case 'DOWN': return '异常';
+                case 'PENDING': return '检测中';
+                default: return '未知';
+            }
+        }
+    </script>
+</body>
+</html> 

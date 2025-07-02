@@ -17,12 +17,8 @@ import {
 import { IconSend, IconRefresh, IconEyeOpened, IconSync } from '@douyinfe/semi-icons';
 
 import { EntityPropertyTypeSelector } from '../../ext/type-selector-ext';
+import { EndpointHealthStatus } from '../../ext/endpoint-health-status';
 import { useRemoteApiRequestStore } from '../../../stores/remote-api-request';
-import {
-  useEndpointProbeStore,
-  getStatusColor,
-  getStatusText,
-} from '../../../stores/endpoint-probe';
 import { useCurrentExpression, useCurrentExpressionActions } from '../../../stores/current-api';
 import { useExpressionStore } from '../../../stores/api-list';
 import { useRouter } from '../../../hooks/use-router';
@@ -42,9 +38,8 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
   const currentExpressionActions = useCurrentExpressionActions();
   const { routeState } = useRouter();
 
-  // 远程API请求和端点探查stores
+  // 远程API请求store
   const remoteApiRequest = useRemoteApiRequestStore();
-  const endpointProbe = useEndpointProbeStore();
 
   // 本地状态
   const [requestParameters, setRequestParameters] = useState<Record<string, any>>({});
@@ -256,24 +251,18 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
     }
   }, [editingApi?.id, remoteApiRequest]);
 
-  // 🎯 获取端点状态
-  const endpointStatus = useMemo(() => {
-    if (!editingApi?.url) return null;
+  // 🎯 获取endpoint信息
+  const endpoint = useMemo(() => {
+    if (!editingApi?.url) return undefined;
 
     try {
       const url = new URL(editingApi.url);
-      const endpoint = `${url.hostname}:${url.port || (url.protocol === 'https:' ? 443 : 80)}`;
-      return endpointProbe.getEndpointStatus(endpoint);
+      const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+      return `${url.hostname}:${port}`;
     } catch {
-      return null;
+      return undefined;
     }
-  }, [editingApi?.url, endpointProbe]);
-
-  // 🎯 启动端点探查轮询
-  useEffect(() => {
-    endpointProbe.startPolling();
-    return () => endpointProbe.stopPolling();
-  }, []); // 移除依赖项，只在组件挂载时执行一次
+  }, [editingApi?.url]);
 
   return (
     <Content style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -381,34 +370,8 @@ export const ApiDetailPanel: React.FC<ApiDetailPanelProps> = ({ selectedExpressi
                 测试连接
               </Button>
 
-              {/* 端点状态指示器 */}
-              {endpointStatus && (
-                <Tooltip
-                  content={
-                    <div>
-                      <div>状态: {getStatusText(endpointStatus.status)}</div>
-                      <div>最近探查: {new Date(endpointStatus.lastProbeTime).toLocaleString()}</div>
-                      {endpointStatus.responseTimeMs && (
-                        <div>响应时间: {endpointStatus.responseTimeMs}ms</div>
-                      )}
-                      {endpointStatus.errorMessage && (
-                        <div>错误: {endpointStatus.errorMessage}</div>
-                      )}
-                    </div>
-                  }
-                >
-                  <div
-                    style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      backgroundColor: getStatusColor(endpointStatus.status),
-                      border: '2px solid #fff',
-                      boxShadow: '0 0 4px rgba(0,0,0,0.3)',
-                    }}
-                  />
-                </Tooltip>
-              )}
+              {/* 端点健康状况 */}
+              <EndpointHealthStatus endpoint={endpoint} mode="full" showRefresh={true} />
             </div>
           </div>
 

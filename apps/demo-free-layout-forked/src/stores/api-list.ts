@@ -11,7 +11,7 @@ import type {
   ExpressionCallResult,
   BehaviorParameter,
 } from '../services/types';
-import { behaviorApi, expressionApi, remoteBehaviorApi } from '../services/api-service';
+import { remoteBehaviorApi, expressionManagementApi } from '../services/api-service';
 
 // 扩展的参数类型，支持编辑状态
 export interface EditableBehaviorParameter extends BehaviorParameter {
@@ -167,7 +167,7 @@ const useExpressionStoreBase = create<ExpressionStore>()(
         try {
           // 并行加载行为函数和远程服务
           const [behaviors, remoteData] = await Promise.all([
-            behaviorApi.getAll(),
+            expressionManagementApi.getAllBehaviors(),
             remoteBehaviorApi.getAll(),
           ]);
 
@@ -273,7 +273,7 @@ const useExpressionStoreBase = create<ExpressionStore>()(
       // 单独加载行为函数
       loadBehaviors: async () => {
         try {
-          const behaviors = await behaviorApi.getAll();
+          const behaviors = await expressionManagementApi.getAllBehaviors();
           set((state) => {
             state.behaviors = behaviors;
             // 重新合并allItems

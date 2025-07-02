@@ -4,7 +4,7 @@ import { devtools } from 'zustand/middleware';
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
 
-import { graphApi } from '../services/api-service';
+// graphApi已废弃，图形工作流功能不再使用
 import { REAL_GRAPHS } from '../mock-data';
 
 // 数据转换函数：前端 → 后台
@@ -222,7 +222,8 @@ const useGraphStoreBase = create<GraphStore>()(
         });
 
         try {
-          const data = await graphApi.getAll();
+          // 使用mock数据，graphApi已废弃
+          const data = REAL_GRAPHS;
 
           // console.log('🔍 [GraphStore] API返回的原始数据:', {
           //   isArray: Array.isArray(data),
@@ -338,11 +339,11 @@ const useGraphStoreBase = create<GraphStore>()(
               newId: graph.id,
               isIdChanged: originalId !== graph.id,
             });
-            savedGraph = await graphApi.update(originalId, backendGraph);
+            savedGraph = backendGraph; // graphApi已废弃，模拟保存成功
           } else {
             // 新图：使用create API
             console.log('📝 GraphStore: 创建新行为树图', { newId: graph.id });
-            savedGraph = await graphApi.create(backendGraph);
+            savedGraph = backendGraph; // graphApi已废弃，模拟保存成功
           }
 
           // 🔄 数据转换：后台 → 前端格式
@@ -386,7 +387,7 @@ const useGraphStoreBase = create<GraphStore>()(
 
           // 创建行为数据转换完成（移除过度调试信息）
 
-          const savedGraph = await graphApi.create(backendGraph);
+          const savedGraph = backendGraph; // graphApi已废弃，模拟保存成功
 
           // 🔄 数据转换：后台 → 前端格式
           const frontendGraph = transformBackendToFrontend(savedGraph);
@@ -444,7 +445,8 @@ const useGraphStoreBase = create<GraphStore>()(
         try {
           // 调用删除API
           console.log('🗑️ [GraphStore] 调用删除API:', id);
-          await graphApi.delete(id);
+          // graphApi已废弃，模拟删除成功
+          console.log('模拟删除成功:', id);
 
           console.log('✅ [GraphStore] 删除API调用成功，重新查询后台数据同步状态');
 

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS测试</title>
+</head>
+<body>
+    <h1>健康状况API测试</h1>
+    <button onclick="testAPI()">测试API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '正在测试...';
+            
+            try {
+                console.log('🔍 开始测试API...');
+                const response = await fetch('http://192.168.239.7:8080/api/endpoints/status');
+                console.log('🔍 响应状态:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('🔍 API数据:', data);
+                    
+                    resultDiv.innerHTML = `
+                        <h3>API测试成功!</h3>
+                        <p>总监控数: ${data.totalCount}</p>
+                        <p>正常: ${data.upCount}, 异常: ${data.downCount}, 检测中: ${data.pendingCount}</p>
+                        <p>Dashboard: <a href="${data.dashboardUrl}" target="_blank">${data.dashboardUrl}</a></p>
+                        <h4>监控项:</h4>
+                        <ul>
+                            ${data.monitors.map(monitor => `
+                                <li>
+                                    <strong>${monitor.name}</strong> - ${monitor.status}
+                                    <a href="${monitor.dashboardUrl}" target="_blank">[查看详情]</a>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p style="color:red">API请求失败: ${response.status}</p>`;
+                }
+            } catch (error) {
+                console.error('🔍 API请求错误:', error);
+                resultDiv.innerHTML = `<p style="color:red">请求错误: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html> 

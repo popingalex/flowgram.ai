@@ -9,11 +9,12 @@ import { UniversalTable } from '../ext/universal-table';
 import { EntityPropertyTypeSelector } from '../ext/type-selector-ext';
 import { useCurrentEntity, useCurrentEntityActions } from '../../stores';
 import { useModuleStore } from '../../stores';
+import type { Entity, Attribute } from '../../services/types';
 
 const { Title } = Typography;
 
 interface EntityDetailProps {
-  selectedEntity: any;
+  selectedEntity: Entity | null;
   isDirty: boolean; // 保留接口兼容性，但内部使用CurrentEntityStore的状态
   isSaving: boolean; // 保留接口兼容性，但内部使用CurrentEntityStore的状态
   canSave: boolean;
@@ -54,11 +55,14 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
   // 🔑 直接使用CurrentEntityStore的editingEntity作为唯一数据源
   const currentEntity = editingEntity;
 
-  // 🔑 构建模块树形数据
+  // 🔑 构建模块树形数据（选中的模块排在顶部）
   const moduleTreeData = useMemo(() => {
     if (!modules) return [];
 
-    return modules.map((module: any) => {
+    const selectedBundles = currentEntity?.bundles || [];
+
+    // 构建所有模块数据
+    const allModules = modules.map((module: any) => {
       const children =
         module.attributes?.map((attr: any) => ({
           key: attr._indexId,
@@ -80,9 +84,17 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
         children,
         isAttribute: false,
         _indexId: module._indexId,
+        isSelected: selectedBundles.includes(module.id),
       };
     });
-  }, [modules]);
+
+    // 分离选中和未选中的模块
+    const selectedModules = allModules.filter((module) => module.isSelected);
+    const unselectedModules = allModules.filter((module) => !module.isSelected);
+
+    // 选中的排在顶部
+    return [...selectedModules, ...unselectedModules];
+  }, [modules, currentEntity?.bundles]);
 
   // 🔑 更新选中状态
   React.useEffect(() => {
@@ -321,121 +333,132 @@ export const EntityDetail: React.FC<EntityDetailProps> = ({
             />
           </div>
 
-          <UniversalTable
-            dataSource={moduleTreeData}
-            searchText={moduleSearchText}
-            columns={[
-              createColumn('id', 'ID', 'id', {
-                width: 150,
-                searchable: true,
-                render: (value: any, record: any) => {
-                  const displayValue = record.displayId || record.id;
-                  const isGroupHeader = record.children && record.children.length > 0;
-
-                  if (isGroupHeader) {
-                    return (
-                      <Typography.Text
-                        link={{ href: `/modules/${record.id}` }}
-                        style={{
-                          fontFamily:
-                            'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          color: 'var(--semi-color-primary)',
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {displayValue}
-                      </Typography.Text>
-                    );
-                  } else {
-                    return (
-                      <Typography.Text
-                        style={{
-                          fontFamily:
-                            'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-                          fontSize: '12px',
-                        }}
-                      >
-                        {displayValue}
-                      </Typography.Text>
-                    );
-                  }
-                },
-              }),
-              createColumn('name', '名称', 'name', {
-                width: 200,
-                searchable: true,
-                render: (value: any, record: any) => {
-                  const isGroupHeader = record.children && record.children.length > 0;
-
-                  if (isGroupHeader) {
-                    return (
-                      <Typography.Text
-                        link={{ href: `/modules/${record.id}` }}
-                        style={{
-                          fontSize: '13px',
-                          fontWeight: 600,
-                          color: 'var(--semi-color-primary)',
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {record.name}
-                      </Typography.Text>
-                    );
-                  } else {
-                    return (
-                      <Typography.Text style={{ fontSize: '13px' }}>{record.name}</Typography.Text>
-                    );
-                  }
-                },
-              }),
-              createColumn('typeOrCount', '', 'type', {
-                searchable: true,
-                render: (value: any, record: any) => {
-                  const isGroupHeader = record.children && record.children.length > 0;
-
-                  if (isGroupHeader) {
-                    // 模块行：显示属性统计
-                    return (
-                      <Tag size="small" color="cyan">
-                        {record.attributeCount || 0}
-                      </Tag>
-                    );
-                  } else {
-                    // 模块属性行：显示类型
-                    return (
-                      <EntityPropertyTypeSelector
-                        value={{
-                          type: record.type,
-                          ...(record.enumClassId && { enumClassId: record.enumClassId }),
-                        }}
-                        onChange={() => {}} // 只读
-                        disabled={true}
-                      />
-                    );
-                  }
-                },
-              }),
-            ]}
-            rowKey="_indexId"
-            editable={false}
-            showSelection={true}
-            selectedKeys={selectedModuleKeys}
-            onSelectionChange={(keys) => {
-              const moduleIds = keys.map((key) => {
-                const module = moduleTreeData.find((item) => item._indexId === key);
-                return module?.id || key;
-              });
-              updateProperty('bundles', moduleIds);
+          <div
+            style={{
+              height: '400px',
+              overflow: 'auto',
+              border: '1px solid var(--semi-color-border)',
+              borderRadius: '6px',
             }}
-            expandable={true}
-            childrenColumnName="children"
-            defaultExpandAllRows={false}
-            expandRowByClick={true}
-            size="small"
-            showPagination={false}
-          />
+          >
+            <UniversalTable
+              dataSource={moduleTreeData}
+              searchText={moduleSearchText}
+              columns={[
+                createColumn('id', 'ID', 'id', {
+                  width: 150,
+                  searchable: true,
+                  render: (value: any, record: any) => {
+                    const displayValue = record.displayId || record.id;
+                    const isGroupHeader = record.children && record.children.length > 0;
+
+                    if (isGroupHeader) {
+                      return (
+                        <Typography.Text
+                          link={{ href: `/modules/${record.id}` }}
+                          style={{
+                            fontFamily:
+                              'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: 'var(--semi-color-primary)',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {displayValue}
+                        </Typography.Text>
+                      );
+                    } else {
+                      return (
+                        <Typography.Text
+                          style={{
+                            fontFamily:
+                              'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+                            fontSize: '12px',
+                          }}
+                        >
+                          {displayValue}
+                        </Typography.Text>
+                      );
+                    }
+                  },
+                }),
+                createColumn('name', '名称', 'name', {
+                  width: 200,
+                  searchable: true,
+                  render: (value: any, record: any) => {
+                    const isGroupHeader = record.children && record.children.length > 0;
+
+                    if (isGroupHeader) {
+                      return (
+                        <Typography.Text
+                          link={{ href: `/modules/${record.id}` }}
+                          style={{
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            color: 'var(--semi-color-primary)',
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {record.name}
+                        </Typography.Text>
+                      );
+                    } else {
+                      return (
+                        <Typography.Text style={{ fontSize: '13px' }}>
+                          {record.name}
+                        </Typography.Text>
+                      );
+                    }
+                  },
+                }),
+                createColumn('typeOrCount', '', 'type', {
+                  searchable: true,
+                  render: (value: any, record: any) => {
+                    const isGroupHeader = record.children && record.children.length > 0;
+
+                    if (isGroupHeader) {
+                      // 模块行：显示属性统计
+                      return (
+                        <Tag size="small" color="cyan">
+                          {record.attributeCount || 0}
+                        </Tag>
+                      );
+                    } else {
+                      // 模块属性行：显示类型
+                      return (
+                        <EntityPropertyTypeSelector
+                          value={{
+                            type: record.type,
+                            ...(record.enumClassId && { enumClassId: record.enumClassId }),
+                          }}
+                          onChange={() => {}} // 只读
+                          disabled={true}
+                        />
+                      );
+                    }
+                  },
+                }),
+              ]}
+              rowKey="_indexId"
+              editable={false}
+              showSelection={true}
+              selectedKeys={selectedModuleKeys}
+              onSelectionChange={(keys) => {
+                const moduleIds = keys.map((key) => {
+                  const module = moduleTreeData.find((item) => item._indexId === key);
+                  return module?.id || key;
+                });
+                updateProperty('bundles', moduleIds);
+              }}
+              expandable={true}
+              childrenColumnName="children"
+              defaultExpandAllRows={false}
+              expandRowByClick={true}
+              size="small"
+              showPagination={false}
+            />
+          </div>
         </div>
       </div>
     </div>

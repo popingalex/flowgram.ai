@@ -2,15 +2,7 @@ import React, { useState } from 'react';
 
 import { Button, Card, Typography, Space, Toast, Tag, Divider } from '@douyinfe/semi-ui';
 
-import {
-  entityApi,
-  moduleApi,
-  enumApi,
-  behaviorApi,
-  graphApi,
-  getApiMode,
-  toggleMockMode,
-} from '../services/api-service';
+import { moduleApi, systemApi, getApiMode, toggleMockMode } from '../services/api-service';
 
 const { Title, Text } = Typography;
 
@@ -52,29 +44,14 @@ export const ApiTestPanel: React.FC = () => {
 
   const tests = [
     {
-      name: '实体API',
-      key: 'entities',
-      fn: () => entityApi.getAll(),
-    },
-    {
       name: '模块API',
       key: 'modules',
       fn: () => moduleApi.getAll(),
     },
     {
-      name: '枚举API',
-      key: 'enums',
-      fn: () => enumApi.getAll(),
-    },
-    {
-      name: '行为API',
-      key: 'behaviors',
-      fn: () => behaviorApi.getAll(),
-    },
-    {
-      name: '图形API',
-      key: 'graphs',
-      fn: () => graphApi.getAll(),
+      name: '系统API',
+      key: 'systems',
+      fn: () => systemApi.getAll(),
     },
   ];
 
@@ -123,7 +100,7 @@ export const ApiTestPanel: React.FC = () => {
           </Text>
           <br />
           <Text type="secondary" size="small">
-            真实API模式会先尝试连接后台服务 (http://localhost:9999)，失败时自动降级到Mock模式
+            真实API模式会先尝试连接后台服务 (http://192.168.239.7:8080)，失败时自动降级到Mock模式
           </Text>
         </div>
 
@@ -191,7 +168,8 @@ export const ApiTestPanel: React.FC = () => {
               <li>绿色标签表示API调用成功</li>
               <li>红色标签表示API调用失败，会自动降级到Mock数据</li>
               <li>Mock模式使用本地模拟数据，不需要后台服务</li>
-              <li>真实API模式需要后台服务运行在 http://localhost:9999</li>
+              <li>真实API模式需要后台服务运行在 http://192.168.239.7:8080</li>
+              <li>注意：实体、枚举、行为、图形API已迁移到新的管理系统</li>
             </ul>
           </Text>
         </div>

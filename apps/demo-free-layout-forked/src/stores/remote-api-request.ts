@@ -42,7 +42,7 @@ interface RemoteApiRequestState {
 }
 
 // API服务配置
-const API_BASE_URL = 'http://localhost:8080/api/remote-request';
+const API_BASE_URL = 'http://192.168.239.7:8080/api/remote-request';
 
 export const useRemoteApiRequestStore = create<RemoteApiRequestState>()(
   subscribeWithSelector((set, get) => ({

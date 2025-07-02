@@ -1,205 +1,514 @@
 [
   {
-    "id": "container",
-    "name": "容器",
-    "desc": "提供容器功能的模块，支持内容物管理和容量控制",
-    "deprecated": false,
+    "id": "name_component",
+    "name": "名称组件",
     "attributes": [
       {
-        "id": "container/content",
-        "type": "(entity:s,type_id:s,type_name:s,flow_min:n,flow_max:n,amount:n,detail:u,cost:n,capacity:n,delivery_rate:n,production_rate:n)[]",
-        "name": "内容物"
-      },
-      {
-        "id": "container/strategy",
+        "id": "name",
         "type": "s",
-        "name": "策略"
-      },
+        "name": "实体名称",
+        "desc": "实体的人类可读名称",
+        "value": "未命名实体",
+        "required": false
+      }
+    ],
+    "desc": "实体的人类可读名称，用于标识和显示"
+  },
+  {
+    "id": "position_component",
+    "name": "位置组件",
+    "attributes": [
       {
-        "id": "container/capacity",
+        "id": "x",
         "type": "n",
-        "name": "容量"
-      }
-    ]
-  },
-  {
-    "id": "mobile",
-    "name": "移动的",
-    "desc": "提供移动功能的模块，支持路径规划和位置管理",
-    "deprecated": false,
-    "attributes": [
-      {
-        "id": "mobile/path",
-        "type": "n[6][]",
-        "name": "路径"
+        "name": "X坐标",
+        "desc": "实体在世界中的X轴位置",
+        "value": 0,
+        "required": false
       },
       {
-        "id": "mobile/step_path",
-        "type": "n[6][]",
-        "name": "步进路径"
-      },
-      {
-        "id": "mobile/road_path",
-        "type": "n[6][]",
-        "name": "路网路径"
-      },
-      {
-        "id": "mobile/step_road_path",
-        "type": "n[6][]",
-        "name": "路网步进路径"
-      },
-      {
-        "id": "mobile/road_position",
-        "type": "n[3][]",
-        "name": "路网位置"
-      },
-      {
-        "id": "mobile/destination",
-        "type": "n[6]",
-        "name": "目的地"
-      },
-      {
-        "id": "mobile/velocity",
-        "type": "(mode:s,scalar:n)[]",
-        "name": "速度"
-      }
-    ]
-  },
-  {
-    "id": "terrain",
-    "name": "地形通用",
-    "desc": "提供地形功能的模块，支持地貌和水文数据管理",
-    "deprecated": false,
-    "attributes": [
-      {
-        "id": "terrain/landform_matrix",
-        "type": "(depth:n,elevation:n,composition:(matter:s,amount:n)[])[][]",
-        "name": "地貌矩阵"
-      },
-      {
-        "id": "terrain/hydrology_matrix",
-        "type": "(depth:n,elevation:n,velocities:(n:n,w:n,e:n,s:n),flow:n)[][]",
-        "name": "水文矩阵"
-      },
-      {
-        "id": "terrain/road_network",
-        "type": "(node:s,position:n[3],neighbors:s[])[]",
-        "name": "路网"
-      },
-      {
-        "id": "terrain/river_network",
-        "type": "(node:s,position:n[3],neighbors:s[])[]",
-        "name": "河网"
-      }
-    ]
-  },
-  {
-    "id": "controlled",
-    "name": "可控制的",
-    "desc": "提供控制功能的模块，支持指令管理和状态控制",
-    "deprecated": false,
-    "attributes": [
-      {
-        "id": "controlled/commands",
-        "type": "(command:s,args:u)[]",
-        "name": "指令集合"
-      },
-      {
-        "id": "controlled/standby_position",
-        "type": "n[3]",
-        "name": "待机位置"
-      },
-      {
-        "id": "controlled/work_position",
-        "type": "n[3]",
-        "name": "工作位置"
-      },
-      {
-        "id": "controlled/action",
-        "type": "s",
-        "name": "行为"
-      },
-      {
-        "id": "controlled/action_cost",
+        "id": "y",
         "type": "n",
-        "name": "行为消耗"
+        "name": "Y坐标",
+        "desc": "实体在世界中的Y轴位置",
+        "value": 0,
+        "required": false
+      }
+    ],
+    "desc": "实体在2D世界中的坐标位置"
+  },
+  {
+    "id": "material_component",
+    "name": "材料组件",
+    "attributes": [
+      {
+        "id": "material_id",
+        "type": "s",
+        "name": "材料ID",
+        "desc": "材料类型的唯一标识符",
+        "value": "default_material",
+        "required": false
+      }
+    ],
+    "desc": "定义实体的材料类型和特性"
+  },
+  {
+    "id": "flammable_component",
+    "name": "可燃组件",
+    "attributes": [
+      {
+        "id": "material_id",
+        "type": "s",
+        "name": "材料ID",
+        "desc": "可燃材料类型标识符",
+        "value": "wood",
+        "required": false
       },
       {
-        "id": "controlled/action_progress",
+        "id": "temperature",
         "type": "n",
-        "name": "行为进度"
+        "name": "当前温度",
+        "desc": "材料当前温度(摄氏度)",
+        "value": 20,
+        "required": false
       },
       {
-        "id": "controlled/action_target",
-        "type": "s",
-        "name": "行为目标"
+        "id": "ignition_point",
+        "type": "n",
+        "name": "燃点",
+        "desc": "材料开始燃烧的温度(摄氏度)",
+        "value": 300,
+        "required": false
       },
       {
-        "id": "controlled/stance",
-        "type": "s",
-        "name": "姿态"
+        "id": "fuel",
+        "type": "n",
+        "name": "当前燃料",
+        "desc": "剩余可燃物质量",
+        "value": 100,
+        "required": false
       },
       {
-        "id": "controlled/status",
-        "type": "s",
-        "name": "状态"
+        "id": "initial_fuel",
+        "type": "n",
+        "name": "初始燃料",
+        "desc": "初始可燃物质量",
+        "value": 100,
+        "required": false
+      },
+      {
+        "id": "burn_rate",
+        "type": "n",
+        "name": "燃烧速率",
+        "desc": "每秒消耗的燃料量",
+        "value": 1,
+        "required": false
+      },
+      {
+        "id": "heat_intensity",
+        "type": "n",
+        "name": "热强度",
+        "desc": "燃烧产生的热量强度",
+        "value": 50,
+        "required": false
+      },
+      {
+        "id": "heat_yield_per_fuel",
+        "type": "n",
+        "name": "单位燃料热值",
+        "desc": "每单位燃料产生的热量",
+        "value": 0.5,
+        "required": false
+      },
+      {
+        "id": "thermal_inertia",
+        "type": "n",
+        "name": "热惯性",
+        "desc": "材料温度变化的阻力",
+        "value": 1,
+        "required": false
       }
-    ]
+    ],
+    "desc": "定义材料的燃烧特性和热力学属性"
   },
   {
-    "id": "vehicle",
-    "name": "载具",
-    "desc": "提供载具功能的模块，支持装卸货和类型管理",
-    "deprecated": false,
+    "id": "burning_component",
+    "name": "燃烧组件",
     "attributes": [
       {
-        "id": "vehicle/loading_area",
-        "type": "s",
-        "name": "装货位置"
-      },
-      {
-        "id": "vehicle/unloading_area",
-        "type": "s",
-        "name": "卸货位置"
-      },
-      {
-        "id": "vehicle/type",
-        "type": "s",
-        "name": "载具类型"
+        "id": "flame_scale",
+        "type": "n",
+        "name": "火焰规模",
+        "desc": "火焰的视觉强度和大小",
+        "value": 1,
+        "required": false
       }
-    ]
+    ],
+    "desc": "表示实体正在燃烧的动态状态"
   },
   {
-    "id": "transform",
-    "name": "变换",
-    "desc": "提供变换功能的模块，支持坐标、位置和旋转管理",
-    "deprecated": false,
+    "id": "agent_component",
+    "name": "智能体组件",
     "attributes": [
       {
-        "id": "transform/coordinates",
-        "type": "n[3]",
-        "name": "坐标"
+        "id": "team",
+        "type": "s",
+        "name": "队伍",
+        "desc": "智能体所属的队伍或组织",
+        "value": "rescue_team",
+        "required": false
       },
       {
-        "id": "transform/position",
-        "type": "n[3]",
-        "name": "位置"
+        "id": "current_action",
+        "type": "s",
+        "name": "当前行动",
+        "desc": "智能体正在执行的行动",
+        "value": "idle",
+        "required": false
       },
       {
-        "id": "transform/lonlatposition",
-        "type": "n[3]",
-        "name": "经纬度位置"
-      },
-      {
-        "id": "transform/rotation",
-        "type": "n[3]",
-        "name": "旋转"
-      },
-      {
-        "id": "transform/scale",
-        "type": "n[3]",
-        "name": "缩放"
+        "id": "speed",
+        "type": "n",
+        "name": "移动速度",
+        "desc": "智能体的移动速度(单位/秒)",
+        "value": 20,
+        "required": false
       }
-    ]
+    ],
+    "desc": "定义智能体的基本属性和行为能力"
+  },
+  {
+    "id": "inventory_component",
+    "name": "背包组件",
+    "attributes": [
+      {
+        "id": "contents",
+        "type": "s",
+        "name": "背包内容",
+        "desc": "背包中物品的JSON表示",
+        "value": "{}",
+        "required": false
+      },
+      {
+        "id": "capacity",
+        "type": "n",
+        "name": "背包容量",
+        "desc": "背包的最大容量",
+        "value": 100,
+        "required": false
+      }
+    ],
+    "desc": "管理智能体携带的物品和资源"
+  },
+  {
+    "id": "target_component",
+    "name": "目标组件",
+    "attributes": [
+      {
+        "id": "target_entity_id",
+        "type": "n",
+        "name": "目标实体ID",
+        "desc": "目标实体的唯一标识符",
+        "value": -1,
+        "required": false
+      },
+      {
+        "id": "target_position_x",
+        "type": "n",
+        "name": "目标位置X",
+        "desc": "目标位置的X坐标",
+        "value": 0,
+        "required": false
+      },
+      {
+        "id": "target_position_y",
+        "type": "n",
+        "name": "目标位置Y",
+        "desc": "目标位置的Y坐标",
+        "value": 0,
+        "required": false
+      }
+    ],
+    "desc": "定义智能体的行动目标"
+  },
+  {
+    "id": "substance_component",
+    "name": "物质组件",
+    "attributes": [
+      {
+        "id": "substance_id",
+        "type": "s",
+        "name": "物质ID",
+        "desc": "物质类型的唯一标识符",
+        "value": "water",
+        "required": false
+      },
+      {
+        "id": "quantity",
+        "type": "n",
+        "name": "数量",
+        "desc": "物质的当前数量",
+        "value": 0,
+        "required": false
+      }
+    ],
+    "desc": "定义实体包含的特定物质和数量"
+  },
+  {
+    "id": "emitter_component",
+    "name": "发射器组件",
+    "attributes": [
+      {
+        "id": "range",
+        "type": "n",
+        "name": "射程",
+        "desc": "发射器的有效射程",
+        "value": 10,
+        "required": false
+      },
+      {
+        "id": "flow_rate",
+        "type": "n",
+        "name": "流量",
+        "desc": "每秒发射的物质量",
+        "value": 5,
+        "required": false
+      },
+      {
+        "id": "is_active",
+        "type": "b",
+        "name": "激活状态",
+        "desc": "发射器是否处于激活状态",
+        "value": false,
+        "required": false
+      }
+    ],
+    "desc": "能够发射或释放物质的装置"
+  },
+  {
+    "id": "refill_station_component",
+    "name": "补给站组件",
+    "attributes": [
+      {
+        "id": "substance_id",
+        "type": "s",
+        "name": "补给物质ID",
+        "desc": "补给站提供的物质类型",
+        "value": "water",
+        "required": false
+      },
+      {
+        "id": "refill_rate",
+        "type": "n",
+        "name": "补给速率",
+        "desc": "每秒补给的物质量",
+        "value": 10,
+        "required": false
+      },
+      {
+        "id": "capacity",
+        "type": "n",
+        "name": "总容量",
+        "desc": "补给站的最大容量",
+        "value": 1000,
+        "required": false
+      },
+      {
+        "id": "current_supply",
+        "type": "n",
+        "name": "当前储量",
+        "desc": "补给站当前的物质储量",
+        "value": 1000,
+        "required": false
+      },
+      {
+        "id": "interaction_radius",
+        "type": "n",
+        "name": "交互半径",
+        "desc": "智能体可以使用补给站的距离",
+        "value": 2,
+        "required": false
+      }
+    ],
+    "desc": "提供物质补给服务的固定设施"
+  },
+  {
+    "id": "bounding_volume_component",
+    "name": "边界体组件",
+    "attributes": [
+      {
+        "id": "shape",
+        "type": "s",
+        "name": "形状",
+        "desc": "边界体的几何形状",
+        "value": "circle",
+        "required": false
+      },
+      {
+        "id": "size",
+        "type": "n",
+        "name": "尺寸",
+        "desc": "边界体的大小(半径或边长)",
+        "value": 1,
+        "required": false
+      }
+    ],
+    "desc": "定义实体的碰撞检测和空间占用边界"
+  },
+  {
+    "id": "structural_integrity_component",
+    "name": "结构完整性组件",
+    "attributes": [
+      {
+        "id": "max_integrity",
+        "type": "n",
+        "name": "最大完整性",
+        "desc": "结构的最大完整性值",
+        "value": 100,
+        "required": false
+      },
+      {
+        "id": "current_integrity",
+        "type": "n",
+        "name": "当前完整性",
+        "desc": "结构的当前完整性值",
+        "value": 100,
+        "required": false
+      },
+      {
+        "id": "damage_threshold",
+        "type": "n",
+        "name": "损坏阈值",
+        "desc": "开始受损的完整性阈值",
+        "value": 80,
+        "required": false
+      }
+    ],
+    "desc": "跟踪建筑物或结构的损坏状态"
+  },
+  {
+    "id": "pressure_vessel_component",
+    "name": "压力容器组件",
+    "attributes": [
+      {
+        "id": "internal_pressure",
+        "type": "n",
+        "name": "内部压力",
+        "desc": "容器内部的当前压力",
+        "value": 1,
+        "required": false
+      },
+      {
+        "id": "max_pressure",
+        "type": "n",
+        "name": "最大压力",
+        "desc": "容器能承受的最大压力",
+        "value": 10,
+        "required": false
+      },
+      {
+        "id": "pressure_buildup_rate",
+        "type": "n",
+        "name": "压力增长率",
+        "desc": "压力每秒增长的速率",
+        "value": 0.1,
+        "required": false
+      },
+      {
+        "id": "temperature_threshold",
+        "type": "n",
+        "name": "温度阈值",
+        "desc": "触发压力增长的温度阈值",
+        "value": 100,
+        "required": false
+      }
+    ],
+    "desc": "模拟可能发生爆炸的压力容器"
+  },
+  {
+    "id": "explosion_event_component",
+    "name": "爆炸事件组件",
+    "attributes": [
+      {
+        "id": "epicenter_x",
+        "type": "n",
+        "name": "爆心X坐标",
+        "desc": "爆炸中心的X坐标",
+        "value": 0,
+        "required": false
+      },
+      {
+        "id": "epicenter_y",
+        "type": "n",
+        "name": "爆心Y坐标",
+        "desc": "爆炸中心的Y坐标",
+        "value": 0,
+        "required": false
+      },
+      {
+        "id": "radius",
+        "type": "n",
+        "name": "爆炸半径",
+        "desc": "爆炸影响的半径范围",
+        "value": 5,
+        "required": false
+      },
+      {
+        "id": "damage",
+        "type": "n",
+        "name": "爆炸伤害",
+        "desc": "爆炸造成的伤害值",
+        "value": 50,
+        "required": false
+      },
+      {
+        "id": "duration",
+        "type": "n",
+        "name": "持续时间",
+        "desc": "爆炸效果的总持续时间",
+        "value": 2,
+        "required": false
+      },
+      {
+        "id": "remaining_time",
+        "type": "n",
+        "name": "剩余时间",
+        "desc": "爆炸效果的剩余时间",
+        "value": 2,
+        "required": false
+      }
+    ],
+    "desc": "表示正在发生的爆炸事件"
+  },
+  {
+    "id": "wind_component",
+    "name": "风力组件",
+    "attributes": [
+      {
+        "id": "direction_x",
+        "type": "n",
+        "name": "风向X分量",
+        "desc": "风向量的X轴分量",
+        "value": 1,
+        "required": false
+      },
+      {
+        "id": "direction_y",
+        "type": "n",
+        "name": "风向Y分量",
+        "desc": "风向量的Y轴分量",
+        "value": 0,
+        "required": false
+      },
+      {
+        "id": "speed",
+        "type": "n",
+        "name": "风速",
+        "desc": "风的速度大小",
+        "value": 5,
+        "required": false
+      }
+    ],
+    "desc": "模拟环境风力对火势传播的影响"
   }
 ]

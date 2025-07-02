@@ -14,7 +14,7 @@ import {
   SystemBehaviorStoreState,
   SystemBehaviorActions,
 } from '../typings/behavior';
-import { behaviorApi } from '../services/api-service';
+import { expressionManagementApi } from '../services/api-service';
 
 // 组合Store类型
 type SystemBehaviorStore = SystemBehaviorStoreState & SystemBehaviorActions;
@@ -41,7 +41,7 @@ const useSystemBehaviorStoreBase = create<SystemBehaviorStore>()(
 
         try {
           // 🔧 使用behaviorApi.getAll()获取数据，与其他Store保持一致
-          const behaviorData = await behaviorApi.getAll();
+          const behaviorData = await expressionManagementApi.getAllBehaviors();
 
           console.log('🔍 [SystemBehaviorStore] API返回的原始数据:', {
             isArray: Array.isArray(behaviorData),

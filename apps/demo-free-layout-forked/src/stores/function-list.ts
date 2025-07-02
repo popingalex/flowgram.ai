@@ -5,7 +5,7 @@ import { create } from 'zustand';
 import { nanoid } from 'nanoid';
 
 import type { BehaviorDef } from '../services/types';
-import { behaviorApi } from '../services/api-service';
+import { expressionManagementApi } from '../services/api-service';
 
 // Store状态
 export interface BehaviorStoreState {
@@ -56,7 +56,7 @@ const useBehaviorStoreBase = create<BehaviorStore>()(
         });
 
         try {
-          const behaviors = await behaviorApi.getAll();
+          const behaviors = await expressionManagementApi.getAllBehaviors();
           // console.log('🔍 [BehaviorStore] API返回的原始数据:', {
           //   behaviorsCount: behaviors.length,
           //   firstBehavior: behaviors[0],
