@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API端点测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left: 4px solid #28a745;
+        }
+        .error {
+            border-left: 4px solid #dc3545;
+        }
+        .status {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>API端点测试</h1>
+    <p>测试新的API端点：<code>http://localhost:8080/api/modular/modules/</code> 和 <code>http://localhost:8080/api/modular/entities</code></p>
+
+    <div class="test-section">
+        <h2>模块API测试</h2>
+        <button class="test-button" onclick="testModulesAPI()">测试 GET /api/modular/modules/</button>
+        <div id="modules-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>实体API测试</h2>
+        <button class="test-button" onclick="testEntitiesAPI()">测试 GET /api/modular/entities</button>
+        <div id="entities-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>API端点对比</h2>
+        <h3>旧端点（应该失败）</h3>
+        <button class="test-button" onclick="testOldModulesAPI()">测试 GET /api/modules</button>
+        <button class="test-button" onclick="testOldEntitiesAPI()">测试 GET /api/entities</button>
+        <div id="old-result" class="result"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8080';
+
+        async function testAPI(endpoint, resultElementId) {
+            const resultElement = document.getElementById(resultElementId);
+            resultElement.innerHTML = '正在测试...';
+            resultElement.className = 'result';
+
+            try {
+                const response = await fetch(`${BASE_URL}${endpoint}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultElement.className = 'result success';
+                    resultElement.innerHTML = `
+<div class="status">✅ 成功 (${response.status})</div>
+端点: ${endpoint}
+数据条数: ${Array.isArray(data) ? data.length : 'N/A'}
+响应数据:
+${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultElement.className = 'result error';
+                    resultElement.innerHTML = `
+<div class="status">❌ 失败 (${response.status})</div>
+端点: ${endpoint}
+错误信息: ${response.statusText}
+响应数据:
+${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+<div class="status">❌ 网络错误</div>
+端点: ${endpoint}
+错误信息: ${error.message}`;
+            }
+        }
+
+        function testModulesAPI() {
+            testAPI('/api/modular/modules/', 'modules-result');
+        }
+
+        function testEntitiesAPI() {
+            testAPI('/api/modular/entities', 'entities-result');
+        }
+
+        function testOldModulesAPI() {
+            testAPI('/api/modules', 'old-result');
+        }
+
+        function testOldEntitiesAPI() {
+            testAPI('/api/entities', 'old-result');
+        }
+
+        // 页面加载时自动测试新端点
+        window.onload = function() {
+            setTimeout(() => {
+                testModulesAPI();
+                setTimeout(() => {
+                    testEntitiesAPI();
+                }, 1000);
+            }, 500);
+        };
+    </script>
+</body>
+</html> 

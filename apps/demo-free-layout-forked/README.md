@@ -78,7 +78,19 @@ npx playwright show-report
 ### 服务依赖
 测试需要以下服务运行：
 - **前端服务**: http://localhost:13000 (开发服务器)
-- **后端API**: http://localhost:9999 (数据清理API)
+- **后端API**: http://localhost:8080 (主要API服务器)
+
+### API端点说明
+当前使用的API端点：
+- **模块API**: `GET http://localhost:8080/api/modular/modules/`
+- **实体API**: `GET http://localhost:8080/api/modular/entities`
+- **系统API**: `GET http://localhost:8080/api/systems`
+- **行为API**: 
+  - 远程行为: `GET http://localhost:8080/exp/remote`
+  - 本地行为: `GET http://localhost:8080/exp/local`
+  - 脚本行为: `GET http://localhost:8080/exp/script`
+
+可以使用 `test-api-endpoints.html` 测试页面验证API端点是否正常工作。
 
 ## 📱 页面结构
 

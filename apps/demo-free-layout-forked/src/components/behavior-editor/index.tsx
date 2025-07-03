@@ -9,6 +9,7 @@ import { DetailPanel } from '../data-management/detail-panel';
 import { systemApi } from '../../services/api-service';
 import { useRouter } from '../../hooks/use-router';
 import { BehaviorDetail } from './behavior-detail';
+import { CodeType } from '../../typings/behavior';
 
 const { Text } = Typography;
 
@@ -329,6 +330,9 @@ export const BehaviorEditor: React.FC = () => {
     if (!loading && systems.length > 0 && !routeState.entityId) {
       const firstSystem = systems[0];
       navigate({ route: 'system', entityId: firstSystem.id });
+    } else if (!loading && systems.length === 0 && !routeState.entityId) {
+      // 如果没有系统，默认进入新建页面
+      navigate({ route: 'system', entityId: 'new' });
     }
   }, [loading, systems, routeState.entityId, navigate]);
 
@@ -570,7 +574,7 @@ export const BehaviorEditor: React.FC = () => {
                   name: system.name,
                   description: system.desc || '',
                   parameters: [],
-                  codeConfig: { type: 'LOCAL' },
+                  codeConfig: { type: CodeType.LOCAL },
                   exp: system.expression ? JSON.stringify(system.expression, null, 2) : '',
                   _status: system._status,
                 }

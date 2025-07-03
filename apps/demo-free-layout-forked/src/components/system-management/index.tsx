@@ -129,6 +129,9 @@ export const SystemManagementPage: React.FC = () => {
     if (!loading && systems.length > 0 && !routeState.entityId) {
       const firstSystem = systems[0];
       navigate({ route: 'system', entityId: firstSystem.id });
+    } else if (!loading && systems.length === 0 && !routeState.entityId) {
+      // 如果没有系统，默认进入新建页面
+      navigate({ route: 'system', entityId: 'new' });
     }
   }, [loading, systems, routeState.entityId, navigate]);
 

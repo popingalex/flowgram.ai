@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulator API修复验证</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left: 4px solid #28a745;
+        }
+        .error {
+            border-left: 4px solid #dc3545;
+        }
+        .status {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simulator API修复验证</h1>
+    <p>验证simulator项目是否正确使用新的API端点</p>
+
+    <div class="test-section">
+        <h2>直接API测试</h2>
+        <button class="test-button" onclick="testDirectAPI()">测试新端点</button>
+        <div id="direct-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>配置验证</h2>
+        <button class="test-button" onclick="showConfig()">显示API配置</button>
+        <div id="config-result" class="result"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8080';
+
+        async function testDirectAPI() {
+            const resultElement = document.getElementById('direct-result');
+            resultElement.innerHTML = '正在测试新端点...';
+            resultElement.className = 'result';
+
+            try {
+                // 测试新的实体端点
+                const entityResponse = await fetch(`${BASE_URL}/api/modular/entities`);
+                const entityData = await entityResponse.json();
+                
+                // 测试新的模块端点  
+                const moduleResponse = await fetch(`${BASE_URL}/api/modular/modules/`);
+                const moduleData = await moduleResponse.json();
+                
+                if (entityResponse.ok && moduleResponse.ok) {
+                    resultElement.className = 'result success';
+                    resultElement.innerHTML = `
+<div class="status">✅ 新端点测试成功</div>
+实体数据: ${Array.isArray(entityData) ? entityData.length : 'N/A'} 条
+模块数据: ${Array.isArray(moduleData) ? moduleData.length : 'N/A'} 条
+
+实体端点: /api/modular/entities (${entityResponse.status})
+模块端点: /api/modular/modules/ (${moduleResponse.status})`;
+                } else {
+                    resultElement.className = 'result error';
+                    resultElement.innerHTML = `
+<div class="status">❌ 端点测试失败</div>
+实体端点状态: ${entityResponse.status}
+模块端点状态: ${moduleResponse.status}`;
+                }
+            } catch (error) {
+                resultElement.className = 'result error';
+                resultElement.innerHTML = `
+<div class="status">❌ 网络错误</div>
+错误信息: ${error.message}`;
+            }
+        }
+
+        function showConfig() {
+            const resultElement = document.getElementById('config-result');
+            
+            // 模拟显示配置信息
+            const config = {
+                BASE_URL: 'http://localhost:8080',
+                ENDPOINTS: {
+                    MODULE: '/api/modular/modules/',
+                    ENTITY: '/api/modular/entities',
+                    SYSTEM: '/api/systems',
+                    SCENARIO: '/api/scenarios'
+                }
+            };
+            
+            resultElement.className = 'result success';
+            resultElement.innerHTML = `
+<div class="status">📋 当前API配置</div>
+${JSON.stringify(config, null, 2)}
+
+修复内容:
+- ✅ 实体API: 从 /entities 更新为 /api/modular/entities
+- ✅ 模块API: 从 /modules 更新为 /api/modular/modules/
+- ✅ 基础URL: 更新为 localhost:8080
+- ✅ 使用配置文件而非硬编码端点`;
+        }
+
+        // 页面加载时自动测试
+        window.onload = function() {
+            setTimeout(() => {
+                testDirectAPI();
+            }, 500);
+        };
+    </script>
+</body>
+</html> 

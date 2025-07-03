@@ -1,0 +1,91 @@
+[
+  {
+    "id": "foam_firefighter",
+    "name": "泡沫消防员",
+    "modules": [{ "id": "e.water_firefighter", "name": "水枪消防员" }],
+    "desc": "使用泡沫的消防员，继承水枪消防员并特化名称和背包内容"
+  },
+  {
+    "id": "water_refill_station",
+    "name": "水补给站",
+    "modules": [
+      { "id": "position_component", "name": "位置组件" },
+      { "id": "name_component", "name": "名称组件" },
+      { "id": "refill_station_component", "name": "补给站组件" }
+    ],
+    "desc": "提供水资源补给的固定设施"
+  },
+  {
+    "id": "foam_refill_station",
+    "name": "泡沫补给站",
+    "modules": [
+      { "id": "position_component", "name": "位置组件" },
+      { "id": "name_component", "name": "名称组件" },
+      { "id": "refill_station_component", "name": "补给站组件" }
+    ],
+    "desc": "提供泡沫资源补给的固定设施"
+  },
+  {
+    "id": "base_forest_plot",
+    "name": "基础森林地块",
+    "modules": [
+      { "id": "position_component", "name": "位置组件" },
+      { "id": "name_component", "name": "名称组件" },
+      { "id": "bounding_volume_component", "name": "边界体组件" },
+      { "id": "material_component", "name": "材料组件" },
+      { "id": "flammable_component", "name": "可燃组件" }
+    ],
+    "desc": "森林地块的基础模板，包含位置、名称、边界体、材料和可燃属性"
+  },
+  {
+    "id": "pine_plot",
+    "name": "松树地块",
+    "modules": [{ "id": "e.base_forest_plot", "name": "基础森林地块" }],
+    "desc": "松树森林地块，继承基础森林地块并特化材料和燃烧属性"
+  },
+  {
+    "id": "oak_plot",
+    "name": "橡树地块",
+    "modules": [{ "id": "e.base_forest_plot", "name": "基础森林地块" }],
+    "desc": "橡树森林地块，继承基础森林地块并特化材料和燃烧属性"
+  },
+  {
+    "id": "gasoline_tank",
+    "name": "汽油罐",
+    "modules": [
+      { "id": "position_component", "name": "位置组件" },
+      { "id": "name_component", "name": "名称组件" },
+      { "id": "bounding_volume_component", "name": "边界体组件" },
+      { "id": "material_component", "name": "材料组件" },
+      { "id": "flammable_component", "name": "可燃组件" }
+    ],
+    "desc": "汽油储罐，包含位置、名称、边界体、材料和可燃属性"
+  },
+  {
+    "id": "crude_oil_tank",
+    "name": "原油罐",
+    "modules": [{ "id": "e.gasoline_tank", "name": "汽油罐" }],
+    "desc": "原油储罐，继承汽油罐并特化名称和可燃属性"
+  },
+  {
+    "id": "water_firefighter",
+    "name": "水枪消防员",
+    "modules": [
+      { "id": "position_component", "name": "位置组件" },
+      { "id": "name_component", "name": "名称组件" },
+      { "id": "agent_component", "name": "智能体组件" },
+      { "id": "inventory_component", "name": "背包组件" },
+      { "id": "emitter_component", "name": "发射器组件" }
+    ],
+    "desc": "使用水枪的消防员，包含位置、名称、智能体、背包和发射器组件"
+  },
+  {
+    "id": "global_wind",
+    "name": "全局风力",
+    "modules": [
+      { "id": "name_component", "name": "名称组件" },
+      { "id": "wind_component", "name": "风力组件" }
+    ],
+    "desc": "影响整个场景的全局风力系统"
+  }
+]

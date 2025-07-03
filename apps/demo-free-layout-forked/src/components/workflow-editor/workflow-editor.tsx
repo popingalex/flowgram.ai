@@ -133,7 +133,7 @@ const EntityPropertySyncer: React.FC = () => {
   // 🎯 新增：从编辑中的实体数据生成完整属性结构
   const getEntityCompletePropertiesFromEditingEntity = useCallback((editingEntity: any) => {
     const { modules } = useModuleStore.getState(); // 获取模块数据
-    if (!editingEntity || !editingEntity.attributes) {
+    if (!editingEntity) {
       return null;
     }
 
@@ -175,40 +175,7 @@ const EntityPropertySyncer: React.FC = () => {
         isSystemProperty: true,
       };
 
-      // 然后添加实体自身的扩展属性（用户定义的业务属性）
-      editingEntity.attributes.forEach((attr: any) => {
-        if (!attr._indexId || !attr.id) {
-          console.warn('编辑实体属性缺少必要字段:', attr);
-          return;
-        }
-
-        // 🎯 使用业务ID作为变量key，nanoid存储在_indexId中用于内部引用
-        const businessId = (attr as any).$id || attr.id;
-        properties[businessId] = {
-          ...attr, // 保留所有原始属性
-          // 转换type格式
-          type:
-            attr.type === 'n'
-              ? 'number'
-              : attr.type === 's'
-              ? 'string'
-              : attr.type?.includes('[')
-              ? 'array'
-              : 'string',
-          ...(attr.type?.includes('[') && {
-            items: {
-              type:
-                attr.type?.replace(/\[|\]/g, '') === 'n'
-                  ? 'number'
-                  : attr.type?.replace(/\[|\]/g, '') === 's'
-                  ? 'string'
-                  : 'string',
-            },
-          }),
-          _indexId: attr._indexId, // 保留原始的nanoid用于内部引用
-          isEntityProperty: true,
-        };
-      });
+      // 实体不再支持自定义属性，移除实体属性处理逻辑
 
       // 🎯 添加模块属性处理
       if (editingEntity.bundles && editingEntity.bundles.length > 0) {

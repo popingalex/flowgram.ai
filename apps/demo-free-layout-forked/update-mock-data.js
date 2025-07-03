@@ -16,8 +16,8 @@ const CONFIG = {
   MOCK_DATA_DIR: path.join(__dirname, 'src/mock-data'),
   // API端点映射 - 基于真实的Controller接口
   ENDPOINTS: {
-    modules: '/api/modules', // ModuleController
-    entities: '/api/entities', // EntityController
+    modules: '/api/modular/modules/', // ModuleController
+    entities: '/api/modular/entities', // EntityController
     systems: '/api/systems', // SystemController
     remoteBehaviors: '/exp/remote', // ExpController - 远程行为
     localBehaviors: '/exp/local', // ExpController - 本地行为
@@ -115,8 +115,8 @@ const updateMockData = async () => {
 
     console.log('\n✅ Mock数据更新完成！');
     console.log('\n📊 API端点总结:');
-    console.log('   - 模块: GET /api/modules');
-    console.log('   - 实体: GET /api/entities');
+    console.log('   - 模块: GET /api/modular/modules/');
+    console.log('   - 实体: GET /api/modular/entities');
     console.log('   - 系统: GET /api/systems');
     console.log('   - 远程行为: GET /exp/remote');
     console.log('   - 本地行为: GET /exp/local');

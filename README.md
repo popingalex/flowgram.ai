@@ -27,6 +27,7 @@ our name.
 | [@flowgram.ai/create-app](./apps/create-app)                              | App Creator         | [![npm](https://img.shields.io/npm/v/@flowgram.ai/create-app.svg)](https://www.npmjs.com/package/@flowgram.ai/create-app)                   |
 | [@flowgram.ai/fixed-layout-editor](./packages/client/fixed-layout-editor) | Fixed Layout Editor | [![npm](https://img.shields.io/npm/v/@flowgram.ai/fixed-layout-editor.svg)](https://www.npmjs.com/package/@flowgram.ai/fixed-layout-editor) |
 | [@flowgram.ai/free-layout-editor](./packages/client/free-layout-editor)   | Free Layout Editor  | [![npm](https://img.shields.io/npm/v/@flowgram.ai/free-layout-editor.svg)](https://www.npmjs.com/package/@flowgram.ai/free-layout-editor)   |
+| [@flowgram.ai/simulator](./apps/simulator)                                | Flow Simulator      | Development App - 流程仿真器应用                                                                                                                  |
 
 ## 🎮 Examples
 
@@ -114,7 +115,7 @@ rush dev:docs # docs
 rush dev:demo-fixed-layout
 rush dev:demo-free-layout
 rush dev:demo-free-layout-forked
-rush dev:api-platform
+rush dev:simulator # simulator app (port 13002)
 ```
 
 ## 🗄️ Mock数据支持

@@ -26,10 +26,29 @@ import {
   REAL_GRAPHS,
 } from '../mock-data';
 
-// 创建可变的 mock 数据副本用于 CRUD 操作
-let mockEntities: Entity[] = [...REAL_ENTITIES];
-let mockModules: Module[] = [...REAL_MODULES];
-let mockEnums: EnumClass[] = Array.isArray(REAL_ENUMS) ? [...REAL_ENUMS] : [];
+// 创建可变的 mock 数据副本用于 CRUD 操作，并添加必要的前端字段
+let mockEntities: Entity[] = REAL_ENTITIES.map((entity: any) => ({
+  ...entity,
+  _indexId: entity._indexId || nanoid(),
+  _status: 'saved' as const,
+  attributes: (entity.attributes || []).map((attr: any) => ({
+    ...attr,
+    _indexId: attr._indexId || nanoid(),
+    _status: 'saved' as const,
+  })),
+}));
+
+let mockModules: Module[] = REAL_MODULES.map((module: any) => ({
+  ...module,
+  _indexId: module._indexId || nanoid(),
+  _status: 'saved' as const,
+  attributes: (module.attributes || []).map((attr: any) => ({
+    ...attr,
+    _indexId: attr._indexId || nanoid(),
+    _status: 'saved' as const,
+  })),
+}));
+let mockEnums: EnumClass[] = Array.isArray(REAL_ENUMS) ? [...(REAL_ENUMS as unknown as EnumClass[])] : [];
 let mockGraphs: any[] = [...REAL_GRAPHS]; // 添加可变的图数据副本
 
 // ECS系统mock数据 - 基于 simulation-disaster.coupling 源码分析
@@ -227,9 +246,28 @@ let mockSystems: BackendSystem[] = [
 
 // 重置 mock 数据的函数（可用于测试或重新加载）
 export const resetMockData = () => {
-  mockEntities = [...REAL_ENTITIES];
-  mockModules = [...REAL_MODULES];
-  mockEnums = Array.isArray(REAL_ENUMS) ? [...REAL_ENUMS] : [];
+  mockEntities = REAL_ENTITIES.map((entity: any) => ({
+    ...entity,
+    _indexId: entity._indexId || nanoid(),
+    _status: 'saved' as const,
+    attributes: (entity.attributes || []).map((attr: any) => ({
+      ...attr,
+      _indexId: attr._indexId || nanoid(),
+      _status: 'saved' as const,
+    })),
+  }));
+  
+  mockModules = REAL_MODULES.map((module: any) => ({
+    ...module,
+    _indexId: module._indexId || nanoid(),
+    _status: 'saved' as const,
+    attributes: (module.attributes || []).map((attr: any) => ({
+      ...attr,
+      _indexId: attr._indexId || nanoid(),
+      _status: 'saved' as const,
+    })),
+  }));
+  mockEnums = Array.isArray(REAL_ENUMS) ? [...(REAL_ENUMS as unknown as EnumClass[])] : [];
   mockGraphs = [...REAL_GRAPHS]; // 重置图数据
   // 重置系统数据到初始状态
   mockSystems = [
@@ -533,10 +571,10 @@ const transformBackendBehavior = (backendBehavior: BackendBehaviorDef): Behavior
 
 // API配置
 const API_CONFIG = {
-  BASE_URL: 'http://192.168.239.7:8080',
+  BASE_URL: 'http://localhost:8080',
   ENDPOINTS: {
-    MODULE: '/api/modules',
-    ENTITY: '/api/entities',
+    MODULE: '/api/modular/modules/',
+    ENTITY: '/api/modular/entities',
     SYSTEM: '/api/systems',
     BEHAVIOR_REMOTE: '/exp/remote',
     BEHAVIOR_LOCAL: '/api/behaviors/local',
@@ -610,7 +648,7 @@ const realApiRequest = async (url: string, options?: RequestInit) => {
     const data = JSON.parse(text);
 
     // 🔑 数据转换：将后端的modules字段转换为前端期望的bundles字段
-    if (url.includes('/api/entities') && Array.isArray(data)) {
+    if (url.includes('/api/modular/entities') && Array.isArray(data)) {
       return data.map((entity: any) => ({
         ...entity,
         // 转换modules数组为bundles数组（提取ID）
@@ -623,7 +661,7 @@ const realApiRequest = async (url: string, options?: RequestInit) => {
     }
 
     // 单个实体的情况
-    if (url.includes('/api/entities') && data && typeof data === 'object' && !Array.isArray(data)) {
+    if (url.includes('/api/modular/entities') && data && typeof data === 'object' && !Array.isArray(data)) {
       return {
         ...data,
         bundles: data.modules
@@ -660,7 +698,7 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
   }
 
   // 模块数据 - 支持 CRUD
-  if (url.includes('/api/modules')) {
+  if (url.includes('/api/modular/modules')) {
     if (method === 'GET') {
       return [...mockModules]; // 返回副本
     }
@@ -682,7 +720,7 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
     }
 
     if (method === 'PUT') {
-      const moduleIdMatch = url.match(/\/api\/modules\/([^\/]+)/);
+      const moduleIdMatch = url.match(/\/api\/modular\/modules\/([^\/]+)/);
       const moduleId = moduleIdMatch?.[1];
 
       if (moduleId) {
@@ -708,7 +746,7 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
     }
 
     if (method === 'DELETE') {
-      const moduleIdMatch = url.match(/\/api\/modules\/([^\/]+)/);
+      const moduleIdMatch = url.match(/\/api\/modular\/modules\/([^\/]+)/);
       const moduleId = moduleIdMatch?.[1];
 
       if (moduleId) {
@@ -781,9 +819,29 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
   }
 
   // 实体数据 - 支持 CRUD
-  if (url.includes('/api/entities')) {
+  if (url.includes('/api/modular/entities')) {
     if (method === 'GET') {
-      return [...mockEntities]; // 返回副本
+      // 🔑 数据转换：将mock数据的modules字段转换为前端期望的bundles字段
+      const transformedEntities = mockEntities.map((entity: any) => {
+        const rawEntity = entity as any; // 类型断言以访问原始数据
+        return {
+          ...entity,
+          // 转换modules数组为bundles数组（提取ID）
+          bundles: rawEntity.modules
+            ? rawEntity.modules.map((module: any) => (typeof module === 'string' ? module : module.id))
+            : [],
+          // 保留原始modules字段供其他用途
+          modules: rawEntity.modules || [],
+        };
+      });
+      
+      console.log('🔍 [API] 实体数据转换示例:', {
+        原始数据: (mockEntities[0] as any)?.modules,
+        转换后bundles: transformedEntities[0]?.bundles,
+        实体数量: transformedEntities.length
+      });
+      
+      return transformedEntities;
     }
 
     if (method === 'POST') {
@@ -804,7 +862,7 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
     }
 
     if (method === 'PUT') {
-      const entityIdMatch = url.match(/\/api\/entities\/([^\/]+)/);
+      const entityIdMatch = url.match(/\/api\/modular\/entities\/([^\/]+)/);
       const entityId = entityIdMatch?.[1];
 
       if (entityId) {
@@ -831,7 +889,7 @@ const mockApiRequest = async (url: string, options?: RequestInit): Promise<any> 
     }
 
     if (method === 'DELETE') {
-      const entityIdMatch = url.match(/\/api\/entities\/([^\/]+)/);
+      const entityIdMatch = url.match(/\/api\/modular\/entities\/([^\/]+)/);
       const entityId = entityIdMatch?.[1];
 
       if (entityId) {

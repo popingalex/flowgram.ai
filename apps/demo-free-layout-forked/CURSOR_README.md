@@ -167,3 +167,114 @@
 - 界面组件: `src/components/entity-list-page.tsx`, `src/components/module-list-page.tsx`
 
 ---
+
+# Cursor开发记录
+
+## 项目概述
+这是一个基于React + TypeScript的可视化图形编辑器项目，支持实体管理、模块管理、行为编辑等功能。
+
+## 开发注意事项
+
+### 1. API端点配置
+- 所有API端点配置在 `src/config/api.ts` 中
+- 当前使用的是新的modular结构端点：
+  - 模块API: `/api/modular/modules/`
+  - 实体API: `/api/modular/entities`
+- 支持mock模式和真实API模式切换
+
+### 2. 数据管理模块架构
+- 使用统一的数据管理布局组件 `DataManagementLayout`
+- 侧边栏组件 `DataListSidebar` 支持搜索、拖拽排序、自定义渲染
+- 详情面板组件 `DetailPanel` 提供统一的编辑界面
+
+### 3. 状态管理
+- 使用Zustand进行状态管理
+- 每个模块都有对应的Store：EntityStore、ModuleStore等
+- 编辑状态单独管理：CurrentEntityStore、CurrentModuleStore等
+
+### 4. 路由管理
+- 使用自定义的useRouter hook
+- 支持嵌套路由和参数传递
+- 路由状态与组件状态保持同步
+
+## 最近更新
+
+### 2024-12-XX: UI优化和用户体验改进
+
+#### 侧边栏列表项优化
+1. **去掉无意义的描述显示**
+   - 修改文件：`src/components/data-management/sidebar.tsx`
+   - 只有当name存在且不为空时才显示名称行
+   - 避免显示空白的"暂无描述"信息
+
+2. **移除下方的关联标签显示**
+   - 去掉了 `renderRelationTags()` 函数
+   - 移除了模块JSON显示等无用的灰色标签
+   - 界面更加简洁清爽
+
+3. **模块统计标签增强**
+   - 为"模：X"标签添加tooltip功能
+   - tooltip显示具体的关联模块列表
+   - 提供更详细的信息而不占用界面空间
+
+#### 默认选中逻辑改进
+1. **实体管理页面**
+   - 修改文件：`src/components/entity-management/index.tsx`
+   - 有实体时：默认选中第一个实体
+   - 没有实体时：自动跳转到新建页面
+
+2. **模块管理页面**
+   - 修改文件：`src/components/module-management/index.tsx`
+   - 有模块时：默认选中第一个模块
+   - 没有模块时：自动跳转到新建页面
+
+3. **行为编辑器页面**
+   - 修改文件：`src/components/behavior-editor/index.tsx`
+   - 有系统时：默认选中第一个系统
+   - 没有系统时：自动跳转到新建页面
+
+4. **系统管理页面**
+   - 修改文件：`src/components/system-management/index.tsx`
+   - 有系统时：默认选中第一个系统
+   - 没有系统时：自动跳转到新建页面
+
+#### 技术细节
+- 所有管理页面现在都遵循统一的用户体验模式
+- 避免了用户看到空白页面的情况
+- 新用户可以直接开始创建内容
+- 现有用户可以快速访问第一个项目
+
+#### 影响的组件
+- `DataListSidebar` - 侧边栏列表项渲染优化
+- `EntityManagementPage` - 实体管理页面默认选中逻辑
+- `ModuleManagementPage` - 模块管理页面默认选中逻辑
+- `BehaviorEditor` - 行为编辑器页面默认选中逻辑
+- `SystemManagementPage` - 系统管理页面默认选中逻辑
+
+## 开发规范
+
+### 组件开发
+1. 使用TypeScript严格模式
+2. 组件props必须定义接口
+3. 使用React.FC类型注解
+4. 优先使用函数组件和Hooks
+
+### 状态管理
+1. 使用Zustand进行全局状态管理
+2. 避免prop drilling，合理使用Context
+3. 异步操作使用async/await
+4. 错误处理要完整
+
+### 样式规范
+1. 使用Semi Design组件库
+2. 内联样式用于简单样式
+3. CSS变量用于主题色彩
+4. 响应式设计考虑
+
+### 测试要求
+1. 关键组件需要单元测试
+2. 用户交互需要集成测试
+3. API调用需要mock测试
+4. 使用data-testid属性
+
+---

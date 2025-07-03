@@ -94,13 +94,16 @@ export interface UniversalTableProps {
   defaultExpandAllRows?: boolean; // 是否默认展开所有行
   expandRowByClick?: boolean; // 是否点击行展开
 
-  // 其他配置
+  // 表格尺寸和显示配置
   showHeader?: boolean; // 是否显示表头
   showPagination?: boolean; // 是否显示分页
   size?: 'small' | 'default' | 'middle';
   title?: string; // 表格标题
   addButtonText?: string; // 添加按钮文字
   emptyText?: string; // 空数据提示
+  height?: number | string; // 表格高度，支持固定高度和滚动
+  maxRows?: number; // 最大显示行数，默认10行
+  scroll?: { x?: number; y?: number }; // 滚动配置
 }
 
 // 稳定的编辑组件
@@ -182,6 +185,9 @@ export const UniversalTable: React.FC<UniversalTableProps> = ({
   isAttributeField = 'isAttribute',
   defaultExpandAllRows = false,
   expandRowByClick = false,
+  height,
+  maxRows = 10,
+  scroll,
 
   ...tableProps
 }) => {
@@ -476,7 +482,25 @@ export const UniversalTable: React.FC<UniversalTableProps> = ({
 
   // 常规表格渲染
   const renderTable = () => {
-    // 直接使用finalColumns，不手动添加选择列和展开列
+    // 计算表格高度和滚动配置
+    const calculateTableHeight = () => {
+      if (height) {
+        return typeof height === 'number' ? `${height}px` : height;
+      }
+      
+      // 根据maxRows计算高度（假设每行约40px，表头约40px）
+      const rowHeight = size === 'small' ? 32 : 40;
+      const headerHeight = 40;
+      const calculatedHeight = Math.min(filteredData.length, maxRows) * rowHeight + headerHeight;
+      
+      return `${calculatedHeight}px`;
+    };
+
+    // 计算滚动配置
+    const scrollConfig = {
+      x: scroll?.x || (finalColumns.length > 5 ? 800 : undefined),
+      y: scroll?.y || (filteredData.length > maxRows ? parseInt(calculateTableHeight()) - 40 : undefined),
+    };
 
     // 树形数据配置 - 使用Semi默认的展开功能
     const treeProps = expandable
@@ -490,27 +514,31 @@ export const UniversalTable: React.FC<UniversalTableProps> = ({
       : {};
 
     return (
-      <Table
-        dataSource={filteredData}
-        columns={finalColumns}
-        rowKey={getRowKey}
-        size={size}
-        pagination={tableProps.showPagination ? {} : false}
-        empty={emptyText}
-        rowSelection={rowSelection}
-        onRow={(record, index) => {
-          // 只有模块表头需要背景色
-          if (record.children && record.children.length > 0) {
-            return {
-              style: {
-                backgroundColor: 'var(--semi-color-fill-1)',
-              },
-            };
-          }
-          return {};
-        }}
-        {...treeProps}
-      />
+      <div style={{ height: calculateTableHeight(), overflow: 'hidden' }}>
+        <Table
+          dataSource={filteredData}
+          columns={finalColumns}
+          rowKey={getRowKey}
+          size={size}
+          pagination={tableProps.showPagination ? {} : false}
+          empty={emptyText}
+          rowSelection={rowSelection}
+          scroll={scrollConfig}
+          style={{ height: '100%' }}
+          onRow={(record, index) => {
+            // 只有模块表头需要背景色
+            if (record.children && record.children.length > 0) {
+              return {
+                style: {
+                  backgroundColor: 'var(--semi-color-fill-1)',
+                },
+              };
+            }
+            return {};
+          }}
+          {...treeProps}
+        />
+      </div>
     );
   };
 

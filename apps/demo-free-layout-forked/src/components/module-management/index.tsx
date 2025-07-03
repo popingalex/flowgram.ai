@@ -87,6 +87,9 @@ export const ModuleManagementPage: React.FC = () => {
       const firstModule = modules[0];
       console.log('🎯 默认选中第一个模块:', firstModule.id);
       navigate({ route: 'module', entityId: firstModule.id });
+    } else if (!loading && modules.length === 0 && !routeState.entityId) {
+      // 如果没有模块，默认进入新建页面
+      navigate({ route: 'module', entityId: 'new' });
     }
   }, [loading, modules, routeState.entityId, navigate]);
 

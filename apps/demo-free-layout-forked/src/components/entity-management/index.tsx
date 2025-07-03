@@ -37,10 +37,8 @@ export const EntityManagementPage: React.FC = () => {
   const selectedEntity = useMemo(() => {
     if (!routeState.entityId) return null;
 
-    // 🔑 特殊处理：新建实体模式 - 应该从store获取，而不是在组件中创建
-    if (routeState.entityId === 'new') {
-      // TODO: 这里应该调用 store 的 createNewEntity 方法
-      // 暂时保持现有逻辑，但标记为需要重构
+    // 🔑 特殊处理：新建实体模式
+    if (routeState.entityId === '$new') {
       const newEntity = {
         _indexId: nanoid(),
         id: '',
@@ -52,7 +50,6 @@ export const EntityManagementPage: React.FC = () => {
         _status: 'new' as const,
       };
       console.log('🆕 进入新建实体模式:', newEntity._indexId);
-      console.log('🆕 新实体对象:', newEntity);
       return newEntity;
     }
 
@@ -80,6 +77,9 @@ export const EntityManagementPage: React.FC = () => {
     if (!loading && entities.length > 0 && !routeState.entityId) {
       const firstEntity = entities[0];
       navigate({ route: 'entities', entityId: firstEntity.id });
+    } else if (!loading && entities.length === 0 && !routeState.entityId) {
+      // 如果没有实体，默认进入新建页面
+      navigate({ route: 'entities', entityId: '$new' });
     }
   }, [loading, entities, routeState.entityId, navigate]);
 
@@ -122,7 +122,7 @@ export const EntityManagementPage: React.FC = () => {
   const hasUnsavedNew = useMemo(
     () =>
       // 🔑 修复：检查当前是否处于新建模式
-      routeState.entityId === 'new',
+      routeState.entityId === '$new',
     [routeState.entityId]
   );
 
@@ -131,8 +131,8 @@ export const EntityManagementPage: React.FC = () => {
     // 如果已经有未保存的新建元素，禁用新建
     if (hasUnsavedNew) return;
 
-    // 🔑 修复：直接导航到新建模式，不要预先创建实体对象
-    navigate({ route: 'entities', entityId: 'new' });
+    // 🔑 修复：导航到新建模式
+    navigate({ route: 'entities', entityId: '$new' });
   }, [navigate, hasUnsavedNew]);
 
   // 刷新数据
@@ -216,7 +216,7 @@ export const EntityManagementPage: React.FC = () => {
     }
   }, [selectedEntity, deleteEntity, navigate]);
 
-  // 🔑 修复：使用CurrentEntityStore的数据计算状态，包含属性验证
+  // 🔑 修复：使用CurrentEntityStore的数据计算状态，移除属性验证
   const canSave = useMemo(() => {
     // 优先使用CurrentEntityStore的editingEntity
     const currentEntity = editingEntity || selectedEntity;
@@ -225,24 +225,6 @@ export const EntityManagementPage: React.FC = () => {
     // 基础验证：实体必须有ID
     if (!currentEntity.id?.trim()) {
       return false;
-    }
-
-    // 🚨 重要：验证所有属性的ID都不能为空
-    if (currentEntity.attributes && currentEntity.attributes.length > 0) {
-      const attributeIds = new Set();
-      for (const attr of currentEntity.attributes) {
-        // 检查属性ID是否为空
-        if (!attr.id || attr.id.trim() === '') {
-          console.warn('🚨 属性ID为空，禁用保存:', attr);
-          return false;
-        }
-        // 检查属性ID是否重复
-        if (attributeIds.has(attr.id)) {
-          console.warn('🚨 属性ID重复，禁用保存:', attr.id);
-          return false;
-        }
-        attributeIds.add(attr.id);
-      }
     }
 
     // 检查实体ID是否与其他实体重复
@@ -255,7 +237,7 @@ export const EntityManagementPage: React.FC = () => {
     return true;
   }, [editingEntity, selectedEntity, entities]);
 
-  // 🎯 验证逻辑：生成详细的异常信息列表
+  // 🎯 验证逻辑：生成详细的异常信息列表，移除属性验证
   const validationErrors = useMemo(() => {
     const errors: string[] = [];
 
@@ -274,31 +256,7 @@ export const EntityManagementPage: React.FC = () => {
       }
     }
 
-    // 2. 检查属性
-    if (currentEntity.attributes && currentEntity.attributes.length > 0) {
-      const attributeIds = new Set<string>();
-
-      currentEntity.attributes.forEach((attr: any, index: number) => {
-        const attrPosition = `第${index + 1}个属性`;
-
-        // 检查属性ID是否为空
-        if (!attr.id || attr.id.trim() === '') {
-          errors.push(`${attrPosition}的ID不能为空`);
-        } else {
-          // 检查属性ID是否重复
-          if (attributeIds.has(attr.id)) {
-            errors.push(`属性ID "${attr.id}" 重复`);
-          } else {
-            attributeIds.add(attr.id);
-          }
-        }
-
-        // 检查属性名称（可选，但如果填写了要有意义）
-        if (attr.name && attr.name.trim().length === 0) {
-          errors.push(`${attrPosition}的名称不能为空白字符`);
-        }
-      });
-    }
+    // 实体不再支持属性，移除属性验证逻辑
 
     return errors;
   }, [editingEntity, selectedEntity, entities]);

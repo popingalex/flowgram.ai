@@ -10,6 +10,7 @@ import {
   Tag,
   Typography,
   Highlight,
+  Tooltip,
 } from '@douyinfe/semi-ui';
 import {
   IconSearch,
@@ -199,12 +200,10 @@ function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & Drag
   // 🔑 获取拖拽手柄的props
   const { dragHandleRef, dragHandleListeners } = props;
 
-  // 🔑 移除旧的HTML5拖拽代码，现在使用dnd-kit
-
   // 渲染统计信息
   const renderStats = () => {
     const moduleCount = item.bundles?.length || 0;
-    const attributeCount = item.attributes?.length || 0;
+    const attributeCount = 0; // 实体不再支持属性
 
     // 🔑 检测是否为模块管理页面（通过testId判断）
     const isModulePage = testId?.includes('module');
@@ -216,7 +215,7 @@ function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & Drag
     }
 
     // 如果所有统计都为0，不显示统计区域
-    if (moduleCount === 0 && attributeCount === 0 && entityReferenceCount === 0) return null;
+    if (moduleCount === 0 && entityReferenceCount === 0) return null;
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-end' }}>
@@ -226,76 +225,32 @@ function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & Drag
             实：{entityReferenceCount}
           </Tag>
         )}
-        {/* 在实体页面显示关联的模块数量 */}
+        {/* 在实体页面显示关联的模块数量，添加tooltip显示具体模块列表 */}
         {!isModulePage && moduleCount > 0 && (
-          <Tag size="small" color="green">
-            模：{moduleCount}
-          </Tag>
+          <Tooltip
+            content={
+              <div>
+                <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>关联模块：</div>
+                {item.bundles?.map((moduleId: string) => {
+                  const module = modules?.find((m) => m.id === moduleId);
+                  const displayText = module?.name || moduleId;
+                  return (
+                    <div key={moduleId} style={{ fontSize: '12px', marginBottom: '2px' }}>
+                      • {displayText}
+                    </div>
+                  );
+                })}
+              </div>
+            }
+            position="left"
+          >
+            <Tag size="small" color="green">
+              模：{moduleCount}
+            </Tag>
+          </Tooltip>
         )}
-        {attributeCount > 0 && (
-          <Tag size="small" color="blue">
-            属：{attributeCount}
-          </Tag>
-        )}
+        {/* 实体不再支持属性，移除属性计数显示 */}
       </div>
-    );
-  };
-
-  // 渲染关联标签（模块或实体）
-  const renderRelationTags = () => {
-    const tags: JSX.Element[] = [];
-
-    // 如果是实体，显示关联的模块
-    if (item.bundles && modules && item.bundles.length > 0) {
-      item.bundles.forEach((moduleId: string) => {
-        const module = modules.find((m) => m.id === moduleId);
-        const displayText = module?.name || moduleId;
-
-        tags.push(
-          <Tag
-            key={`module-${moduleId}`}
-            size="small"
-            color="blue"
-            style={{
-              fontSize: '11px',
-              lineHeight: '16px',
-              padding: '2px 6px',
-            }}
-          >
-            <Highlight sourceString={displayText} searchWords={searchWords} />
-          </Tag>
-        );
-      });
-    }
-
-    // 如果是模块，显示关联的实体
-    if (entities && entities.length > 0) {
-      const relatedEntities = entities.filter((entity) => entity.bundles?.includes(item.id));
-
-      relatedEntities.forEach((entity) => {
-        const displayText = entity.name || entity.id;
-
-        tags.push(
-          <Tag
-            key={`entity-${entity.id}`}
-            size="small"
-            color="green"
-            style={{
-              fontSize: '11px',
-              lineHeight: '16px',
-              padding: '2px 6px',
-            }}
-          >
-            <Highlight sourceString={displayText} searchWords={searchWords} />
-          </Tag>
-        );
-      });
-    }
-
-    if (tags.length === 0) return null;
-
-    return (
-      <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>{tags}</div>
     );
   };
 
@@ -347,8 +302,8 @@ function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & Drag
         onClick={() => onItemSelect(item)}
       >
         {/* 第一行：左侧信息 + 右侧统计 */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', minHeight: '20px' }}>
+          <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
             <Text
               style={{
                 color: isSelected ? 'var(--semi-color-primary)' : 'var(--semi-color-text-0)',
@@ -358,6 +313,7 @@ function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & Drag
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
+                lineHeight: '20px',
               }}
             >
               <Highlight sourceString={item.id} searchWords={searchWords} />
@@ -373,17 +329,23 @@ function DefaultItemRenderer<T extends BaseDataItem & DefaultRenderFields & Drag
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
+                  lineHeight: '16px',
                 }}
               >
                 <Highlight sourceString={item.name} searchWords={searchWords} />
               </Text>
             )}
           </div>
-          <div style={{ flexShrink: 0, marginLeft: '8px' }}>{renderStats()}</div>
+          <div style={{ 
+            flexShrink: 0, 
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'flex-end',
+            minWidth: 'fit-content'
+          }}>
+            {renderStats()}
+          </div>
         </div>
-
-        {/* 第二行：关联标签 */}
-        {renderRelationTags()}
       </div>
     </List.Item>
   );
@@ -411,11 +373,13 @@ export function DataListSidebar<T extends BaseDataItem>({
   style,
   testId = 'data-sidebar',
 }: DataListSidebarProps<T>) {
-  // 🔑 配置拖拽传感器 - 修复：使用手柄模式，避免与选中冲突
+  const [draggedItems, setDraggedItems] = useState<T[]>([]);
+
+  // 拖拽传感器配置
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // 需要拖拽8px才激活，避免误触
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -423,134 +387,150 @@ export function DataListSidebar<T extends BaseDataItem>({
     })
   );
 
-  // 🔑 拖拽结束处理
+  // 拖拽结束处理
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    console.log('🔄 [DataListSidebar] 拖拽结束:', {
-      activeId: active.id,
-      overId: over?.id,
-      hasOnDragSort: !!onDragSort,
-      itemsCount: items.length,
-      itemsIndexIds: items.map((item) => item._indexId),
-    });
-
-    if (active.id !== over?.id && onDragSort) {
-      const oldIndex = items.findIndex((item) => item._indexId === active.id);
-      const newIndex = items.findIndex((item) => item._indexId === over?.id);
-
-      console.log('🔄 [DataListSidebar] 拖拽索引:', {
-        oldIndex,
-        newIndex,
-        activeId: active.id,
-        overId: over?.id,
-      });
+    if (active.id !== over?.id) {
+      const oldIndex = draggedItems.findIndex((item) => getRowKey(item) === active.id);
+      const newIndex = draggedItems.findIndex((item) => getRowKey(item) === over?.id);
 
       if (oldIndex !== -1 && newIndex !== -1) {
-        onDragSort(oldIndex, newIndex);
-      } else {
-        console.log('❌ [DataListSidebar] 拖拽索引无效');
+        const newItems = arrayMove(draggedItems, oldIndex, newIndex);
+        setDraggedItems(newItems);
+        onDragSort?.(oldIndex, newIndex);
       }
     }
   };
 
-  // 确定渲染函数
+  // 获取行键值
+  const getRowKey = (item: T) => {
+    return item[selectedIdField] as string;
+  };
+
+  // 初始化拖拽数据
+  React.useEffect(() => {
+    if (enableDragSort) {
+      setDraggedItems([...items]);
+    }
+  }, [items, enableDragSort]);
+
+  // 获取渲染函数
   const getRenderFunction = (): ((
     context: RenderContext<T> & { dragHandleRef?: any; dragHandleListeners?: any }
   ) => ReactNode) => {
-    // 向后兼容：如果提供了旧的renderItem，优先使用
-    if (renderItem) {
-      return (context) => renderItem(context.item, context.isSelected, context.index);
+    // 1. 优先使用新的 renderMethod
+    if (renderMethod.type === 'custom') {
+      return renderMethod.render;
+    }
+    if (renderMethod.type === 'children') {
+      return renderMethod.children;
     }
 
-    // 根据renderMethod选择渲染方式
-    switch (renderMethod.type) {
-      case 'custom':
-        return renderMethod.render;
-      case 'children':
-        return renderMethod.children;
-      case 'default':
-      default:
-        return (context) =>
-          DefaultItemRenderer(
-            context as RenderContext<T & DefaultRenderFields & DragSortFields> & {
-              dragHandleRef?: any;
-              dragHandleListeners?: any;
-            }
-          );
+    // 2. 向后兼容：使用旧的 renderItem
+    if (renderItem) {
+      return ({ item, isSelected, index }) => renderItem(item, isSelected, index);
     }
+
+    // 3. 默认渲染
+    return DefaultItemRenderer;
   };
 
   const renderFunction = getRenderFunction();
+  const displayItems = enableDragSort ? draggedItems : items;
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', ...style }}>
-      {/* 搜索栏和操作按钮 - 恢复原来的一行布局 */}
+    <div
+      style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        ...style,
+      }}
+      data-testid={testId}
+    >
+      {/* 修复：顶部操作栏 - 单行布局，左侧搜索框，右侧按钮 */}
       <div
         style={{
-          padding: '16px',
+          padding: '12px',
           borderBottom: '1px solid var(--semi-color-border)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
           backgroundColor: 'var(--semi-color-bg-1)',
-          flexShrink: 0, // 不允许收缩
         }}
       >
-        <Space style={{ width: '100%' }}>
-          <Input
-            prefix={<IconSearch />}
-            placeholder={searchPlaceholder}
-            value={searchText}
-            onChange={onSearchChange}
-            style={{ flex: 1 }}
-            size="small"
-            showClear
-            data-testid={`${testId}-search`}
-          />
+        {/* 搜索框 - 占据剩余空间 */}
+        <Input
+          prefix={<IconSearch />}
+          placeholder={searchPlaceholder}
+          value={searchText}
+          onChange={onSearchChange}
+          showClear
+          style={{ flex: 1 }}
+          data-testid={`${testId}-search`}
+        />
+        
+        {/* 按钮组 - 右对齐 */}
+        <div style={{ display: 'flex', gap: '4px' }}>
           {onAdd && (
             <Button
               icon={<IconPlus />}
-              type="primary"
-              size="small"
               onClick={onAdd}
               disabled={addDisabled}
+              theme="borderless"
+              size="small"
               data-testid={`${testId}-add`}
+              style={{ padding: '4px' }}
             />
           )}
           {onRefresh && (
             <Button
               icon={<IconRefresh />}
-              size="small"
               onClick={onRefresh}
+              theme="borderless"
+              size="small"
               data-testid={`${testId}-refresh`}
+              style={{ padding: '4px' }}
             />
           )}
-        </Space>
+        </div>
       </div>
 
       {/* 列表内容 */}
       <div style={{ flex: 1, overflow: 'auto' }}>
-        <Spin spinning={loading}>
-          {items.length === 0 ? (
-            <Empty
-              image={<IconSearch size="large" />}
-              title="暂无数据"
-              description={emptyText}
-              style={{ padding: '40px 20px' }}
-            />
-          ) : enableDragSort ? (
-            // 🔑 启用拖拽排序时使用DndContext
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={items.map((item) => item._indexId)}
-                strategy={verticalListSortingStrategy}
-              >
-                <List
-                  dataSource={items}
-                  renderItem={(item, index) => {
-                    const isSelected = String(item[selectedIdField]) === String(selectedId);
+        {loading ? (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '200px',
+            }}
+          >
+            <Spin />
+          </div>
+        ) : displayItems.length === 0 ? (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              height: '200px',
+            }}
+          >
+            <Empty description={emptyText} />
+          </div>
+        ) : enableDragSort ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={displayItems.map(getRowKey)} strategy={verticalListSortingStrategy}>
+              <List
+                dataSource={displayItems}
+                renderItem={(item, index) => {
+                  const key = getRowKey(item);
+                  const isSelected = selectedId === key;
+
+                  const DraggableItemWrapper = (props: any) => {
                     const context: RenderContext<T> = {
                       item,
                       isSelected,
@@ -562,50 +542,53 @@ export function DataListSidebar<T extends BaseDataItem>({
                       enableDragSort,
                       onDragSort,
                       testId,
-                      totalItems: items.length,
+                      totalItems: displayItems.length,
+                      ...props,
                     };
 
-                    // 🔑 修复：创建一个可以接收拖拽props的组件
-                    const DraggableItemWrapper = (props: any) => {
-                      const extendedContext = { ...context, ...props };
-                      return renderFunction(extendedContext);
-                    };
+                    return renderFunction(context);
+                  };
 
-                    return (
-                      <SortableItem key={item._indexId} id={item._indexId} disabled={false}>
-                        <DraggableItemWrapper />
-                      </SortableItem>
-                    );
-                  }}
-                  style={{ padding: 0 }}
-                />
-              </SortableContext>
-            </DndContext>
-          ) : (
-            // 🔑 不启用拖拽排序时使用普通List
-            <List
-              dataSource={items}
-              renderItem={(item, index) => {
-                const isSelected = String(item[selectedIdField]) === String(selectedId);
-                const context: RenderContext<T> = {
-                  item,
-                  isSelected,
-                  index,
-                  searchText,
-                  modules,
-                  entities,
-                  onItemSelect,
-                  enableDragSort,
-                  onDragSort,
-                  testId,
-                  totalItems: items.length,
-                };
-                return renderFunction(context);
-              }}
-              style={{ padding: 0 }}
-            />
-          )}
-        </Spin>
+                  return (
+                    <SortableItem key={key} id={key}>
+                      <DraggableItemWrapper />
+                    </SortableItem>
+                  );
+                }}
+                style={{ padding: 0 }}
+              />
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <List
+            dataSource={displayItems}
+            renderItem={(item, index) => {
+              const key = getRowKey(item);
+              const isSelected = selectedId === key;
+
+              const context: RenderContext<T> = {
+                item,
+                isSelected,
+                index,
+                searchText,
+                modules,
+                entities,
+                onItemSelect,
+                enableDragSort,
+                onDragSort,
+                testId,
+                totalItems: displayItems.length,
+              };
+
+              return (
+                <List.Item key={key} style={{ padding: 0 }}>
+                  {renderFunction(context)}
+                </List.Item>
+              );
+            }}
+            style={{ padding: 0 }}
+          />
+        )}
       </div>
     </div>
   );

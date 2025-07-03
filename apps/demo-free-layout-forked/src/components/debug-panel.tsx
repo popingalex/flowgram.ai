@@ -133,15 +133,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
       name: entity.name,
       description: entity.description || '',
       bundles: entity.bundles || [],
-      attributes: (entity.attributes || []).map((attr: any, index: number) => ({
-        [`属性${index + 1}`]: {
-          id: attr.id,
-          name: attr.name,
-          type: attr.type,
-          description: attr.description || '',
-          ...(attr.enumClassId && { enumClassId: attr.enumClassId }),
-        },
-      })),
+      // 实体不再支持属性，移除attributes字段
     };
   };
 
@@ -371,7 +363,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
             <span style={{ color: 'var(--semi-color-text-2)' }}>|</span>
             <strong>属性数量:</strong>
             <span>
-              {originalEntity?.attributes?.length || 0} → {editingEntity?.attributes?.length || 0}
+              实体不再支持属性
             </span>
             <span style={{ color: 'var(--semi-color-text-2)' }}>|</span>
             <strong>模块关联:</strong>

@@ -14,6 +14,7 @@ export type RouteType =
   | 'exp-inline' // 脚本改名为inline
   | 'entity-workflow'
   | 'behavior'
+  | 'component-graph' // 组件关系图
   | 'api-test'
   | 'test-new-architecture'
   | 'test-indexed-store'
@@ -106,6 +107,11 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
         route: 'exp-remote',
         expressionId: expRemoteMatch[1],
       };
+    }
+
+    // 组件关系图路由
+    if (hashPath === 'component-graph') {
+      return { route: 'component-graph' };
     }
 
     // 测试页面路由
@@ -213,6 +219,11 @@ const parseUrl = (pathname: string, hash?: string): RouteState => {
     };
   }
 
+  // 组件关系图路由
+  if (path === 'component-graph') {
+    return { route: 'component-graph' };
+  }
+
   // 测试页面路由
   if (path === 'api-test') {
     return { route: 'api-test' };
@@ -318,6 +329,8 @@ const generateUrl = (routeState: RouteState): string => {
       return routeState.entityId ? `/entity-workflow/${routeState.entityId}/` : '/entity-workflow/';
     case 'behavior':
       return routeState.entityId ? `/behavior/${routeState.entityId}/` : '/behavior/';
+    case 'component-graph':
+      return '/component-graph/';
     case 'api-test':
       return '/api-test/';
     case 'test-new-architecture':

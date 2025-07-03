@@ -24,7 +24,7 @@ import {
   IconUndo,
   IconBranch,
   IconHelpCircle,
-  IconCode,
+
 } from '@douyinfe/semi-icons';
 
 // 现有的组件
@@ -47,7 +47,7 @@ import {
 import { toggleMockMode, getApiMode } from './services/api-service';
 import { useRouter, RouteType } from './hooks/use-router';
 import { RouterProvider } from './hooks/use-router';
-import { useDebugPanel } from './hooks/use-debug-panel';
+// Debug相关功能已移除
 import { Editor } from './editor';
 import { TestNewArchitecture } from './components/test-new-architecture';
 // import { ModuleEntityTestPage } from './components/ext/module-entity-editor/test-page'; // 已删除
@@ -60,7 +60,8 @@ import { ExpressionListPage } from './components/expression-list';
 // import { EntityWorkflowSyncer } from './components/entity-workflow-syncer'; // 已移除
 import { EntitySelector } from './components/entity-selector';
 import { EntityManagementPage } from './components/entity-management';
-import { DebugPanel } from './components/debug-panel';
+// Debug相关功能已移除
+import { ComponentRelationshipGraph } from './components/component-relationship-graph';
 import { BehaviorEditor } from './components/behavior-editor';
 import { ApiTestPanel } from './components/api-test/api-test-panel';
 // import { EntityPropertiesEditorTestPage } from './components/ext/entity-properties-editor/test-page';
@@ -236,8 +237,7 @@ const AppContent: React.FC = () => {
   // 移除独立的currentPage状态，直接使用routeState.route
   const currentPage: RouteType = routeState.route;
 
-  // Debug面板状态
-  const { debugState, toggleDebugPanel, hideDebugPanel, updateDebugData } = useDebugPanel();
+  // Debug相关功能已移除
 
   // 🔍 添加路由状态调试
   // console.log('🔍 [AppContent] 路由状态:', {
@@ -326,196 +326,9 @@ const AppContent: React.FC = () => {
     window.location.reload();
   }, []);
 
-  // 获取当前页面的数据，用于debug面板显示
-  const getCurrentPageData = React.useCallback(() => {
-    // console.log('🔍 [Debug] 获取页面数据:', {
-    //   currentPage,
-    //   hasOriginalEntity: !!originalEntity,
-    //   hasEditingEntity: !!editingEntity,
-    //   isDirty,
-    //   isSaving,
-    // });
+  // Debug相关功能已移除
 
-    switch (currentPage) {
-      case 'entities':
-        const selectedEntity = entities.find((e) => e.id === routeState.entityId);
-
-        // 如果有编辑状态，展示原数据和工作副本
-        if (originalEntity && editingEntity) {
-          return {
-            pageType: 'entities',
-            editingState: {
-              originalEntity,
-              editingEntity,
-              isDirty,
-              isSaving,
-              selectedEntityId: routeState.entityId,
-            },
-            selectedEntity,
-            routeState,
-            metadata: {
-              totalEntities: entities.length,
-              loading,
-            },
-          };
-        }
-
-        // 否则只展示选中的实体
-        return {
-          pageType: 'entities',
-          selectedEntity,
-          routeState,
-          metadata: {
-            totalEntities: entities.length,
-            loading,
-            note: '未进入编辑状态',
-          },
-        };
-
-      case 'modules':
-      case 'module':
-        const selectedModule = modules.find((m) => m.id === routeState.entityId);
-
-        // 模块页面暂时没有编辑状态，直接展示选中的模块
-        return {
-          pageType: 'module',
-          selectedModule,
-          routeState,
-          metadata: {
-            totalModules: modules.length,
-            note: '模块页面暂无编辑状态',
-          },
-        };
-
-      case 'entity-workflow':
-        const workflowEntity = selectedEntityId
-          ? entities.find((e) => e._indexId === selectedEntityId)
-          : null;
-        const relatedGraph = workflowEntity
-          ? graphs.find((g) => g._indexId === workflowEntity._indexId)
-          : null;
-
-        // 展示工作流页面的编辑状态
-        if (originalEntity && editingEntity) {
-          return {
-            pageType: 'entity-workflow',
-            editingState: {
-              originalEntity,
-              editingEntity,
-              isDirty,
-              isSaving,
-              selectedEntityId,
-            },
-            workflowData: {
-              relatedGraph: relatedGraph
-                ? {
-                    id: relatedGraph.id,
-                    nodeCount: relatedGraph.nodes?.length || 0,
-                    nodes: relatedGraph.nodes?.slice(0, 2) || [], // 只显示前2个节点作为示例
-                  }
-                : null,
-            },
-            routeState,
-            metadata: {
-              hasWorkflow: !!relatedGraph,
-              totalGraphs: graphs.length,
-            },
-          };
-        }
-
-        return {
-          pageType: 'entity-workflow',
-          selectedEntity: workflowEntity,
-          workflowData: {
-            relatedGraph: relatedGraph
-              ? {
-                  id: relatedGraph.id,
-                  nodeCount: relatedGraph.nodes?.length || 0,
-                }
-              : null,
-          },
-          routeState,
-          metadata: {
-            hasWorkflow: !!relatedGraph,
-            note: '未进入编辑状态',
-          },
-        };
-
-      case 'exp-remote':
-      case 'exp-local':
-        return {
-          pageType: currentPage,
-          expressions: [], // TODO: 添加表达式数据
-          routeState,
-          metadata: {
-            note: '表达式数据待实现',
-          },
-        };
-
-      case 'behavior':
-        return {
-          pageType: 'behavior',
-          systems: [], // TODO: 添加行为系统数据
-          routeState,
-          metadata: {
-            note: '行为系统管理',
-          },
-        };
-
-      case 'api-test':
-        return {
-          pageType: 'api-test',
-          apiMode,
-          testResults: [],
-          routeState,
-          metadata: {
-            note: 'API测试数据',
-          },
-        };
-
-      default:
-        return {
-          pageType: 'unknown',
-          currentPage,
-          routeState,
-          metadata: {
-            entitiesCount: entities.length,
-            modulesCount: modules.length,
-            graphsCount: graphs.length,
-            note: '未知页面类型',
-          },
-        };
-    }
-  }, [
-    currentPage,
-    originalEntity,
-    editingEntity,
-    isDirty,
-    isSaving,
-    entities,
-    modules,
-    graphs,
-    selectedEntityId,
-    routeState,
-    loading,
-    apiMode,
-  ]);
-
-  // 处理debug面板切换
-  const handleToggleDebug = React.useCallback(() => {
-    const currentData = getCurrentPageData();
-    const title = `Debug - ${currentPage}`;
-    toggleDebugPanel(currentData, title);
-  }, [getCurrentPageData, currentPage, toggleDebugPanel]);
-
-  // 实时更新debug面板数据
-  React.useEffect(() => {
-    if (debugState.visible) {
-      const currentData = getCurrentPageData();
-      const title = `Debug - ${currentPage}`;
-      updateDebugData(currentData, title);
-    }
-  }, [debugState.visible, getCurrentPageData, currentPage, updateDebugData]);
+  // Debug相关功能已移除
 
   // 主要导航项
   const mainNavItems = React.useMemo(
@@ -532,6 +345,7 @@ const AppContent: React.FC = () => {
           { itemKey: 'exp-inline', text: '脚本', link: '/exp/inline' },
         ],
       },
+      { itemKey: 'component-graph', text: '组件关系图', link: '/component-graph' },
     ],
     []
   );
@@ -618,6 +432,8 @@ const AppContent: React.FC = () => {
         return <ExpressionListPage />;
       case 'entity-workflow':
         return <WorkflowEditPage />;
+      case 'component-graph':
+        return <ComponentRelationshipGraph />;
       case 'api-test':
         return <ApiTestPanel />;
       case 'test-new-architecture':
@@ -662,17 +478,6 @@ const AppContent: React.FC = () => {
           }}
           footer={
             <Space>
-              {/* Debug按钮 */}
-              <Button
-                icon={<IconCode />}
-                size="small"
-                type={debugState.visible ? 'primary' : 'tertiary'}
-                onClick={handleToggleDebug}
-                title="显示/隐藏Debug面板"
-              >
-                Debug
-              </Button>
-
               {/* 在实体工作流页面和行为编辑页面显示实体相关控件 */}
               {(currentPage === 'entity-workflow' || currentPage === 'behavior') && (
                 <>
@@ -741,21 +546,12 @@ const AppContent: React.FC = () => {
         style={{
           flex: 1,
           overflow: 'hidden',
-          marginRight: debugState.visible ? '500px' : '0',
-          transition: 'margin-right 0.3s ease',
         }}
       >
         {renderMainContent()}
       </Content>
 
-      {/* Debug面板 */}
-      <DebugPanel
-        visible={debugState.visible}
-        onClose={hideDebugPanel}
-        currentRoute={currentPage}
-        data={debugState.data}
-        title={debugState.title}
-      />
+
     </Layout>
   );
 };

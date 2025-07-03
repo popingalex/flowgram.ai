@@ -24,8 +24,7 @@ export const EntitySelector: React.FC = () => {
 
   // 计算实体统计信息
   const getEntityStats = (entity: any) => {
-    // 计算属性数量（去掉模块属性）
-    const attributeCount = entity.attributes?.length || 0;
+    // 实体不再支持属性，移除属性计数
 
     // 计算模块数量
     const moduleCount = entity.bundles?.length || 0;
@@ -38,7 +37,7 @@ export const EntitySelector: React.FC = () => {
     );
     const workflowNodeCount = entityGraph?.nodes?.length || 0;
 
-    return { attributeCount, moduleCount, workflowNodeCount };
+    return { moduleCount, workflowNodeCount };
   };
 
   return (
@@ -83,9 +82,6 @@ export const EntitySelector: React.FC = () => {
                   }}
                 >
                   <div style={{ display: 'flex', gap: '4px' }}>
-                    <Tag size="small" color="blue">
-                      {stats.attributeCount}属性
-                    </Tag>
                     <Tag size="small" color="green">
                       {stats.moduleCount}模块
                     </Tag>

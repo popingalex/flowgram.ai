@@ -341,12 +341,12 @@
             "shellCommand": "concurrently --kill-others --prefix \"{name}\" --names [watch],[demo] -c white,blue \"rush build:watch --to-except @flowgram.ai/demo-free-layout-forked\" \"cd apps/demo-free-layout-forked && rushx dev -- --port 13000\""
         },
         {
-            "name": "dev:api-platform",
+            "name": "dev:simulator",
             "commandKind": "global",
-            "summary": "⭐️️ run dev in apps/api-platform on port 13001",
+            "summary": "⭐️️ run dev in apps/simulator on port 13002",
             "autoinstallerName": "rush-commands",
             "safeForSimultaneousRushProcesses": true,
-            "shellCommand": "concurrently --kill-others --prefix \"{name}\" --names [api-platform] -c blue \"cd apps/api-platform && rushx dev -- --port 13001\""
+            "shellCommand": "cd apps/simulator && rushx dev"
         }
     ],
     /**

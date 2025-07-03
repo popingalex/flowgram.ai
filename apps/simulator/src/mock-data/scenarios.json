@@ -1,0 +1,104 @@
+[
+  {
+    "_indexId": "scenario_mountain_rescue_001",
+    "name": "山区救援演习",
+    "description": "模拟山区发生意外时的紧急救援行动",
+    "entities": [
+      "entity_helicopter_001",
+      "entity_ambulance_001", 
+      "entity_command_center_001"
+    ],
+    "modules": [
+      "module_mobile_001",
+      "module_controlled_001"
+    ],
+    "systems": [
+      "system_movement_001",
+      "system_interaction_001",
+      "system_simulation_001",
+      "system_logging_001"
+    ],
+    "metadata": {
+      "terrain": "mountain",
+      "weather": "clear",
+      "difficulty": "medium",
+      "duration": 3600,
+      "participants": 3,
+      "objectives": [
+        "定位受困人员",
+        "建立通信联络",
+        "执行救援行动",
+        "安全撤离伤员"
+      ]
+    }
+  },
+  {
+    "_indexId": "scenario_fire_suppression_001",
+    "name": "城市火灾扑救",
+    "description": "模拟城市建筑物火灾的扑救作业",
+    "entities": [
+      "entity_fire_truck_001",
+      "entity_ambulance_001",
+      "entity_command_center_001"
+    ],
+    "modules": [
+      "module_mobile_001", 
+      "module_container_001",
+      "module_controlled_001"
+    ],
+    "systems": [
+      "system_movement_001",
+      "system_interaction_001",
+      "system_simulation_001",
+      "system_logging_001"
+    ],
+    "metadata": {
+      "terrain": "urban",
+      "weather": "windy",
+      "difficulty": "high",
+      "duration": 7200,
+      "participants": 2,
+      "objectives": [
+        "控制火势蔓延",
+        "疏散周边居民",
+        "保护重要设施",
+        "扑灭明火"
+      ]
+    }
+  },
+  {
+    "_indexId": "scenario_multi_emergency_001",
+    "name": "多点应急响应",
+    "description": "同时处理多个紧急事件的综合演练",
+    "entities": [
+      "entity_helicopter_001",
+      "entity_fire_truck_001", 
+      "entity_ambulance_001",
+      "entity_command_center_001"
+    ],
+    "modules": [
+      "module_mobile_001",
+      "module_container_001",
+      "module_controlled_001"
+    ],
+    "systems": [
+      "system_movement_001",
+      "system_interaction_001", 
+      "system_simulation_001",
+      "system_logging_001"
+    ],
+    "metadata": {
+      "terrain": "mixed",
+      "weather": "rainy",
+      "difficulty": "very_high",
+      "duration": 10800,
+      "participants": 4,
+      "objectives": [
+        "协调多个救援队伍",
+        "优化资源分配",
+        "处理突发状况",
+        "确保行动安全"
+      ]
+    }
+  }
+] 

@@ -16,27 +16,28 @@
     "participants": [
       {
         "id": "agents",
-        "type": "s",
         "name": "智能体集合",
-        "desc": "执行行为决策的智能体实体 [组件:agent_component,position_component] [角色:primary]",
-        "value": "primary",
-        "required": false
+        "components": [
+          "agent_component",
+          "position_component"
+        ]
       },
       {
         "id": "fire_targets",
-        "type": "s",
         "name": "火灾目标集合",
-        "desc": "智能体需要扑灭的火灾目标 [组件:burning_component,flammable_component,position_component] [角色:target]",
-        "value": "target",
-        "required": false
+        "components": [
+          "burning_component",
+          "flammable_component",
+          "position_component"
+        ]
       },
       {
         "id": "refill_stations",
-        "type": "s",
         "name": "补给站集合",
-        "desc": "提供资源补给的站点 [组件:refill_station_component,position_component] [角色:query]",
-        "value": "query",
-        "required": false
+        "components": [
+          "refill_station_component",
+          "position_component"
+        ]
       }
     ]
   },
@@ -57,19 +58,18 @@
     "participants": [
       {
         "id": "moving_entities",
-        "type": "s",
         "name": "可移动实体集合",
-        "desc": "具有移动目标的实体 [组件:position_component,target_component] [角色:primary]",
-        "value": "primary",
-        "required": false
+        "components": [
+          "position_component",
+          "target_component"
+        ]
       },
       {
         "id": "agents",
-        "type": "s",
         "name": "智能体集合",
-        "desc": "需要检查行为状态的智能体 [组件:agent_component] [角色:optional]",
-        "value": "optional",
-        "required": false
+        "components": [
+          "agent_component"
+        ]
       }
     ]
   },
@@ -90,35 +90,35 @@
     "participants": [
       {
         "id": "flammable_entities",
-        "type": "s",
         "name": "可燃实体集合",
-        "desc": "所有可燃烧的实体，进行温度管理和点燃检查 [组件:flammable_component,position_component] [角色:primary]",
-        "value": "primary",
-        "required": false
+        "components": [
+          "flammable_component",
+          "position_component"
+        ]
       },
       {
         "id": "burning_entities",
-        "type": "s",
         "name": "燃烧实体集合",
-        "desc": "正在燃烧的实体，消耗燃料并传播热量 [组件:flammable_component,burning_component,position_component] [角色:active]",
-        "value": "active",
-        "required": false
+        "components": [
+          "flammable_component",
+          "burning_component",
+          "position_component"
+        ]
       },
       {
         "id": "wind_entities",
-        "type": "s",
         "name": "风力实体集合",
-        "desc": "影响火势传播方向的风力实体 [组件:wind_component] [角色:environment]",
-        "value": "environment",
-        "required": false
+        "components": [
+          "wind_component"
+        ]
       },
       {
         "id": "pressure_vessels",
-        "type": "s",
         "name": "压力容器集合",
-        "desc": "受高温影响可能爆炸的压力容器 [组件:pressure_vessel_component,position_component] [角色:special]",
-        "value": "special",
-        "required": false
+        "components": [
+          "pressure_vessel_component",
+          "position_component"
+        ]
       }
     ]
   },
@@ -139,19 +139,22 @@
     "participants": [
       {
         "id": "active_agents",
-        "type": "s",
         "name": "活跃智能体集合",
-        "desc": "具备交互能力的智能体 [组件:agent_component,inventory_component,emitter_component,position_component] [角色:primary]",
-        "value": "primary",
-        "required": false
+        "components": [
+          "agent_component",
+          "inventory_component",
+          "emitter_component",
+          "position_component"
+        ]
       },
       {
         "id": "interaction_targets",
-        "type": "s",
         "name": "可交互目标集合",
-        "desc": "可以被智能体作用的目标实体 [组件:flammable_component,material_component,position_component] [角色:target]",
-        "value": "target",
-        "required": false
+        "components": [
+          "flammable_component",
+          "material_component",
+          "position_component"
+        ]
       }
     ]
   },
@@ -172,11 +175,11 @@
     "participants": [
       {
         "id": "pressure_vessels",
-        "type": "s",
         "name": "压力容器集合",
-        "desc": "监控压力状态的压力容器实体 [组件:pressure_vessel_component,position_component] [角色:primary]",
-        "value": "primary",
-        "required": false
+        "components": [
+          "pressure_vessel_component",
+          "position_component"
+        ]
       }
     ]
   },
@@ -197,27 +200,29 @@
     "participants": [
       {
         "id": "consuming_agents",
-        "type": "s",
         "name": "资源消耗智能体集合",
-        "desc": "正在消耗资源的智能体 [组件:agent_component,inventory_component,emitter_component] [角色:primary]",
-        "value": "primary",
-        "required": false
+        "components": [
+          "agent_component",
+          "inventory_component",
+          "emitter_component"
+        ]
       },
       {
         "id": "refilling_agents",
-        "type": "s",
         "name": "资源补给智能体集合",
-        "desc": "正在补给资源的智能体 [组件:agent_component,inventory_component,position_component] [角色:primary]",
-        "value": "primary",
-        "required": false
+        "components": [
+          "agent_component",
+          "inventory_component",
+          "position_component"
+        ]
       },
       {
         "id": "refill_stations",
-        "type": "s",
         "name": "补给站集合",
-        "desc": "提供资源补给的服务站点 [组件:refill_station_component,position_component] [角色:service]",
-        "value": "service",
-        "required": false
+        "components": [
+          "refill_station_component",
+          "position_component"
+        ]
       }
     ]
   }
